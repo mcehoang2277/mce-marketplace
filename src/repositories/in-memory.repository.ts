@@ -114,12 +114,12 @@ export class InMemoryRepository implements ICandidateRepository, IJobRepository,
     return this.candidates;
   }
 
-  async findById(id: string): Promise<WorkerCandidate | undefined> {
+  async findCandidateById(id: string): Promise<WorkerCandidate | undefined> {
     return this.candidates.find((c) => c.id === id);
   }
 
   // --- IJobRepository ---
-  async findById(id: string): Promise<JobRequirement | undefined> {
+  async findJobById(id: string): Promise<JobRequirement | undefined> {
     return this.jobs.get(id);
   }
 

@@ -1,34 +1,26 @@
 {
   "version": 2,
   "name": "mce-marketplace",
+  "buildCommand": "tsc || true",
   "cleanUrls": true,
-  "routes": [
+  "rewrites": [
+    { "source": "/", "destination": "/index.html" },
+    { "source": "/mobile", "destination": "/mobile.html" },
+    { "source": "/auth", "destination": "/auth.html" }
+  ],
+  "headers": [
     {
-      "src": "^/manifest.json$",
-      "headers": {
-        "Content-Type": "application/manifest+json"
-      },
-      "dest": "/manifest.json"
+      "source": "/manifest.json",
+      "headers": [
+        { "key": "Content-Type", "value": "application/manifest+json" }
+      ]
     },
     {
-      "src": "^/sw.js$",
-      "headers": {
-        "Cache-Control": "no-cache, no-store, must-revalidate",
-        "Content-Type": "application/javascript"
-      },
-      "dest": "/sw.js"
-    },
-    {
-      "src": "^/mobile$",
-      "dest": "/mobile.html"
-    },
-    {
-      "src": "^/auth$",
-      "dest": "/auth.html"
-    },
-    {
-      "src": "^/$",
-      "dest": "/index.html"
+      "source": "/sw.js",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+        { "key": "Content-Type", "value": "application/javascript" }
+      ]
     }
   ]
 }
