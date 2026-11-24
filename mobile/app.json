@@ -1,0 +1,77 @@
+{
+  "expo": {
+    "name": "MCE Marketplace — Việc Làm Tức Thời 24/7",
+    "slug": "mce-marketplace",
+    "version": "2.8.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#080D1A"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "vn.mce.marketplace",
+      "buildNumber": "2.8.0",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "MCE sử dụng vị trí của bạn để quét và hiển thị các ca việc làm tức thời gần bạn trong bán kính 3-12km.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "MCE sử dụng vị trí nền để thông báo cho bạn ngay khi có ca làm việc gấp ở cự ly gần.",
+        "NSCameraUsageDescription": "MCE yêu cầu quyền truy cập máy ảnh để chụp ảnh minh chứng hoàn thành ca việc (e-Proof) và xác thực định danh eKYC CCCD.",
+        "NSMicrophoneUsageDescription": "MCE sử dụng micro để hỗ trợ bạn thực hiện cuộc gọi thoại đàm thoại trực tiếp qua mạng 4G/VoIP với người thuê khi điện thoại hết tiền cước SIM.",
+        "UIBackgroundModes": [
+          "location",
+          "fetch",
+          "remote-notification",
+          "voip"
+        ]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#080D1A"
+      },
+      "package": "vn.mce.marketplace",
+      "versionCode": 280,
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "CAMERA",
+        "RECORD_AUDIO",
+        "VIBRATE",
+        "POST_NOTIFICATIONS",
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Cho phép MCE truy cập vị trí định vị để kết nối người làm và người thuê lân cận."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Cho phép MCE sử dụng máy ảnh để chụp ảnh nghiệm thu ca làm."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "mce-marketplace-vn-prod"
+      }
+    }
+  }
+}

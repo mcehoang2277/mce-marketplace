@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MCE Marketplace — Dual Live Command Center (Web & Mobile Đồng Thời)</title>
+  
+  <!-- Tailwind CSS CDN with Custom Enterprise Dark Palette -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              bg: '#080D1A',
+              surface: '#111827',
+              card: '#151F32',
+              border: '#273449',
+              primary: '#6366F1',
+              secondary: '#8B5CF6',
+              accent: '#06B6D4',
+              success: '#10B981',
+              warning: '#F59E0B',
+              danger: '#EF4444',
+              textPrimary: '#F8FAFC',
+              textSecondary: '#94A3B8'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'Plus Jakarta Sans', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Fira Code', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #080D1A;
+      background-image: 
+        radial-gradient(circle at 10% 10%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 90% 90%, rgba(139, 92, 246, 0.07) 0%, transparent 40%),
+        radial-gradient(circle at 50% 50%, rgba(6, 182, 212, 0.03) 0%, transparent 50%);
+      color: #F8FAFC;
+    }
+    .split-frame {
+      height: calc(100vh - 72px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+  </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden antialiased selection:bg-brand-primary selection:text-white">
+
+  <!-- TOP COMMAND & TELEMETRY BAR -->
+  <header class="h-[72px] bg-brand-surface/90 border-b border-brand-border px-4 sm:px-6 flex items-center justify-between z-50 backdrop-blur-md shadow-xl shadow-black/30">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand-primary via-brand-secondary to-brand-accent flex items-center justify-center text-white font-black text-xl shadow-lg shadow-brand-primary/25">
+        M
+      </div>
+      <div>
+        <h1 class="text-sm sm:text-base font-black text-brand-textPrimary flex items-center gap-2">
+          MCE Marketplace — Trung Tâm Điều Hành Kép (Command Center)
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-success/20 text-emerald-300 border border-brand-success/40">
+            TEST RUN #3 LIVE
+          </span>
+        </h1>
+        <p class="text-xs text-brand-textSecondary">Giám sát đồng thời: <strong>Web Dashboard Điều Hành</strong> (Trái) & <strong>Mobile Native App</strong> (Phải)</p>
+      </div>
+    </div>
+
+    <!-- Live Unified Trigger Action -->
+    <div class="flex items-center gap-3">
+      <div class="hidden lg:flex items-center gap-4 text-xs bg-brand-card/90 px-4 py-2 rounded-2xl border border-brand-border shadow-inner">
+        <div>
+          <div class="text-[10px] text-brand-textSecondary font-bold uppercase tracking-wider">QUY MÔ TOÀN QUỐC</div>
+          <div class="font-extrabold text-brand-textPrimary">500 Đơn · 1.000 Worker</div>
+        </div>
+        <div class="w-px h-6 bg-brand-border"></div>
+        <div>
+          <div class="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">DÒNG TIỀN ESCROW</div>
+          <div class="font-extrabold text-emerald-400">114.455.000 VNĐ</div>
+        </div>
+        <div class="w-px h-6 bg-brand-border"></div>
+        <div>
+          <div class="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">PHÍ SÀN 90 NGÀY</div>
+          <div class="font-extrabold text-indigo-300">0 VNĐ (0%)</div>
+        </div>
+      </div>
+
+      <button onclick="triggerUnifiedNationalSim()" class="py-2.5 px-5 bg-gradient-to-r from-brand-primary via-brand-secondary to-brand-accent hover:opacity-95 active:scale-95 text-white font-extrabold text-xs rounded-2xl shadow-lg shadow-brand-primary/25 transition flex items-center gap-2">
+        <span class="text-sm">⚡</span>
+        <span>KÍCH HOẠT SIÊU MÔ PHỎNG ĐỒNG THỜI</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- DUAL SPLIT-SCREEN CONTAINER -->
+  <main class="flex-1 flex overflow-hidden split-frame bg-brand-bg p-2 sm:p-3 gap-3">
+    
+    <!-- LEFT PANE: DESKTOP WEB DASHBOARD -->
+    <div class="flex-1 flex flex-col bg-brand-surface rounded-3xl border border-brand-border overflow-hidden shadow-2xl relative">
+      <div class="h-10 bg-brand-card px-4 flex items-center justify-between border-b border-brand-border text-xs font-bold text-brand-textPrimary">
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-brand-primary"></span>
+          <span>BẢN WEB DASHBOARD (Điều Hành Doanh Nghiệp & Sổ Quỹ Toàn Quốc)</span>
+        </div>
+        <a href="/index.html" target="_blank" class="text-[11px] text-indigo-400 hover:text-white flex items-center gap-1 transition">
+          Mở tab riêng ↗
+        </a>
+      </div>
+      <iframe id="webIframe" src="/index.html" class="flex-1 w-full h-full border-none bg-brand-bg"></iframe>
+    </div>
+
+    <!-- RIGHT PANE: NATIVE MOBILE SIMULATOR -->
+    <div class="w-[430px] hidden md:flex flex-col bg-brand-surface rounded-3xl border border-brand-border overflow-hidden shadow-2xl relative">
+      <div class="h-10 bg-brand-card px-4 flex items-center justify-between border-b border-brand-border text-xs font-bold text-brand-textPrimary">
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>BẢN MOBILE NATIVE APP (MCE Mobile iOS / Android)</span>
+        </div>
+        <a href="/mobile.html" target="_blank" class="text-[11px] text-emerald-400 hover:text-white flex items-center gap-1 transition">
+          Mở tab riêng ↗
+        </a>
+      </div>
+      <iframe id="mobileIframe" src="/mobile.html" class="flex-1 w-full h-full border-none bg-brand-bg"></iframe>
+    </div>
+
+  </main>
+
+  <!-- FLOATING SYNC TOAST -->
+  <div id="syncToast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-brand-card/95 text-brand-textPrimary border border-brand-success/50 backdrop-blur-xl px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-xs font-bold pointer-events-none transform transition-all duration-300 translate-y-8 opacity-0 z-[99999]">
+    <span class="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></span>
+    <span id="syncToastText">Đang kích hoạt đồng bộ toàn quốc 500 việc làm & 1.000 worker...</span>
+  </div>
+
+  <script>
+    function triggerUnifiedNationalSim() {
+      const toast = document.getElementById('syncToast');
+      const toastText = document.getElementById('syncToastText');
+      toast.classList.remove('translate-y-8', 'opacity-0');
+
+      toastText.textContent = "🚀 Đang kích hoạt đồng bộ Test Run #3: 500 Việc làm & 1.000 Worker khắp Việt Nam...";
+
+      // Trigger Web iframe
+      try {
+        const webWin = document.getElementById('webIframe').contentWindow;
+        if (webWin && typeof webWin.openNationalSimModal === 'function') {
+          webWin.openNationalSimModal();
+          setTimeout(() => {
+            if (typeof webWin.runLiveNationalSimulation === 'function') {
+              webWin.runLiveNationalSimulation();
+            }
+          }, 400);
+        }
+      } catch (e) {
+        console.warn("Web sync notice", e);
+      }
+
+      // Trigger Mobile iframe
+      try {
+        const mobileWin = document.getElementById('mobileIframe').contentWindow;
+        if (mobileWin && typeof mobileWin.openMobileNationalSim === 'function') {
+          mobileWin.openMobileNationalSim();
+          setTimeout(() => {
+            if (typeof mobileWin.runLiveMobileNationalSim === 'function') {
+              mobileWin.runLiveMobileNationalSim();
+            }
+          }, 400);
+        }
+      } catch (e) {
+        console.warn("Mobile sync notice", e);
+      }
+
+      setTimeout(() => {
+        toastText.textContent = "✅ Đã chạy thành công siêu mô phỏng đồng bộ trên cả Web Dashboard và Mobile App!";
+      }, 1800);
+
+      setTimeout(() => {
+        toast.classList.add('translate-y-8', 'opacity-0');
+      }, 5000);
+    }
+  </script>
+</body>
+</html>

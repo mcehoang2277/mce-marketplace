@@ -1,0 +1,181 @@
+// Prisma Schema for MCE Hyperlocal Time Marketplace
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  POSTER
+  WORKER
+  BOTH
+}
+
+enum JobStatus {
+  DRAFT
+  OPEN
+  ASSIGNED
+  IN_PROGRESS
+  PENDING_REVIEW
+  COMPLETED
+  DISPUTED
+  CANCELLED
+}
+
+enum EscrowStatus {
+  PENDING
+  LOCKED
+  RELEASED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum RiskTier {
+  TIER_1_LOW_RISK      // Online, Data entry, Event help, Waiting in line
+  TIER_2_MODERATE_RISK // Warehouse, Moving, Heavy lifting, Pets
+  TIER_3_PROHIBITED    // Forbidden / hazardous
+}
+
+enum CheckEventType {
+  CHECK_IN
+  CHECK_OUT
+}
+
+model User {
+  id              String        @id @default(uuid())
+  fullName        String
+  phone           String        @unique
+  role            UserRole      @default(BOTH)
+  karmaScore      Float         @default(5.0) // 0.0 - 5.0
+  isKycVerified   Boolean       @default(false)
+  currentLat      Float?
+  currentLng      Float?
+  skills          String[]      @default([])
+  desiredMinRate  Decimal?      @db.Decimal(12, 2)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  postedJobs      Job[]         @relation("PosterJobs")
+  assignedJobs    Job[]         @relation("WorkerJobs")
+  applications    Application[]
+  wallet          Wallet?
+  checkEvents     CheckEvent[]
+  reviewsGiven    Review[]      @relation("ReviewsGiven")
+  reviewsReceived Review[]      @relation("ReviewsReceived")
+}
+
+model Wallet {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  availableBalance Decimal  @default(0.0) @db.Decimal(12, 2)
+  lockedBalance    Decimal  @default(0.0) @db.Decimal(12, 2)
+  updatedAt        DateTime @updatedAt
+
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Job {
+  id                 String             @id @default(uuid())
+  posterId           String
+  workerId           String?
+  title              String
+  description        String
+  category           String
+  riskTier           RiskTier           @default(TIER_1_LOW_RISK)
+  status             JobStatus          @default(DRAFT)
+  
+  startTime          DateTime
+  endTime            DateTime
+  hourlyRate         Decimal            @db.Decimal(12, 2)
+  totalEstimatedVnd  Decimal            @db.Decimal(12, 2)
+  
+  lat                Float
+  lng                Float
+  addressText        String
+  requiredSkills     String[]           @default([])
+  
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  poster             User               @relation("PosterJobs", fields: [posterId], references: [id])
+  worker             User?              @relation("WorkerJobs", fields: [workerId], references: [id])
+  applications       Application[]
+  escrowTransaction  EscrowTransaction?
+  checkEvents        CheckEvent[]
+  dispute            Dispute?
+  review             Review?
+}
+
+model EscrowTransaction {
+  id               String       @id @default(uuid())
+  jobId            String       @unique
+  grossAmount      Decimal      @db.Decimal(12, 2) // Gross VND deposited by Poster
+  platformFeeRate  Float        @default(0.08)     // e.g. 8%
+  platformFeeVnd   Decimal      @db.Decimal(12, 2)
+  netWorkerPayout  Decimal      @db.Decimal(12, 2)
+  status           EscrowStatus @default(PENDING)
+  lockedAt         DateTime?
+  releasedAt       DateTime?
+  
+  job              Job          @relation(fields: [jobId], references: [id], onDelete: Cascade)
+}
+
+model Application {
+  id          String   @id @default(uuid())
+  jobId       String
+  workerId    String
+  matchScore  Float    // Match Score calculated by engine (0 - 100)
+  status      String   @default("APPLIED") // APPLIED, ACCEPTED, REJECTED
+  createdAt   DateTime @default(now())
+
+  job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  worker      User     @relation(fields: [workerId], references: [id], onDelete: Cascade)
+}
+
+model CheckEvent {
+  id                 String         @id @default(uuid())
+  jobId              String
+  workerId           String
+  eventType          CheckEventType
+  lat                Float
+  lng                Float
+  distanceMeters     Float          // Calculated distance from job coordinate
+  photoProofUrl      String?
+  notes              String?
+  recordedAt         DateTime       @default(now())
+
+  job                Job            @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  worker             User           @relation(fields: [workerId], references: [id], onDelete: Cascade)
+}
+
+model Dispute {
+  id          String   @id @default(uuid())
+  jobId       String   @unique
+  initiatorId String
+  reason      String
+  evidenceUrl String?
+  status      String   @default("OPEN") // OPEN, RESOLVED_POSTER, RESOLVED_WORKER, SPLIT
+  resolution  String?
+  createdAt   DateTime @default(now())
+  resolvedAt  DateTime?
+
+  job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+}
+
+model Review {
+  id           String   @id @default(uuid())
+  jobId        String   @unique
+  reviewerId   String
+  revieweeId   String
+  rating       Int      // 1 to 5
+  comment      String?
+  createdAt    DateTime @default(now())
+
+  job          Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  reviewer     User     @relation("ReviewsGiven", fields: [reviewerId], references: [id])
+  reviewee     User     @relation("ReviewsReceived", fields: [revieweeId], references: [id])
+}

@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  # CỔNG ĐẢO NGƯỢC NGINX (REVERSE PROXY & RATE LIMITER)
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: mce-nginx-gateway
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - mce_network
+
+  # ỨNG DỤNG MCE APP NODE (STATELESS SCALABLE CONTAINER)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mce-app-node
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 8000
+      DATABASE_URL: "postgresql://mce_admin:mce_secure_password_2026@postgres:5432/mce_marketplace?schema=public"
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: mce_redis_secret_2026
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - mce_network
+
+  # CƠ SỞ DỮ LIỆU CHÍNH (POSTGRESQL 16)
+  postgres:
+    image: postgres:16-alpine
+    container_name: mce-postgres-db
+    restart: always
+    environment:
+      POSTGRES_DB: mce_marketplace
+      POSTGRES_USER: mce_admin
+      POSTGRES_PASSWORD: mce_secure_password_2026
+    ports:
+      - "5432:5432"
+    volumes:
+      - mce_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mce_admin -d mce_marketplace"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mce_network
+
+  # BỘ NHỚ ĐỆM & HÀNG ĐỢI PHÂN TÁN (REDIS 7)
+  redis:
+    image: redis:7-alpine
+    container_name: mce-redis-cache
+    restart: always
+    command: redis-server --appendonly yes --requirepass mce_redis_secret_2026
+    ports:
+      - "6379:6379"
+    volumes:
+      - mce_redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "mce_redis_secret_2026", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mce_network
+
+volumes:
+  mce_pgdata:
+  mce_redisdata:
+
+networks:
+  mce_network:
+    driver: bridge

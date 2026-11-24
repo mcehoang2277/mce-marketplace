@@ -1,0 +1,173 @@
+﻿{
+    "messages":  [
+                     {
+                         "id":  "msg-001",
+                         "jobId":  "JOB-HANOI-001",
+                         "text":  "Chào bạn! Bên mình cần đóng gói 300 kiện hàng Shopee xuất kho trước 17h nhé. Đến số 12 Tràng Thi thì nhắn mình ra mở cửa.",
+                         "timestamp":  "2026-11-24T17:28:51.9320972+07:00",
+                         "senderName":  "Chủ Shop Tràng Thi",
+                         "sender":  "poster",
+                         "time":  "13:45"
+                     },
+                     {
+                         "id":  "msg-002",
+                         "jobId":  "JOB-HANOI-001",
+                         "text":  "Dạ em nhận được rồi ạ! Em đang chuẩn bị chạy qua, khoảng 15 phút nữa là em có mặt tại shop anh nhé.",
+                         "timestamp":  "2026-11-24T17:29:51.9320972+07:00",
+                         "senderName":  "Nguyễn Văn An",
+                         "sender":  "worker",
+                         "time":  "13:46"
+                     },
+                     {
+                         "id":  "msg-1795518757898",
+                         "jobId":  "JOB-001",
+                         "text":  "Chào anh, em đã check-in và bắt đầu đóng hàng ạ!",
+                         "timestamp":  "2026-11-24T18:12:37.9045586+07:00",
+                         "senderName":  "Tôi",
+                         "sender":  "worker",
+                         "time":  "18:12"
+                     },
+                     {
+                         "id":  "msg-1795520570265",
+                         "jobId":  "JOB-002",
+                         "text":  "📍 Tôi đang trên đường tới!",
+                         "timestamp":  "2026-11-24T18:42:50.2719304+07:00",
+                         "senderName":  "Tôi",
+                         "sender":  "worker",
+                         "time":  "18:42"
+                     }
+                 ],
+    "transactions":  [
+                         {
+                             "jobId":  "JOB-PREV-01",
+                             "id":  "tx-init-001",
+                             "timestamp":  "2026-11-24 15:58",
+                             "title":  "Hoàn thành ca Trông thú cưng",
+                             "fee":  0,
+                             "type":  "PAYOUT",
+                             "amount":  150000,
+                             "status":  "SUCCESS"
+                         },
+                         {
+                             "jobId":  "JOB-PREV-02",
+                             "id":  "tx-init-002",
+                             "timestamp":  "2026-11-23 17:58",
+                             "title":  "Hoàn thành ca Đóng gói Shopee",
+                             "fee":  0,
+                             "type":  "PAYOUT",
+                             "amount":  240000,
+                             "status":  "SUCCESS"
+                         },
+                         {
+                             "id":  "tx-wd-1795518712537",
+                             "fee":  0,
+                             "timestamp":  "2026-11-24 18:11",
+                             "amount":  -100000,
+                             "type":  "WITHDRAW",
+                             "title":  "Rút về tài khoản MBBank (0981234567)",
+                             "status":  "SUCCESS"
+                         },
+                         {
+                             "id":  "tx-wd-1795519214583",
+                             "fee":  0,
+                             "timestamp":  "2026-11-24 18:20",
+                             "amount":  -50000,
+                             "type":  "WITHDRAW",
+                             "title":  "Rút về tài khoản MBBank (0981234567)",
+                             "status":  "SUCCESS"
+                         },
+                         {
+                             "id":  "tx-wd-1795519427214",
+                             "fee":  0,
+                             "timestamp":  "2026-11-24 18:23",
+                             "amount":  -50000,
+                             "type":  "WITHDRAW",
+                             "title":  "Rút về tài khoản MBBank (0981234567)",
+                             "status":  "SUCCESS"
+                         },
+                         {
+                             "id":  "tx-wd-1795520774193",
+                             "fee":  0,
+                             "timestamp":  "2026-11-24 18:46",
+                             "amount":  -50000,
+                             "type":  "WITHDRAW",
+                             "title":  "Rút về tài khoản MBBank (0981234567)",
+                             "status":  "SUCCESS"
+                         },
+                         {
+                             "id":  "tx-wd-1795520774387",
+                             "fee":  0,
+                             "timestamp":  "2026-11-24 18:46",
+                             "amount":  -10000,
+                             "type":  "WITHDRAW",
+                             "title":  "Rút về tài khoản MBBank (0981234567)",
+                             "status":  "SUCCESS"
+                         }
+                     ],
+    "otps":  {
+
+             },
+    "escrows":  [
+                    {
+                        "jobId":  "JOB-HANOI-001",
+                        "grossAmount":  240000,
+                        "workerNet":  240000,
+                        "platformFee":  0,
+                        "status":  "DRAFT",
+                        "updatedAt":  "2026-11-24T17:58:51.9208135+07:00"
+                    }
+                ],
+    "jobs":  [
+                 {
+                     "id":  "JOB-HANOI-001",
+                     "assignedWorkerId":  null,
+                     "posterId":  "poster-001",
+                     "hours":  3,
+                     "hourlyRate":  80000,
+                     "time":  "14:00 - 17:00 (3 tiếng)",
+                     "status":  "OPEN",
+                     "address":  "Số 12 Tràng Thi, Hoàn Kiếm, Hà Nội",
+                     "location":  {
+                                      "lat":  21.028511,
+                                      "lng":  105.854444
+                                  },
+                     "title":  "Phụ đóng gói 300 kiện hàng shopee",
+                     "assignedWorkerName":  null
+                 }
+             ],
+    "users":  [
+                  {
+                      "account":  "0981234567",
+                      "id":  "worker-001",
+                      "isVerified":  true,
+                      "name":  "Nguyễn Văn An",
+                      "idNumber":  "001098012345",
+                      "karmaScore":  4.9,
+                      "bank":  "MBBank",
+                      "phone":  "0981234567",
+                      "role":  "WORKER",
+                      "skills":  [
+                                     "dong_goi",
+                                     "can_than",
+                                     "xe_may"
+                                 ],
+                      "walletBalance":  130000,
+                      "completionRate":  0.98,
+                      "email":  "nguyenvanan.mce@gmail.com"
+                  },
+                  {
+                      "account":  "1903888999",
+                      "id":  "poster-001",
+                      "isVerified":  true,
+                      "completionRate":  1,
+                      "walletBalance":  2500000,
+                      "idNumber":  "001188099888",
+                      "role":  "POSTER",
+                      "name":  "Hoàng Mai (Chủ Shop)",
+                      "karmaScore":  5,
+                      "bank":  "Techcombank",
+                      "phone":  "0912888999",
+                      "email":  "hoangmai.shop@gmail.com"
+                  }
+              ]
+}
