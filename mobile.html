@@ -153,14 +153,20 @@
         </div>
       </div>
 
-      <!-- Quick Role Switcher (Khách Hàng: Tìm Việc / Đăng Tuyển) -->
-      <div class="flex items-center gap-1 bg-brand-card p-0.5 rounded-xl border border-brand-border shadow-inner">
-        <button id="btnRoleWorker" onclick="switchRole('WORKER')" class="py-1 px-2.5 rounded-lg text-[10px] font-black bg-brand-primary text-white transition active:scale-95 shadow-sm">
-          🛵 Tìm Việc
+      <!-- Header Actions: Quick Role Switcher + App Store / Auth Pill -->
+      <div class="flex items-center gap-1.5">
+        <button onclick="openAppStoreModal()" title="Tải ứng dụng cho điện thoại" class="p-1 px-1.5 rounded-lg text-[9px] font-bold bg-brand-surface hover:bg-brand-border border border-brand-border text-brand-accent transition flex items-center gap-1">
+          <span>📲 Cài App</span>
         </button>
-        <button id="btnRolePoster" onclick="switchRole('POSTER')" class="py-1 px-2.5 rounded-lg text-[10px] font-bold text-brand-textSecondary hover:text-brand-textPrimary transition active:scale-95">
-          🏢 Đăng Tuyển
-        </button>
+
+        <div class="flex items-center gap-0.5 bg-brand-card p-0.5 rounded-xl border border-brand-border shadow-inner">
+          <button id="btnRoleWorker" onclick="switchRole('WORKER')" class="py-1 px-2 rounded-lg text-[10px] font-black bg-brand-primary text-white transition active:scale-95 shadow-sm">
+            🛵 Tìm Việc
+          </button>
+          <button id="btnRolePoster" onclick="switchRole('POSTER')" class="py-1 px-2 rounded-lg text-[10px] font-bold text-brand-textSecondary hover:text-brand-textPrimary transition active:scale-95">
+            🏢 Tuyển
+          </button>
+        </div>
       </div>
     </header>
 
@@ -489,14 +495,56 @@
             </div>
           </div>
 
-          <div class="pt-2 border-t border-brand-border/60 flex gap-2">
-            <button onclick="toggleUserRoleFromProfile()" class="flex-1 py-1.5 px-3 bg-brand-surface hover:bg-brand-border border border-brand-border text-brand-textPrimary rounded-xl text-[11px] font-bold transition">
-              🔄 Chuyển sang Người Thuê
+          <div class="pt-2 border-t border-brand-border/60 flex gap-1.5">
+            <button onclick="toggleUserRoleFromProfile()" class="flex-1 py-1.5 px-2 bg-brand-surface hover:bg-brand-border border border-brand-border text-brand-textPrimary rounded-xl text-[10px] font-bold transition">
+              🔄 Đổi Vai Trò
             </button>
-            <button onclick="logoutToAuth()" class="py-1.5 px-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl text-[11px] font-bold transition">
+            <button onclick="openAuthModal('LOGIN')" class="py-1.5 px-2.5 bg-brand-surface hover:bg-brand-border border border-brand-border text-indigo-400 rounded-xl text-[10px] font-bold transition">
+              🔑 Đổi TK
+            </button>
+            <button onclick="logoutToAuth()" class="py-1.5 px-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl text-[10px] font-bold transition">
               🚪 Đăng Xuất
             </button>
           </div>
+        </div>
+
+        <!-- eKYC Verification Banner / Action Card -->
+        <div id="profileEkycCard" class="p-3.5 bg-gradient-to-r from-emerald-950/40 via-brand-card to-brand-surface rounded-3xl border border-emerald-500/40 shadow space-y-2.5">
+          <div class="flex items-start justify-between">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-base">
+                🪪
+              </div>
+              <div>
+                <h4 id="ekycCardTitle" class="text-xs font-black text-brand-textPrimary flex items-center gap-1.5">
+                  Xác Thực Danh Tính eKYC
+                  <span id="ekycCardBadge" class="text-[9px] bg-emerald-500/20 text-emerald-300 font-extrabold px-1.5 py-0.2 rounded border border-emerald-500/30">CẤP ĐỘ 2</span>
+                </h4>
+                <p id="ekycCardSub" class="text-[10px] text-brand-textSecondary">Định danh CCCD gắn chip & Sinh trắc học</p>
+              </div>
+            </div>
+            <button onclick="openEkycModal()" class="py-1 px-2.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-[10px] font-extrabold rounded-lg shadow active:scale-95 transition">
+              <span id="ekycBtnText">Xác Thực</span>
+            </button>
+          </div>
+          <div class="p-2 bg-brand-surface/80 rounded-xl border border-brand-border/60 flex items-center justify-between text-[10px]">
+            <span class="text-brand-textSecondary">Trạng thái định danh:</span>
+            <span id="ekycStatusText" class="text-emerald-400 font-bold">✓ CSDL Quốc Gia Xác Thực</span>
+          </div>
+        </div>
+
+        <!-- App Store Distribution & Installation Banner -->
+        <div class="p-3 bg-brand-card rounded-2xl border border-indigo-500/30 shadow flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">📲</span>
+            <div>
+              <strong class="text-xs font-bold text-brand-textPrimary block">Cài Đặt App Native MCE</strong>
+              <span class="text-[9px] text-brand-textSecondary">Bản thương mại Google Play & App Store</span>
+            </div>
+          </div>
+          <button onclick="openAppStoreModal()" class="py-1.5 px-3 bg-brand-primary hover:bg-brand-secondary text-white text-[10px] font-extrabold rounded-xl shadow active:scale-95 transition">
+            Tải App Ngay
+          </button>
         </div>
 
         <!-- Edit Profile Form Card -->
@@ -631,9 +679,481 @@
     <span class="w-2 h-2 rounded-full bg-emerald-300 animate-ping"></span>
     <span>🎧 Hỗ Trợ 24/7</span>
   </button>
-    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-    <span>💬 Góp Ý Thực Tế</span>
-  </button>
+
+  <!-- ================= MODAL: IN-APP MOBILE AUTHENTICATION (ĐĂNG NHẬP / ĐĂNG KÝ) ================= -->
+  <div id="mobileAuthModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-brand-card rounded-t-3xl sm:rounded-3xl max-w-sm w-full max-h-[92vh] flex flex-col shadow-2xl border border-brand-border overflow-hidden">
+      
+      <!-- Header -->
+      <div class="p-4 border-b border-brand-border flex items-center justify-between bg-brand-surface">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-primary to-brand-secondary text-white font-black flex items-center justify-center text-sm shadow">
+            M
+          </div>
+          <div>
+            <h3 id="authModalTitle" class="font-extrabold text-xs text-brand-textPrimary">Tài Khoản MCE Marketplace</h3>
+            <p class="text-[9px] text-brand-textSecondary">Đăng nhập hoặc Đăng ký thành viên mới</p>
+          </div>
+        </div>
+        <button onclick="closeAuthModal()" class="text-brand-textSecondary hover:text-brand-textPrimary text-xl font-bold p-1">&times;</button>
+      </div>
+
+      <!-- Segmented Tab: Đăng Nhập vs Đăng Ký -->
+      <div class="p-3 bg-brand-surface/60 border-b border-brand-border flex gap-1.5 text-xs">
+        <button type="button" onclick="switchAuthTab('LOGIN')" id="tabBtnLogin" class="flex-1 py-2 rounded-xl font-bold bg-brand-primary text-white shadow transition">
+          Đăng Nhập
+        </button>
+        <button type="button" onclick="switchAuthTab('REGISTER')" id="tabBtnRegister" class="flex-1 py-2 rounded-xl font-bold bg-brand-card text-brand-textSecondary hover:text-brand-textPrimary transition">
+          Đăng Ký Mới
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="p-4 overflow-y-auto space-y-3.5 custom-scroll flex-1 text-xs">
+        
+        <!-- Google Quick 1-Tap Sign-In -->
+        <button type="button" onclick="loginWithGoogleQuick()" class="w-full py-2.5 px-3 bg-brand-surface hover:bg-brand-border/60 border border-brand-border rounded-xl text-xs font-bold text-brand-textPrimary flex items-center justify-center gap-2 transition active:scale-98">
+          <svg class="w-4 h-4" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          <span>Tiếp tục với Google (Gmail)</span>
+        </button>
+
+        <div class="relative flex items-center py-1">
+          <div class="flex-grow border-t border-brand-border"></div>
+          <span class="flex-shrink mx-2 text-[9px] uppercase font-bold text-brand-textSecondary">Hoặc dùng số điện thoại</span>
+          <div class="flex-grow border-t border-brand-border"></div>
+        </div>
+
+        <!-- FORM LOGIN -->
+        <form id="formInAppLogin" onsubmit="handleInAppLogin(event)" class="space-y-3">
+          <div>
+            <label class="block text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider mb-1">
+              Số điện thoại <span class="text-rose-400">*</span>
+            </label>
+            <div class="flex gap-2">
+              <span class="flex items-center px-2.5 border border-brand-border rounded-xl bg-brand-surface text-xs font-semibold text-brand-textSecondary">🇻🇳 +84</span>
+              <input id="inAppLoginPhone" type="tel" value="0981234567" required placeholder="0981 234 567" class="flex-1 p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs font-bold text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none">
+            </div>
+          </div>
+
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <label class="text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider">Mật khẩu hoặc Mã OTP</label>
+              <button type="button" onclick="sendAuthOtp('LOGIN')" class="text-[10px] text-brand-primary font-bold hover:underline">Gửi SMS OTP</button>
+            </div>
+            <input id="inAppLoginPass" type="password" value="123456" placeholder="Nhập mật khẩu hoặc OTP..." required class="w-full p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none">
+            
+            <div id="loginOtpBanner" class="mt-2 p-2 bg-emerald-500/15 border border-emerald-500/30 rounded-xl text-[10px] text-emerald-300 hidden flex items-center justify-between">
+              <span id="loginOtpText">Mã OTP: 882910</span>
+              <button type="button" onclick="document.getElementById('inAppLoginPass').value='882910'" class="px-2 py-0.5 bg-emerald-500/30 text-emerald-200 font-bold rounded">Điền Nhanh</button>
+            </div>
+          </div>
+
+          <button type="submit" class="w-full py-2.5 bg-brand-primary hover:bg-brand-secondary text-white font-extrabold text-xs rounded-xl shadow transition active:scale-98">
+            Đăng Nhập Vào Sàn
+          </button>
+        </form>
+
+        <!-- FORM REGISTER -->
+        <form id="formInAppRegister" onsubmit="handleInAppRegister(event)" class="space-y-3 hidden">
+          <div>
+            <label class="block text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider mb-1">
+              Họ và tên thật <span class="text-rose-400">*</span>
+            </label>
+            <input id="inAppRegName" type="text" placeholder="Nguyễn Văn An" class="w-full p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs font-bold text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none">
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider mb-1">Vai trò của bạn</label>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" onclick="setRegRole('WORKER')" id="regRoleWorkerBtn" class="p-2 rounded-xl border border-brand-primary bg-brand-primary/20 text-brand-textPrimary font-bold text-xs flex items-center justify-center gap-1">
+                <span>🛵 Người Làm</span>
+              </button>
+              <button type="button" onclick="setRegRole('POSTER')" id="regRolePosterBtn" class="p-2 rounded-xl border border-brand-border bg-brand-surface text-brand-textSecondary font-bold text-xs flex items-center justify-center gap-1">
+                <span>🏢 Người Thuê</span>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <label class="text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider">
+                Số điện thoại <span class="text-rose-400">*</span>
+              </label>
+              <button type="button" onclick="sendAuthOtp('REGISTER')" class="text-[10px] text-brand-primary font-bold hover:underline">Gửi SMS OTP</button>
+            </div>
+            <div class="flex gap-2">
+              <span class="flex items-center px-2.5 border border-brand-border rounded-xl bg-brand-surface text-xs font-semibold text-brand-textSecondary">🇻🇳 +84</span>
+              <input id="inAppRegPhone" type="tel" placeholder="0912 345 678" class="flex-1 p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs font-bold text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none">
+            </div>
+
+            <div id="regOtpBanner" class="mt-2 p-2 bg-emerald-500/15 border border-emerald-500/30 rounded-xl text-[10px] text-emerald-300 hidden flex items-center justify-between">
+              <span id="regOtpText">Mã OTP: 654321</span>
+              <button type="button" onclick="document.getElementById('inAppRegOtp').value='654321'" class="px-2 py-0.5 bg-emerald-500/30 text-emerald-200 font-bold rounded">Điền Nhanh</button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider mb-1">Mã xác nhận OTP (6 số)</label>
+            <input id="inAppRegOtp" type="text" maxlength="6" placeholder="000000" class="w-full p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs text-center font-mono font-bold tracking-widest text-brand-textPrimary">
+          </div>
+
+          <button type="submit" class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-xs rounded-xl shadow transition active:scale-98">
+            Đăng Ký & Kích Hoạt Tài Khoản
+          </button>
+        </form>
+
+        <!-- Quick Switch Preset Accounts -->
+        <div class="pt-3 border-t border-brand-border/60 space-y-1.5">
+          <span class="text-[9px] uppercase font-bold text-brand-textSecondary block text-center">Hoặc chọn nhanh tài khoản mẫu:</span>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" onclick="quickSwitchDemoAccount('WORKER')" class="p-2 rounded-xl border border-brand-border bg-brand-surface hover:bg-brand-border text-left transition flex items-center gap-1.5">
+              <span class="text-base">🛵</span>
+              <div>
+                <strong class="text-[10px] text-brand-textPrimary block">Nguyễn Văn An</strong>
+                <span class="text-[8px] text-emerald-400 font-bold">Thợ · 4.9⭐</span>
+              </div>
+            </button>
+            <button type="button" onclick="quickSwitchDemoAccount('POSTER')" class="p-2 rounded-xl border border-brand-border bg-brand-surface hover:bg-brand-border text-left transition flex items-center gap-1.5">
+              <span class="text-base">🏢</span>
+              <div>
+                <strong class="text-[10px] text-brand-textPrimary block">Shop Tràng Thi</strong>
+                <span class="text-[8px] text-indigo-400 font-bold">Chủ Shop Thuê</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= MODAL: eKYC CCCD GẮN CHIP & SINH TRẮC HỌC KHUÔN MẶT ================= -->
+  <div id="mobileEkycModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-brand-card rounded-t-3xl sm:rounded-3xl max-w-sm w-full max-h-[92vh] flex flex-col shadow-2xl border border-brand-border overflow-hidden">
+      
+      <!-- Header -->
+      <div class="p-4 border-b border-brand-border flex items-center justify-between bg-brand-surface">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-600 text-white font-bold flex items-center justify-center text-base shadow">
+            🪪
+          </div>
+          <div>
+            <h3 class="font-extrabold text-xs text-brand-textPrimary flex items-center gap-1.5">
+              Xác Thực Định Danh eKYC
+              <span class="text-[9px] bg-emerald-500/20 text-emerald-300 font-bold px-1.5 rounded border border-emerald-500/30">CẤP 2</span>
+            </h3>
+            <p class="text-[9px] text-brand-textSecondary">Đối chiếu CSDL Căn cước công dân gắn chip</p>
+          </div>
+        </div>
+        <button onclick="closeEkycModal()" class="text-brand-textSecondary hover:text-brand-textPrimary text-xl font-bold p-1">&times;</button>
+      </div>
+
+      <!-- Step Indicator -->
+      <div class="p-2.5 bg-brand-card border-b border-brand-border flex items-center justify-around text-[10px] font-bold">
+        <span id="ekycStepTab1" class="text-emerald-400">1. Ảnh CCCD</span>
+        <span class="text-brand-border">›</span>
+        <span id="ekycStepTab2" class="text-brand-textSecondary">2. Sinh Trắc Học</span>
+        <span class="text-brand-border">›</span>
+        <span id="ekycStepTab3" class="text-brand-textSecondary">3. CSDL Quốc Gia</span>
+      </div>
+
+      <!-- Body -->
+      <div class="p-4 overflow-y-auto space-y-3.5 custom-scroll flex-1 text-xs text-brand-textPrimary">
+        
+        <!-- STEP 1: CCCD 2 MẶT -->
+        <div id="ekycStep1Content" class="space-y-3">
+          <div class="p-3 bg-brand-surface rounded-2xl border border-brand-border text-center space-y-2">
+            <span class="text-2xl">💳</span>
+            <h4 class="font-bold text-xs text-brand-textPrimary">Chụp Hoặc Tải Thẻ CCCD Gắn Chip</h4>
+            <p class="text-[10px] text-brand-textSecondary">Đảm bảo rõ góc, không bị chói sáng hoặc mất góc chữ số định danh</p>
+            
+            <div class="grid grid-cols-2 gap-2 pt-1">
+              <!-- Mặt trước -->
+              <div class="border border-brand-border rounded-xl p-2 bg-brand-card text-center space-y-1">
+                <span class="text-[9px] font-bold text-brand-textSecondary block">MẶT TRƯỚC</span>
+                <img id="imgCccdFront" class="w-full h-16 object-cover rounded-lg hidden" alt="CCCD Trước">
+                <div id="phCccdFront" class="h-16 rounded-lg bg-brand-surface flex items-center justify-center text-[9px] text-brand-textSecondary border border-dashed border-brand-border">
+                  Chưa tải
+                </div>
+                <input type="file" id="fileCccdFront" accept="image/*" class="hidden" onchange="handleEkycCccdFile(event, 'FRONT')">
+                <button type="button" onclick="document.getElementById('fileCccdFront').click()" class="w-full py-1 bg-brand-surface hover:bg-brand-border border border-brand-border text-[9px] font-bold rounded-lg transition">
+                  Chọn Ảnh
+                </button>
+              </div>
+
+              <!-- Mặt sau -->
+              <div class="border border-brand-border rounded-xl p-2 bg-brand-card text-center space-y-1">
+                <span class="text-[9px] font-bold text-brand-textSecondary block">MẶT SAU (CHÍP)</span>
+                <img id="imgCccdBack" class="w-full h-16 object-cover rounded-lg hidden" alt="CCCD Sau">
+                <div id="phCccdBack" class="h-16 rounded-lg bg-brand-surface flex items-center justify-center text-[9px] text-brand-textSecondary border border-dashed border-brand-border">
+                  Chưa tải
+                </div>
+                <input type="file" id="fileCccdBack" accept="image/*" class="hidden" onchange="handleEkycCccdFile(event, 'BACK')">
+                <button type="button" onclick="document.getElementById('fileCccdBack').click()" class="w-full py-1 bg-brand-surface hover:bg-brand-border border border-brand-border text-[9px] font-bold rounded-lg transition">
+                  Chọn Ảnh
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <button type="button" onclick="goEkycStep(2)" class="w-full py-2.5 bg-brand-primary hover:bg-brand-secondary text-white font-extrabold text-xs rounded-xl shadow transition">
+            Tiếp Tục Quét Sinh Trắc Học ›
+          </button>
+        </div>
+
+        <!-- STEP 2: LIVENESS SELFIE DETECTION -->
+        <div id="ekycStep2Content" class="space-y-3 hidden">
+          <div class="p-3 bg-brand-surface rounded-2xl border border-brand-border text-center space-y-2">
+            <span class="text-2xl">👤</span>
+            <h4 class="font-bold text-xs text-brand-textPrimary">Quét Khuôn Mặt Sinh Trắc Học (Liveness)</h4>
+            <p class="text-[10px] text-brand-textSecondary">Giữ thẳng khuôn mặt trong khung hình để hệ thống kiểm tra người thật</p>
+
+            <!-- Video / Preview -->
+            <div class="h-44 w-full bg-slate-950 rounded-2xl border-2 border-emerald-500/50 flex flex-col items-center justify-center relative overflow-hidden">
+              <video id="ekycSelfieVideo" autoplay playsinline class="w-full h-full object-cover hidden"></video>
+              <canvas id="ekycSelfieCanvas" class="w-full h-full object-cover hidden"></canvas>
+              
+              <!-- Placeholder -->
+              <div id="ekycSelfiePlaceholder" class="p-4 flex flex-col items-center justify-center space-y-1.5">
+                <div class="w-16 h-20 rounded-full border-2 border-dashed border-emerald-400 flex items-center justify-center text-xs text-emerald-400">
+                  Khung Mặt
+                </div>
+                <span class="text-[9px] text-brand-textSecondary">Chạm Bật Camera hoặc Chọn Ảnh Chân Dung</span>
+              </div>
+            </div>
+
+            <div class="flex gap-2">
+              <button type="button" id="btnToggleEkycCam" onclick="startEkycCam()" class="flex-1 py-2 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold rounded-xl transition">
+                📹 Bật Camera Trực Tiếp
+              </button>
+              <input type="file" id="fileEkycSelfie" accept="image/*" class="hidden" onchange="handleEkycSelfieFile(event)">
+              <button type="button" onclick="document.getElementById('fileEkycSelfie').click()" class="py-2 px-3 bg-brand-surface border border-brand-border text-[10px] font-bold rounded-xl transition">
+                📁 File Ảnh
+              </button>
+            </div>
+          </div>
+
+          <div class="flex gap-2">
+            <button type="button" onclick="goEkycStep(1)" class="flex-1 py-2.5 bg-brand-surface border border-brand-border text-brand-textSecondary font-bold text-xs rounded-xl">
+              ‹ Quay lại
+            </button>
+            <button type="button" onclick="goEkycStep(3)" class="flex-2 py-2.5 px-3 bg-brand-primary hover:bg-brand-secondary text-white font-extrabold text-xs rounded-xl shadow transition">
+              Đối Chiếu Dữ Liệu Quốc Gia ›
+            </button>
+          </div>
+        </div>
+
+        <!-- STEP 3: OCR EXTRACTION & NATIONAL DB MATCH -->
+        <div id="ekycStep3Content" class="space-y-3 hidden">
+          <div class="p-3.5 bg-brand-surface rounded-2xl border border-brand-border space-y-2.5">
+            <div class="flex items-center justify-between pb-2 border-b border-brand-border/60">
+              <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Kết Quả Đối Chiếu OCR AI:</span>
+              <span class="text-[9px] bg-emerald-500/20 text-emerald-300 font-extrabold px-1.5 py-0.5 rounded border border-emerald-500/30">TRÙNG KHỚP 99.8%</span>
+            </div>
+
+            <div class="space-y-1 text-xs">
+              <div class="flex justify-between py-1 border-b border-brand-border/30">
+                <span class="text-brand-textSecondary">Số CCCD Gắn Chip:</span>
+                <strong id="ekycResultId" class="font-mono text-brand-primary">001098012345</strong>
+              </div>
+              <div class="flex justify-between py-1 border-b border-brand-border/30">
+                <span class="text-brand-textSecondary">Họ và tên:</span>
+                <strong id="ekycResultName" class="text-brand-textPrimary uppercase">NGUYỄN VĂN AN</strong>
+              </div>
+              <div class="flex justify-between py-1 border-b border-brand-border/30">
+                <span class="text-brand-textSecondary">Ngày sinh:</span>
+                <span class="text-brand-textPrimary">15/08/1998</span>
+              </div>
+              <div class="flex justify-between py-1 border-b border-brand-border/30">
+                <span class="text-brand-textSecondary">Quê quán:</span>
+                <span class="text-brand-textPrimary">Hà Nội</span>
+              </div>
+              <div class="flex justify-between py-1">
+                <span class="text-brand-textSecondary">Trực thuộc CSDL:</span>
+                <span class="text-emerald-400 font-bold">C06 - Bộ Công An (Hợp Lệ)</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-2.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-[10px] text-emerald-300 flex items-center gap-2">
+            <span>🛡️</span>
+            <span>Sau khi hoàn tất, hồ sơ của bạn sẽ nhận Huy hiệu Tích Xanh uy tín và được ưu tiên nhận các ca thù lao cao!</span>
+          </div>
+
+          <button type="button" onclick="completeEkycVerification()" class="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:opacity-95 text-slate-950 font-black text-xs rounded-xl shadow transition active:scale-98">
+            ✅ Hoàn Tất Xác Thực & Nhận Huy Hiệu Tích Xanh
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= MODAL: VIETQR NAPAS 24/7 ESCROW PAYMENT SHEET ================= -->
+  <div id="escrowPaymentModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-brand-card rounded-t-3xl sm:rounded-3xl max-w-sm w-full max-h-[92vh] flex flex-col shadow-2xl border border-brand-border overflow-hidden">
+      
+      <!-- Header -->
+      <div class="p-4 border-b border-brand-border flex items-center justify-between bg-brand-surface">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-primary to-indigo-600 text-white font-bold flex items-center justify-center text-sm shadow">
+            QR
+          </div>
+          <div>
+            <h3 class="font-extrabold text-xs text-brand-textPrimary flex items-center gap-1.5">
+              Nạp Ký Quỹ Escrow VietQR
+              <span class="text-[9px] bg-brand-success/20 text-emerald-300 font-bold px-1.5 rounded border border-brand-success/30">Napas 24/7</span>
+            </h3>
+            <p class="text-[9px] text-brand-textSecondary">Thanh toán bảo đảm tiền thù lao cho ca làm</p>
+          </div>
+        </div>
+        <button onclick="closeEscrowPaymentModal()" class="text-brand-textSecondary hover:text-brand-textPrimary text-xl font-bold p-1">&times;</button>
+      </div>
+
+      <!-- Body -->
+      <div class="p-4 overflow-y-auto space-y-3.5 custom-scroll flex-1 text-xs text-brand-textPrimary text-center">
+        
+        <!-- VietQR Box -->
+        <div class="bg-white p-3.5 rounded-2xl shadow-lg border-2 border-indigo-500/40 inline-block mx-auto space-y-1.5">
+          <div class="flex items-center justify-between px-1 text-[10px] text-slate-800 font-bold">
+            <span class="text-blue-700">MBBANK</span>
+            <span class="text-red-600">NAPAS 24/7</span>
+          </div>
+          <!-- Dynamic QR image -->
+          <img id="escrowQrImage" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=00020101021238540010A0000007270124000697042201100981234567530370454062550005802VN62210817MCEESCROWJOB998163047248" class="w-44 h-44 mx-auto rounded-lg" alt="VietQR Escrow">
+          <div class="text-[9px] text-slate-600 font-semibold">Quét bằng ứng dụng của bất kỳ ngân hàng nào</div>
+        </div>
+
+        <!-- Transfer Info -->
+        <div class="p-3 bg-brand-surface rounded-2xl border border-brand-border text-left space-y-1.5">
+          <div class="flex justify-between items-center text-xs">
+            <span class="text-brand-textSecondary">Số tiền cần nạp:</span>
+            <strong id="escrowPayAmountText" class="text-sm font-black text-emerald-400">255.000 VNĐ</strong>
+          </div>
+          <div class="flex justify-between items-center text-xs">
+            <span class="text-brand-textSecondary">Ngân hàng thụ hưởng:</span>
+            <strong class="text-brand-textPrimary">MBBank (Ngân hàng Quân Đội)</strong>
+          </div>
+          <div class="flex justify-between items-center text-xs">
+            <span class="text-brand-textSecondary">Số tài khoản MCE:</span>
+            <div class="flex items-center gap-1">
+              <strong class="font-mono text-indigo-400 font-bold">0981234567</strong>
+              <button type="button" onclick="navigator.clipboard.writeText('0981234567'); showToast('Đã sao chép số TK!', 'info')" class="text-[9px] bg-brand-card hover:bg-brand-border border border-brand-border px-1.5 py-0.5 rounded text-brand-textSecondary">Copy</button>
+            </div>
+          </div>
+          <div class="flex justify-between items-center text-xs">
+            <span class="text-brand-textSecondary">Nội dung chuyển khoản:</span>
+            <div class="flex items-center gap-1">
+              <strong id="escrowTransferContent" class="font-mono text-amber-400 font-bold">MCE ESCROW JOB9981</strong>
+              <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('escrowTransferContent').textContent); showToast('Đã sao chép nội dung!', 'info')" class="text-[9px] bg-brand-card hover:bg-brand-border border border-brand-border px-1.5 py-0.5 rounded text-brand-textSecondary">Copy</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-[10px] text-brand-textSecondary flex items-center justify-center gap-1">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+          <span>Hệ thống tự động kích hoạt ca làm ngay khi tiền về tài khoản</span>
+        </div>
+
+        <button type="button" onclick="confirmEscrowTransfer()" class="w-full py-3 bg-gradient-to-r from-brand-primary to-brand-secondary hover:opacity-95 text-white font-extrabold text-xs rounded-xl shadow transition active:scale-98">
+          ⚡ Tôi Đã Chuyển Khoản — Kích Hoạt Ca Làm Ngay
+        </button>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= MODAL: PHÂN PHỐI SÀN STORE & TẢI APP MOBILE NATIVE ================= -->
+  <div id="appStoreModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-brand-card rounded-t-3xl sm:rounded-3xl max-w-sm w-full max-h-[92vh] flex flex-col shadow-2xl border border-brand-border overflow-hidden">
+      
+      <!-- Header -->
+      <div class="p-4 border-b border-brand-border flex items-center justify-between bg-brand-surface">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 text-white font-bold flex items-center justify-center text-sm shadow">
+            📲
+          </div>
+          <div>
+            <h3 class="font-extrabold text-xs text-brand-textPrimary flex items-center gap-1.5">
+              Tải & Cài Đặt MCE Mobile
+              <span class="text-[9px] bg-indigo-500/20 text-indigo-300 font-bold px-1.5 rounded border border-indigo-500/30">v2.8.0</span>
+            </h3>
+            <p class="text-[9px] text-brand-textSecondary">Google Play & Apple App Store Distribution</p>
+          </div>
+        </div>
+        <button onclick="closeAppStoreModal()" class="text-brand-textSecondary hover:text-brand-textPrimary text-xl font-bold p-1">&times;</button>
+      </div>
+
+      <!-- Body -->
+      <div class="p-4 overflow-y-auto space-y-3.5 custom-scroll flex-1 text-xs text-brand-textPrimary">
+        
+        <!-- Store Channel 1: Google Play Android -->
+        <div class="p-3 bg-brand-surface rounded-2xl border border-brand-border space-y-2">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">🤖</span>
+              <div>
+                <strong class="text-xs font-bold text-brand-textPrimary block">Dành Cho Điện Thoại Android</strong>
+                <span class="text-[9px] text-emerald-400 font-semibold">Google Play Console & File APK Trực Tiếp</span>
+              </div>
+            </div>
+            <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">MIỄN PHÍ</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <button type="button" onclick="triggerPwaInstallOrApk()" class="py-2 px-2.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-[10px] rounded-xl shadow transition flex items-center justify-center gap-1">
+              <span>📥 Cài Đặt Ngay</span>
+            </button>
+            <a href="./manifest.json" target="_blank" class="py-2 px-2.5 bg-brand-card hover:bg-brand-border border border-brand-border text-brand-textPrimary font-bold text-[10px] rounded-xl transition flex items-center justify-center gap-1">
+              <span>📦 Tải Gói .AAB</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Store Channel 2: Apple App Store iOS -->
+        <div class="p-3 bg-brand-surface rounded-2xl border border-brand-border space-y-2">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">🍎</span>
+              <div>
+                <strong class="text-xs font-bold text-brand-textPrimary block">Dành Cho iPhone & iPad (iOS)</strong>
+                <span class="text-[9px] text-indigo-400 font-semibold">TestFlight & Thêm Vào Màn Hình Chính</span>
+              </div>
+            </div>
+            <span class="text-[9px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-bold">0% PHÍ IAP</span>
+          </div>
+
+          <div class="p-2 bg-brand-card rounded-xl border border-brand-border/60 text-[10px] space-y-1">
+            <p class="text-brand-textSecondary leading-relaxed">
+              💡 <strong>Cách cài tức thì không cần tải:</strong> Nhấn biểu tượng <strong class="text-indigo-400">Chia Sẻ (Share) ⎋</strong> trên Safari & chọn <strong class="text-emerald-400">"Thêm vào MH chính" (Add to Home Screen)</strong>.
+            </p>
+          </div>
+
+          <button type="button" onclick="triggerPwaInstallOrApk()" class="w-full py-2 bg-brand-card hover:bg-brand-border border border-brand-border text-brand-textPrimary font-bold text-[10px] rounded-xl transition">
+            📲 Kích Hoạt Chế Độ Màn Hình Độc Lập (PWA)
+          </button>
+        </div>
+
+        <!-- Compliance & Apple Guideline 3.1.5(a) Exemption Notice -->
+        <div class="p-2.5 bg-brand-card rounded-xl border border-brand-border/60 text-[9px] text-brand-textSecondary space-y-1">
+          <strong class="text-indigo-300 block">Tuân thủ chính sách chợ ứng dụng:</strong>
+          <p>
+            MCE Marketplace cung cấp dịch vụ việc làm thực tế ngoài đời thực (physical services), được miễn phí 30% In-App Purchase theo mục 3.1.5(a) của Apple App Store Review Guidelines. Toàn bộ tiền thù lao giải ngân 100% qua Napas 24/7.
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
 
   <!-- ================= MODAL 1: IN-APP LIVE CHAT (KHI SIM HẾT TIỀN) ================= -->
   <div id="chatModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
@@ -1754,6 +2274,31 @@
       document.getElementById('inputProfileAccount').value = p.account || p.phone;
 
       document.getElementById('profileSkillsSection').classList.toggle('hidden', p.role !== 'WORKER');
+
+      // eKYC badge & card sync
+      const isVerified = p.verified !== false;
+      const displayBadge = document.getElementById('displayProfileBadge');
+      if (displayBadge) {
+        displayBadge.textContent = isVerified ? "eKYC ĐẠT" : "CHƯA eKYC";
+        displayBadge.className = isVerified
+          ? "text-[9px] bg-brand-success/20 text-emerald-300 font-bold px-1.5 py-0.2 rounded border border-brand-success/30"
+          : "text-[9px] bg-amber-500/20 text-amber-300 font-bold px-1.5 py-0.2 rounded border border-amber-500/30";
+      }
+
+      const ekycBadge = document.getElementById('ekycCardBadge');
+      const ekycBtn = document.getElementById('ekycBtnText');
+      const ekycStatus = document.getElementById('ekycStatusText');
+      if (ekycBadge) {
+        ekycBadge.textContent = isVerified ? "CẤP ĐỘ 2 (ĐÃ XÁC THỰC)" : "CHƯA XÁC MINH";
+        ekycBadge.className = isVerified
+          ? "text-[9px] bg-emerald-500/20 text-emerald-300 font-extrabold px-1.5 py-0.2 rounded border border-emerald-500/30"
+          : "text-[9px] bg-amber-500/20 text-amber-300 font-extrabold px-1.5 py-0.2 rounded border border-amber-500/30";
+      }
+      if (ekycBtn) ekycBtn.textContent = isVerified ? "Xem CCCD" : "Xác Thực";
+      if (ekycStatus) {
+        ekycStatus.textContent = isVerified ? "✓ CSDL Quốc Gia Xác Thực" : "⚠️ Cần quét CCCD gắn chip";
+        ekycStatus.className = isVerified ? "text-emerald-400 font-bold" : "text-amber-400 font-bold";
+      }
     }
 
     function saveUserProfile() {
@@ -1785,10 +2330,285 @@
 
     function logoutToAuth() {
       localStorage.removeItem('mce_current_user');
-      showToast("🚪 Đang đăng xuất...", "info");
-      setTimeout(() => {
-        window.location.href = "./auth.html";
-      }, 500);
+      mobileState.userProfile = {
+        name: "Khách Hàng Mới",
+        phone: "0900000000",
+        email: "khachhang@mce.vn",
+        idNumber: "001099000000",
+        bank: "MBBank",
+        account: "0900000000",
+        karma: 5.0,
+        role: "WORKER",
+        verified: false
+      };
+      syncProfileToUI();
+      showToast("🚪 Đã đăng xuất tài khoản. Mở cổng đăng nhập / đăng ký...", "info");
+      setTimeout(() => openAuthModal('LOGIN'), 300);
+    }
+
+    // --- IN-APP AUTHENTICATION CONTROLLER (ĐĂNG NHẬP / ĐĂNG KÝ) ---
+    let authRoleSelected = 'WORKER';
+    function openAuthModal(mode = 'LOGIN') {
+      document.getElementById('mobileAuthModal').classList.remove('hidden');
+      switchAuthTab(mode);
+    }
+    function closeAuthModal() {
+      document.getElementById('mobileAuthModal').classList.add('hidden');
+    }
+    function switchAuthTab(mode) {
+      const isLogin = mode === 'LOGIN';
+      document.getElementById('formInAppLogin').classList.toggle('hidden', !isLogin);
+      document.getElementById('formInAppRegister').classList.toggle('hidden', isLogin);
+      document.getElementById('authModalTitle').textContent = isLogin ? "Đăng Nhập Tài Khoản" : "Đăng Ký Thành Viên Mới";
+
+      const tabL = document.getElementById('tabBtnLogin');
+      const tabR = document.getElementById('tabBtnRegister');
+      if (tabL && tabR) {
+        tabL.className = isLogin
+          ? "flex-1 py-2 rounded-xl font-bold bg-brand-primary text-white shadow transition"
+          : "flex-1 py-2 rounded-xl font-bold bg-brand-card text-brand-textSecondary hover:text-brand-textPrimary transition";
+        tabR.className = !isLogin
+          ? "flex-1 py-2 rounded-xl font-bold bg-brand-primary text-white shadow transition"
+          : "flex-1 py-2 rounded-xl font-bold bg-brand-card text-brand-textSecondary hover:text-brand-textPrimary transition";
+      }
+    }
+    function setRegRole(role) {
+      authRoleSelected = role;
+      const bW = document.getElementById('regRoleWorkerBtn');
+      const bP = document.getElementById('regRolePosterBtn');
+      if (role === 'WORKER') {
+        bW.className = "p-2 rounded-xl border border-brand-primary bg-brand-primary/20 text-brand-textPrimary font-bold text-xs flex items-center justify-center gap-1";
+        bP.className = "p-2 rounded-xl border border-brand-border bg-brand-surface text-brand-textSecondary font-bold text-xs flex items-center justify-center gap-1";
+      } else {
+        bP.className = "p-2 rounded-xl border border-brand-primary bg-brand-primary/20 text-brand-textPrimary font-bold text-xs flex items-center justify-center gap-1";
+        bW.className = "p-2 rounded-xl border border-brand-border bg-brand-surface text-brand-textSecondary font-bold text-xs flex items-center justify-center gap-1";
+      }
+    }
+    function sendAuthOtp(type) {
+      const banner = document.getElementById(type === 'LOGIN' ? 'loginOtpBanner' : 'regOtpBanner');
+      if (banner) banner.classList.remove('hidden');
+      showToast("📩 Đã gửi mã xác thực OTP 6 số qua tin nhắn SMS!", "success");
+    }
+    function handleInAppLogin(e) {
+      e.preventDefault();
+      const phone = document.getElementById('inAppLoginPhone').value.trim();
+      if (!phone || phone.length < 9) {
+        showToast("Vui lòng nhập đúng số điện thoại!", "error");
+        return;
+      }
+      mobileState.userProfile.phone = phone;
+      if (phone.includes('1234') || phone === '0981234567') {
+        mobileState.userProfile.name = "Nguyễn Văn An";
+        mobileState.userProfile.role = "WORKER";
+        mobileState.userProfile.verified = true;
+      } else {
+        mobileState.userProfile.name = "Khách Hàng MCE";
+        mobileState.userProfile.role = "WORKER";
+      }
+      localStorage.setItem('mce_current_user', JSON.stringify(mobileState.userProfile));
+      syncProfileToUI();
+      closeAuthModal();
+      showToast(`👋 Chào mừng ${mobileState.userProfile.name} đăng nhập thành công!`, "success");
+    }
+    function handleInAppRegister(e) {
+      e.preventDefault();
+      const name = document.getElementById('inAppRegName').value.trim() || "Thành Viên MCE";
+      const phone = document.getElementById('inAppRegPhone').value.trim();
+      if (!phone || phone.length < 9) {
+        showToast("Vui lòng nhập số điện thoại hợp lệ!", "error");
+        return;
+      }
+      mobileState.userProfile.name = name;
+      mobileState.userProfile.phone = phone;
+      mobileState.userProfile.role = authRoleSelected;
+      mobileState.userProfile.verified = false;
+      mobileState.userProfile.karma = 5.0;
+      localStorage.setItem('mce_current_user', JSON.stringify(mobileState.userProfile));
+      syncProfileToUI();
+      closeAuthModal();
+      showToast(`🎉 Chúc mừng ${name} đã đăng ký tài khoản thành công! Hãy tiến hành xác minh CCCD để nhận việc.`, "success");
+      setTimeout(() => openEkycModal(), 700);
+    }
+    function loginWithGoogleQuick() {
+      mobileState.userProfile.name = "Hoàng Minh (Google)";
+      mobileState.userProfile.email = "hoang.minh.developer@gmail.com";
+      mobileState.userProfile.verified = true;
+      localStorage.setItem('mce_current_user', JSON.stringify(mobileState.userProfile));
+      syncProfileToUI();
+      closeAuthModal();
+      showToast("✓ Đăng nhập nhanh Google thành công: Hoàn tất liên kết Gmail!", "success");
+    }
+    function quickSwitchDemoAccount(role) {
+      if (role === 'WORKER') {
+        mobileState.userProfile = {
+          name: "Nguyễn Văn An",
+          phone: "0981234567",
+          email: "nguyenvanan.mce@gmail.com",
+          idNumber: "001098012345",
+          bank: "MBBank",
+          account: "0981234567",
+          karma: 4.9,
+          role: "WORKER",
+          verified: true
+        };
+        switchRole('WORKER');
+      } else {
+        mobileState.userProfile = {
+          name: "Shop Thời Trang Tràng Thi",
+          phone: "0909888999",
+          email: "shoptrangthi@gmail.com",
+          idNumber: "001089098765",
+          bank: "Techcombank",
+          account: "1903888999",
+          karma: 5.0,
+          role: "POSTER",
+          verified: true
+        };
+        switchRole('POSTER');
+      }
+      localStorage.setItem('mce_current_user', JSON.stringify(mobileState.userProfile));
+      syncProfileToUI();
+      closeAuthModal();
+      showToast(`Đã chuyển sang tài khoản: ${mobileState.userProfile.name}`, "success");
+    }
+
+    // --- eKYC CCCD GẮN CHIP & SINH TRẮC HỌC KHUÔN MẶT CONTROLLER ---
+    let ekycCamStream = null;
+    function openEkycModal() {
+      document.getElementById('mobileEkycModal').classList.remove('hidden');
+      goEkycStep(1);
+    }
+    function closeEkycModal() {
+      stopEkycCam();
+      document.getElementById('mobileEkycModal').classList.add('hidden');
+    }
+    function goEkycStep(step) {
+      [1, 2, 3].forEach(s => {
+        const el = document.getElementById(`ekycStep${s}Content`);
+        if (el) el.classList.toggle('hidden', s !== step);
+        const tab = document.getElementById(`ekycStepTab${s}`);
+        if (tab) {
+          tab.className = s === step ? "text-emerald-400 font-bold" : (s < step ? "text-indigo-400 font-bold" : "text-brand-textSecondary");
+        }
+      });
+      if (step === 3) {
+        document.getElementById('ekycResultName').textContent = (mobileState.userProfile.name || "NGUYỄN VĂN AN").toUpperCase();
+        document.getElementById('ekycResultId').textContent = mobileState.userProfile.idNumber || "001098012345";
+      }
+    }
+    function handleEkycCccdFile(event, side) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = document.getElementById(side === 'FRONT' ? 'imgCccdFront' : 'imgCccdBack');
+        const ph = document.getElementById(side === 'FRONT' ? 'phCccdFront' : 'phCccdBack');
+        if (img && ph) {
+          img.src = e.target.result;
+          img.classList.remove('hidden');
+          ph.classList.add('hidden');
+        }
+        showToast(`✓ Đã tải ảnh CCCD ${side === 'FRONT' ? 'mặt trước' : 'mặt sau'}!`, "success");
+      };
+      reader.readAsDataURL(file);
+    }
+    async function startEkycCam() {
+      const video = document.getElementById('ekycSelfieVideo');
+      const placeholder = document.getElementById('ekycSelfiePlaceholder');
+      try {
+        ekycCamStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+        video.srcObject = ekycCamStream;
+        video.classList.remove('hidden');
+        placeholder.classList.add('hidden');
+        showToast("📷 Live camera bật thành công. Hãy giữ thẳng khuôn mặt trong 3 giây!", "info");
+      } catch (err) {
+        showToast("Camera không thể bật trực tiếp. Bạn hãy nhấn 'File Ảnh' để tải selfie!", "info");
+        document.getElementById('fileEkycSelfie').click();
+      }
+    }
+    function stopEkycCam() {
+      if (ekycCamStream) {
+        ekycCamStream.getTracks().forEach(t => t.stop());
+        ekycCamStream = null;
+      }
+    }
+    function handleEkycSelfieFile(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      showToast("✓ Đã nhận diện khuôn mặt sinh trắc học sống thành công!", "success");
+      stopEkycCam();
+      goEkycStep(3);
+    }
+    function completeEkycVerification() {
+      stopEkycCam();
+      mobileState.userProfile.verified = true;
+      mobileState.userProfile.karma = Math.min(5.0, Number((mobileState.userProfile.karma + 0.2).toFixed(1)));
+      localStorage.setItem('mce_current_user', JSON.stringify(mobileState.userProfile));
+      syncProfileToUI();
+      closeEkycModal();
+      showToast(`🎉 Xác thực eKYC CCCD thành công! Điểm uy tín Karma tăng lên: ${mobileState.userProfile.karma}⭐`, "success");
+    }
+
+    // --- ESCROW VIETQR & STORE DISTRIBUTION CONTROLLER ---
+    let pendingEscrowJob = null;
+    function openEscrowPaymentModal(job) {
+      pendingEscrowJob = job;
+      document.getElementById('escrowPayAmountText').textContent = job.total.toLocaleString('vi-VN') + " VNĐ";
+      const code = 'MCE ESCROW ' + Date.now().toString().slice(-6);
+      document.getElementById('escrowTransferContent').textContent = code;
+      
+      const qrData = encodeURIComponent(`00020101021238540010A00000072701240006970422011009812345675303704540${job.total}5802VN62180814${code}6304`);
+      document.getElementById('escrowQrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${qrData}`;
+      document.getElementById('escrowPaymentModal').classList.remove('hidden');
+    }
+    function closeEscrowPaymentModal() {
+      document.getElementById('escrowPaymentModal').classList.add('hidden');
+    }
+    function confirmEscrowTransfer() {
+      closeEscrowPaymentModal();
+      const title = pendingEscrowJob ? pendingEscrowJob.title : "Ca làm việc mới";
+      const pay = pendingEscrowJob ? pendingEscrowJob.total : 255000;
+      
+      // Add new job to map
+      const newJob = {
+        id: 'JOB-' + Date.now().toString().slice(-3),
+        title: title,
+        pay: pay,
+        lat: mobileState.currentCoords.lat + (Math.random() * 0.004 - 0.002),
+        lng: mobileState.currentCoords.lng + (Math.random() * 0.004 - 0.002),
+        dist: '0.8 km',
+        type: 'PACK',
+        poster: mobileState.userProfile.name
+      };
+      jobData.unshift(newJob);
+      renderJobMarkers(jobData);
+      
+      showToast(`⚡ Ký quỹ thành công ${pay.toLocaleString()}đ! Ca "${title}" đã được ghim lên bản đồ và gửi thông báo tới thợ quanh bán kính 6km.`, "success");
+      switchMobileTab(1);
+    }
+
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+    });
+
+    function openAppStoreModal() {
+      document.getElementById('appStoreModal').classList.remove('hidden');
+    }
+    function closeAppStoreModal() {
+      document.getElementById('appStoreModal').classList.add('hidden');
+    }
+    function triggerPwaInstallOrApk() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(() => {
+          deferredPrompt = null;
+          closeAppStoreModal();
+        });
+      } else {
+        showToast("📱 Ứng dụng đã sẵn sàng! Trên điện thoại, bạn chọn 'Thêm vào màn hình chính' để dùng như App Store / Google Play Native.", "success");
+      }
     }
 
     // --- ACCEPT JOB ---
@@ -2190,9 +3010,11 @@
     }
 
     function mobileCreateJobAndQR() {
-      const title = document.getElementById('mobilePostTitle').value;
-      showToast(`⚡ Đã tạo ca việc & nạp cọc thành công! Ca việc "${title}" đã được ghim lên bản đồ.`, "success");
-      switchMobileTab(1);
+      const title = document.getElementById('mobilePostTitle').value.trim() || "Ca làm việc mới";
+      const hours = parseInt(document.getElementById('mobilePostHours').value) || 3;
+      const rate = parseInt(document.getElementById('mobilePostRate').value) || 85000;
+      const total = hours * rate;
+      openEscrowPaymentModal({ title, total });
     }
 
     // --- TOAST NOTIFICATION ---

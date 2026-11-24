@@ -61,7 +61,7 @@
   <!-- TOP HEADER (Clean & Minimalist) -->
   <header class="bg-brand-surface/90 border-b border-brand-border backdrop-blur-md sticky top-0 z-30">
     <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-      <a href="./index.html" class="flex items-center gap-3 group">
+      <a href="./mobile.html" class="flex items-center gap-3 group">
         <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-primary to-brand-secondary flex items-center justify-center text-white font-extrabold text-xl shadow-md">
           M
         </div>
@@ -75,7 +75,7 @@
       </a>
 
       <div class="flex items-center gap-3">
-        <a href="./index.html" class="text-xs font-semibold px-3 py-1.5 rounded-xl border border-brand-border hover:bg-brand-card text-brand-textSecondary hover:text-brand-textPrimary transition flex items-center gap-1.5">
+        <a href="./mobile.html" class="text-xs font-semibold px-3 py-1.5 rounded-xl border border-brand-border hover:bg-brand-card text-brand-textSecondary hover:text-brand-textPrimary transition flex items-center gap-1.5">
           <svg class="w-3.5 h-3.5 text-brand-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
           Vào Sàn Giao Dịch
         </a>
@@ -535,7 +535,7 @@
 
       localStorage.setItem('mce_current_user', JSON.stringify(userData));
       alert(`✅ Đăng nhập thành công với vai trò ${userData.role}: ${userData.name}!`);
-      window.location.href = "./index.html";
+      window.location.href = "./mobile.html";
     }
 
     async function handleLoginSubmit(e) {
@@ -575,7 +575,7 @@
 
       localStorage.setItem('mce_current_user', JSON.stringify(userData));
       alert(`✅ Đăng nhập thành công: ${userData.name}!`);
-      window.location.href = "./index.html";
+      window.location.href = "./mobile.html";
     }
 
     let activeGeneratedOtp = "889966";
@@ -854,7 +854,7 @@
     }
 
     function redirectToDashboard() {
-      window.location.href = "./index.html";
+      window.location.href = "./mobile.html";
     }
   </script>
 </body>
