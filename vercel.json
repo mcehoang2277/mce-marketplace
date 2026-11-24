@@ -1,12 +1,12 @@
 {
   "version": 2,
   "name": "mce-marketplace",
-  "buildCommand": "tsc || true",
   "cleanUrls": true,
   "rewrites": [
     { "source": "/", "destination": "/index.html" },
     { "source": "/mobile", "destination": "/mobile.html" },
-    { "source": "/auth", "destination": "/auth.html" }
+    { "source": "/auth", "destination": "/auth.html" },
+    { "source": "/api/(.*)", "destination": "/api" }
   ],
   "headers": [
     {

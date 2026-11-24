@@ -2,7 +2,6 @@
   "name": "mce-marketplace-core",
   "version": "1.1.0",
   "description": "Production-Ready Modular Monolith Server for MCE On-Demand Time Marketplace",
-  "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
