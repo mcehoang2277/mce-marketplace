@@ -5,7 +5,6 @@
     { "src": "index.html", "use": "@vercel/static" },
     { "src": "mobile.html", "use": "@vercel/static" },
     { "src": "auth.html", "use": "@vercel/static" },
-    { "src": "demo.html", "use": "@vercel/static" },
     { "src": "manifest.json", "use": "@vercel/static" },
     { "src": "sw.js", "use": "@vercel/static" }
   ],
@@ -14,7 +13,6 @@
     { "src": "/sw.js", "dest": "/sw.js" },
     { "src": "/mobile", "dest": "/mobile.html" },
     { "src": "/auth", "dest": "/auth.html" },
-    { "src": "/demo", "dest": "/demo.html" },
     { "src": "/index.html", "dest": "/index.html" },
     { "src": "/mobile.html", "dest": "/mobile.html" },
     { "src": "/auth.html", "dest": "/auth.html" },

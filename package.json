@@ -7,7 +7,6 @@
     "build": "echo 'Static Web Build Complete'",
     "build:server": "tsc",
     "start": "node dist/server.js",
-    "demo:cli": "ts-node src/demo.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "test": "jest"
