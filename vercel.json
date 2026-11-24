@@ -5,8 +5,7 @@
   "rewrites": [
     { "source": "/", "destination": "/index.html" },
     { "source": "/mobile", "destination": "/mobile.html" },
-    { "source": "/auth", "destination": "/auth.html" },
-    { "source": "/api/(.*)", "destination": "/api" }
+    { "source": "/auth", "destination": "/auth.html" }
   ],
   "headers": [
     {
