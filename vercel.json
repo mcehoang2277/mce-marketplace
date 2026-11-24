@@ -2,7 +2,6 @@
   "version": 2,
   "name": "mce-marketplace",
   "builds": [
-    { "src": "index.html", "use": "@vercel/static" },
     { "src": "mobile.html", "use": "@vercel/static" },
     { "src": "auth.html", "use": "@vercel/static" },
     { "src": "manifest.json", "use": "@vercel/static" },
@@ -11,11 +10,10 @@
   "routes": [
     { "src": "/manifest.json", "dest": "/manifest.json" },
     { "src": "/sw.js", "dest": "/sw.js" },
-    { "src": "/mobile", "dest": "/mobile.html" },
     { "src": "/auth", "dest": "/auth.html" },
-    { "src": "/index.html", "dest": "/index.html" },
-    { "src": "/mobile.html", "dest": "/mobile.html" },
     { "src": "/auth.html", "dest": "/auth.html" },
-    { "src": "/", "dest": "/index.html" }
+    { "src": "/mobile", "dest": "/mobile.html" },
+    { "src": "/mobile.html", "dest": "/mobile.html" },
+    { "src": "/(.*)", "dest": "/mobile.html" }
   ]
 }

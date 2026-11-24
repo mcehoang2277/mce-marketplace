@@ -111,15 +111,6 @@
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center sm:p-4 antialiased select-none text-brand-textPrimary selection:bg-brand-primary selection:text-white">
 
-  <!-- Desktop Hint Bar -->
-  <div class="desktop-frame-only text-brand-textSecondary text-xs mb-2.5 flex items-center gap-3">
-    <span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-brand-surface border border-brand-border text-emerald-400 font-semibold text-[11px]">
-      <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-      MCE Mobile v2.8 (Gọi VoIP/Chat Miễn Phí & Bản Đồ Tìm Việc Trực Tiếp)
-    </span>
-    <a href="./index.html" class="underline text-indigo-400 hover:text-white transition text-xs">← Về Web Dashboard</a>
-  </div>
-
   <!-- TOAST CONTAINER -->
   <div id="toastContainer" class="fixed top-6 z-[99999] flex flex-col items-center gap-2 pointer-events-none px-4 w-full max-w-sm"></div>
 
@@ -145,33 +136,31 @@
     </div>
 
     <!-- APP HEADER -->
-    <header class="bg-brand-surface/95 border-b border-brand-border px-3 py-2 flex items-center justify-between sticky top-10 z-40 backdrop-blur-md">
+    <header class="bg-brand-surface/95 border-b border-brand-border px-3 py-2.5 flex items-center justify-between sticky top-0 sm:top-10 z-40 backdrop-blur-md">
       <div class="flex items-center gap-2">
-        <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-brand-primary to-brand-secondary text-white font-extrabold flex items-center justify-center text-xs shadow">
+        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-primary via-indigo-500 to-brand-secondary text-white font-black flex items-center justify-center text-sm shadow-md">
           M
         </div>
         <div>
-          <h2 class="text-xs font-bold text-brand-textPrimary flex items-center gap-1 leading-tight">
-            MCE Mobile
-            <span class="text-[9px] bg-brand-success/20 text-emerald-300 font-bold px-1.5 rounded border border-brand-success/30">0% PHÍ</span>
+          <h2 class="text-xs font-black text-brand-textPrimary flex items-center gap-1.5 leading-tight">
+            MCE Marketplace
+            <span class="text-[9px] bg-brand-success/20 text-emerald-300 font-extrabold px-1.5 rounded border border-brand-success/30">0% PHÍ</span>
           </h2>
-          <p class="text-[9px] text-brand-textSecondary leading-tight" id="headerSubtext">Người làm: Nguyễn Văn An</p>
+          <div class="flex items-center gap-1 text-[9px] text-brand-textSecondary leading-tight mt-0.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span id="headerSubtext">📍 Hoàn Kiếm, Hà Nội</span>
+          </div>
         </div>
       </div>
 
-      <!-- Quick Role Switcher & Pilot 1 Button -->
-      <div class="flex items-center gap-1.5">
-        <button onclick="openPilotGuideModal()" class="py-1 px-2 rounded-lg text-[9px] font-black bg-gradient-to-r from-amber-500 to-indigo-600 text-white shadow-md active:scale-95 transition flex items-center gap-1">
-          <span>🚀 Thử Nghiệm 1</span>
+      <!-- Quick Role Switcher (Khách Hàng: Tìm Việc / Đăng Tuyển) -->
+      <div class="flex items-center gap-1 bg-brand-card p-0.5 rounded-xl border border-brand-border shadow-inner">
+        <button id="btnRoleWorker" onclick="switchRole('WORKER')" class="py-1 px-2.5 rounded-lg text-[10px] font-black bg-brand-primary text-white transition active:scale-95 shadow-sm">
+          🛵 Tìm Việc
         </button>
-        <div class="flex items-center gap-0.5 bg-brand-card p-0.5 rounded-lg border border-brand-border">
-          <button id="btnRoleWorker" onclick="switchRole('WORKER')" class="py-0.5 px-2 rounded text-[10px] font-bold bg-brand-primary text-white transition">
-            🛵 Làm
-          </button>
-          <button id="btnRolePoster" onclick="switchRole('POSTER')" class="py-0.5 px-2 rounded text-[10px] font-semibold text-brand-textSecondary hover:text-brand-textPrimary transition">
-            🏢 Thuê
-          </button>
-        </div>
+        <button id="btnRolePoster" onclick="switchRole('POSTER')" class="py-1 px-2.5 rounded-lg text-[10px] font-bold text-brand-textSecondary hover:text-brand-textPrimary transition active:scale-95">
+          🏢 Đăng Tuyển
+        </button>
       </div>
     </header>
 
@@ -201,16 +190,12 @@
           <div class="absolute bottom-2 left-2 right-2 z-20 flex flex-col gap-1.5">
             <div class="bg-brand-card/95 backdrop-blur-md px-2.5 py-1.5 rounded-xl border border-brand-border shadow flex items-center justify-between text-[10px]">
               <!-- Nút chuyển sang Chế độ bản đồ không dùng list -->
-              <button onclick="toggleMapOnlyMode()" id="btnMapOnlyToggle" class="text-[9px] bg-brand-primary text-white font-extrabold px-2 py-1 rounded-lg shadow flex items-center gap-1 active:scale-95 transition">
+              <button onclick="toggleMapOnlyMode()" id="btnMapOnlyToggle" class="text-[9px] bg-brand-primary text-white font-extrabold px-2.5 py-1 rounded-lg shadow flex items-center gap-1 active:scale-95 transition">
                 <span>🗺️ Chỉ Bản Đồ</span>
               </button>
 
-              <button onclick="openMobileNationalSim()" class="text-[9px] bg-gradient-to-r from-brand-primary to-brand-secondary text-white font-extrabold px-2 py-1 rounded-lg shadow flex items-center gap-1 active:scale-95 transition">
-                <span>🚀 Demo Test 4</span>
-              </button>
-
-              <button onclick="toggleOffsiteMode()" id="btnOffsiteToggle" class="text-[9px] bg-brand-surface hover:bg-brand-border px-2 py-1 rounded-lg border border-brand-border text-indigo-300 font-semibold transition">
-                🎯 Thuê chỗ khác
+              <button onclick="toggleOffsiteMode()" id="btnOffsiteToggle" class="text-[9px] bg-brand-surface hover:bg-brand-border px-2.5 py-1 rounded-lg border border-brand-border text-indigo-300 font-semibold transition flex items-center gap-1">
+                <span>🎯 Thuê Chỗ Khác</span>
               </button>
             </div>
 
@@ -641,8 +626,11 @@
 
   </div>
 
-  <!-- FLOATING ACTION BUTTON: THU THẬP GÓP Ý THỰC TẾ BẢN 1 -->
-  <button id="btnFloatingFeedback" onclick="openFeedbackModal()" class="fixed bottom-20 right-4 sm:right-[calc(50%-185px)] z-50 bg-gradient-to-r from-cyan-500 via-indigo-500 to-purple-600 hover:opacity-95 text-white font-extrabold text-[11px] py-2 px-3.5 rounded-full shadow-2xl border border-cyan-400/40 flex items-center gap-1.5 active:scale-95 transition-all">
+  <!-- FLOATING ACTION BUTTON: HỖ TRỢ KHÁCH HÀNG 24/7 -->
+  <button id="btnFloatingHelp" onclick="openHelpSupportModal()" class="fixed bottom-20 right-4 sm:right-[calc(50%-185px)] z-50 bg-gradient-to-r from-emerald-500 via-teal-500 to-indigo-600 hover:opacity-95 text-white font-extrabold text-[11px] py-2 px-3 rounded-full shadow-2xl border border-emerald-400/40 flex items-center gap-1.5 active:scale-95 transition-all">
+    <span class="w-2 h-2 rounded-full bg-emerald-300 animate-ping"></span>
+    <span>🎧 Hỗ Trợ 24/7</span>
+  </button>
     <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
     <span>💬 Góp Ý Thực Tế</span>
   </button>
@@ -989,190 +977,84 @@
     </div>
   </div>
 
-  <!-- MODAL: DEMO TEST 4 MOBILE BOTTOM SHEET -->
-  <div id="mobileSimModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
-    <div class="bg-brand-card rounded-t-3xl sm:rounded-3xl max-w-sm w-full max-h-[85vh] flex flex-col shadow-2xl border border-brand-border overflow-hidden animate-in slide-in-from-bottom duration-200">
-      
-      <div class="p-4 border-b border-brand-border flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <span class="p-1.5 rounded-xl bg-brand-primary/20 text-indigo-400 font-bold text-sm border border-brand-primary/30">🚀</span>
-          <div>
-            <h3 class="font-extrabold text-xs text-brand-textPrimary">Demo Test 4: Siêu Tải & Toàn Diện</h3>
-            <p class="text-[9px] text-brand-textSecondary">1.000 Posters · 2.500 Workers · 20 Tỉnh Thành VN</p>
-          </div>
-        </div>
-        <button onclick="closeMobileNationalSim()" class="text-brand-textSecondary hover:text-brand-textPrimary text-xl font-bold p-1">&times;</button>
-      </div>
-
-      <div class="p-4 overflow-y-auto space-y-3 text-xs text-brand-textPrimary">
-        <div class="grid grid-cols-3 gap-1.5 text-center">
-          <div class="p-2 bg-brand-surface rounded-xl border border-brand-border">
-            <div class="text-[8px] text-brand-textSecondary font-bold uppercase">Người Thuê</div>
-            <div class="text-xs font-black text-brand-textPrimary">1.000 Ca</div>
-          </div>
-          <div class="p-2 bg-brand-surface rounded-xl border border-brand-border">
-            <div class="text-[8px] text-brand-textSecondary font-bold uppercase">Người Làm</div>
-            <div class="text-xs font-black text-indigo-400">2.500 Worker</div>
-          </div>
-          <div class="p-2 bg-brand-surface rounded-xl border border-brand-border">
-            <div class="text-[8px] text-brand-textSecondary font-bold uppercase">Lệch Số Dư</div>
-            <div class="text-xs font-black text-emerald-400">0.00 VNĐ</div>
-          </div>
-        </div>
-
-        <div class="p-3 bg-brand-surface rounded-xl border border-brand-border text-[10px] space-y-1.5">
-          <div class="flex justify-between font-extrabold text-brand-textPrimary">
-            <span>Tổng cọc Escrow 1.000 ca:</span>
-            <span class="text-xs text-indigo-400">279.350.000 VNĐ</span>
-          </div>
-          <div class="flex justify-between text-brand-textSecondary">
-            <span>• Worker nhận (100% thù lao):</span>
-            <span class="font-bold text-emerald-400">248.265.000 VNĐ</span>
-          </div>
-          <div class="flex justify-between text-brand-textSecondary">
-            <span>• Phí sàn (Ưu đãi 90 ngày):</span>
-            <span class="font-bold text-emerald-400">0 VNĐ (0%)</span>
-          </div>
-          <div class="flex justify-between text-brand-textSecondary">
-            <span>• Hoàn trả (Hủy + Tranh chấp):</span>
-            <span class="font-bold text-brand-textPrimary">31.085.000 VNĐ</span>
-          </div>
-        </div>
-
-        <div id="mobileSimLogBox" class="p-2.5 bg-brand-bg text-emerald-400 font-mono text-[9px] rounded-xl border border-brand-border hidden">
-          <div id="mobileSimLogText">Đang khởi tạo 1.000 việc làm toàn quốc...</div>
-        </div>
-      </div>
-
-      <div class="p-3 border-t border-brand-border bg-brand-surface flex gap-2">
-        <button onclick="closeMobileNationalSim()" class="flex-1 py-2 bg-brand-card hover:bg-brand-border border border-brand-border text-brand-textSecondary hover:text-brand-textPrimary font-bold text-[10px] rounded-xl transition">Đóng</button>
-        <button onclick="runLiveMobileNationalSim()" class="flex-2 py-2 px-3 bg-gradient-to-r from-brand-primary via-brand-secondary to-brand-accent text-white font-extrabold text-[10px] rounded-xl shadow transition">
-          ⚡ Trải Nghiệm Hệ Thống Toàn Quốc
-        </button>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- ================= MODAL: BẢN THỬ NGHIỆM 1 — HƯỚNG DẪN TRẢI NGHIỆM TỪNG BƯỚC ================= -->
-  <div id="pilotGuideModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[9999] flex items-center justify-center p-4 hidden">
-    <div class="bg-brand-card text-brand-textPrimary rounded-3xl max-w-sm w-full max-h-[90vh] flex flex-col border border-brand-border shadow-2xl overflow-hidden">
+  <!-- ================= MODAL: TRUNG TÂM HỖ TRỢ KHÁCH HÀNG & CSKH 24/7 ================= -->
+  <div id="helpSupportModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-brand-card rounded-t-3xl sm:rounded-3xl max-w-sm w-full max-h-[90vh] flex flex-col shadow-2xl border border-brand-border overflow-hidden">
       
       <!-- Header -->
-      <div class="p-4 border-b border-brand-border flex justify-between items-center bg-brand-surface">
+      <div class="p-4 border-b border-brand-border flex items-center justify-between bg-brand-surface">
         <div class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 to-indigo-600 flex items-center justify-center text-white text-base shadow">
-            🚀
+          <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-600 text-white flex items-center justify-center font-bold text-base shadow">
+            🎧
           </div>
           <div>
-            <h3 class="text-xs font-black text-brand-textPrimary flex items-center gap-1.5">
-              Bản Thử Nghiệm 1 (Pilot 1)
-              <span class="text-[9px] bg-amber-500/20 text-amber-300 font-bold px-1.5 py-0.5 rounded border border-amber-500/30">BETA</span>
+            <h3 class="font-extrabold text-xs text-brand-textPrimary flex items-center gap-1.5">
+              Trung Tâm Hỗ Trợ Khách Hàng
+              <span class="text-[9px] bg-emerald-500/20 text-emerald-300 font-bold px-1.5 rounded border border-emerald-500/30">24/7</span>
             </h3>
-            <p class="text-[9px] text-brand-textSecondary">Trải nghiệm 5 bước tính năng thực tế</p>
+            <p class="text-[9px] text-brand-textSecondary">MCE Marketplace luôn đồng hành cùng bạn</p>
           </div>
         </div>
-        <button onclick="closePilotGuideModal()" class="text-brand-textSecondary hover:text-brand-textPrimary text-xl font-bold">&times;</button>
+        <button onclick="closeHelpSupportModal()" class="text-brand-textSecondary hover:text-brand-textPrimary text-xl font-bold p-1">&times;</button>
       </div>
 
-      <!-- Body / Steps -->
-      <div class="p-3.5 overflow-y-auto space-y-2.5 custom-scroll flex-1 text-xs">
-        <div class="p-2.5 rounded-xl bg-indigo-950/40 border border-indigo-500/30 text-[10px] text-indigo-200">
-          💡 <strong>Chào mừng bạn!</strong> Đây là bản thử nghiệm thực tế dành cho khách hàng. Hãy bấm vào từng bước dưới đây để trải nghiệm trực tiếp các chức năng cốt lõi:
-        </div>
-
-        <!-- Step 1 Card -->
-        <div class="p-3 rounded-2xl bg-brand-surface border border-brand-border hover:border-brand-primary/50 transition flex flex-col gap-2">
-          <div class="flex items-start justify-between">
-            <div class="flex items-center gap-2">
-              <span class="w-6 h-6 rounded-full bg-brand-primary/20 text-brand-primary font-black flex items-center justify-center text-xs">1</span>
-              <div>
-                <h4 class="font-extrabold text-[11px] text-brand-textPrimary">Quét Radar & Bản Đồ Thực Tế</h4>
-                <p class="text-[9px] text-brand-textSecondary">Định vị GPS, quét việc & thợ quanh 3.5 - 12km</p>
-              </div>
-            </div>
-            <span class="text-[9px] font-bold text-emerald-400">Bước 1</span>
+      <!-- Content -->
+      <div class="p-4 overflow-y-auto space-y-3.5 custom-scroll flex-1 text-xs text-brand-textPrimary">
+        
+        <!-- Quick Emergency Contacts -->
+        <div class="p-3 bg-brand-surface rounded-2xl border border-brand-border space-y-2">
+          <div class="text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider">Kênh liên hệ trực tiếp</div>
+          <div class="grid grid-cols-2 gap-2">
+            <a href="tel:19008888" class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-extrabold text-[11px] flex items-center justify-center gap-1.5 active:scale-95 transition">
+              <span>📞 Hotline: 1900 8888</span>
+            </a>
+            <a href="https://zalo.me" target="_blank" class="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400 font-extrabold text-[11px] flex items-center justify-center gap-1.5 active:scale-95 transition">
+              <span>💬 Zalo CSKH 24/7</span>
+            </a>
           </div>
-          <button onclick="executePilotStep(1)" class="w-full py-1.5 bg-brand-primary hover:bg-brand-secondary text-white font-bold text-[10px] rounded-xl transition flex items-center justify-center gap-1">
-            <span>📍 Thử Quét Radar Bản Đồ Ngay</span>
-          </button>
         </div>
 
-        <!-- Step 2 Card -->
-        <div class="p-3 rounded-2xl bg-brand-surface border border-brand-border hover:border-brand-primary/50 transition flex flex-col gap-2">
-          <div class="flex items-start justify-between">
-            <div class="flex items-center gap-2">
-              <span class="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 font-black flex items-center justify-center text-xs">2</span>
-              <div>
-                <h4 class="font-extrabold text-[11px] text-brand-textPrimary">Nhận Việc 1 Chạm & Ký Quỹ Escrow</h4>
-                <p class="text-[9px] text-brand-textSecondary">Không cần CV/phỏng vấn, tiền giữ 100% qua VietQR</p>
-              </div>
+        <!-- 3 Core Guarantees -->
+        <div class="space-y-2">
+          <div class="text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider">Cam kết chất lượng dịch vụ</div>
+          
+          <div class="p-3 bg-brand-surface rounded-xl border border-brand-border space-y-1">
+            <div class="flex items-center gap-1.5 font-bold text-brand-textPrimary text-[11px]">
+              <span class="text-emerald-400">🛡️</span> Bảo Vệ Tiền Công (Ký Quỹ Escrow)
             </div>
-            <span class="text-[9px] font-bold text-indigo-400">Bước 2</span>
+            <p class="text-[10px] text-brand-textSecondary leading-relaxed">
+              Tiền thù lao được Người thuê nạp giữ trong tài khoản trung gian trước khi ca làm bắt đầu. Người làm yên tâm 100% không lo bị bùng tiền.
+            </p>
           </div>
-          <button onclick="executePilotStep(2)" class="w-full py-1.5 bg-brand-surface hover:bg-brand-card border border-brand-border text-brand-textPrimary font-bold text-[10px] rounded-xl transition flex items-center justify-center gap-1">
-            <span>🤝 Thử Xem Ca Việc & Ký Quỹ</span>
-          </button>
-        </div>
 
-        <!-- Step 3 Card -->
-        <div class="p-3 rounded-2xl bg-brand-surface border border-brand-border hover:border-brand-primary/50 transition flex flex-col gap-2">
-          <div class="flex items-start justify-between">
-            <div class="flex items-center gap-2">
-              <span class="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 font-black flex items-center justify-center text-xs">3</span>
-              <div>
-                <h4 class="font-extrabold text-[11px] text-brand-textPrimary">Gọi Thoại VoIP Khi Hết Tiền SIM</h4>
-                <p class="text-[9px] text-brand-textSecondary">Đàm thoại trực tiếp qua 4G/Wifi (Không tốn cước điện thoại)</p>
-              </div>
+          <div class="p-3 bg-brand-surface rounded-xl border border-brand-border space-y-1">
+            <div class="flex items-center gap-1.5 font-bold text-brand-textPrimary text-[11px]">
+              <span class="text-cyan-400">⚡</span> Nhận Việc 1 Chạm — 0đ Phí Sàn
             </div>
-            <span class="text-[9px] font-bold text-emerald-400">Bước 3</span>
+            <p class="text-[10px] text-brand-textSecondary leading-relaxed">
+              Ưu đãi 100% thù lao về tay người lao động trong 90 ngày đầu tiên (0% phí chiết khấu nền tảng).
+            </p>
           </div>
-          <button onclick="executePilotStep(3)" class="w-full py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] rounded-xl transition flex items-center justify-center gap-1">
-            <span>📞 Thử Cuộc Gọi VoIP Live</span>
-          </button>
-        </div>
 
-        <!-- Step 4 Card -->
-        <div class="p-3 rounded-2xl bg-brand-surface border border-brand-border hover:border-brand-primary/50 transition flex flex-col gap-2">
-          <div class="flex items-start justify-between">
-            <div class="flex items-center gap-2">
-              <span class="w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 font-black flex items-center justify-center text-xs">4</span>
-              <div>
-                <h4 class="font-extrabold text-[11px] text-brand-textPrimary">Chụp Ảnh e-Proof Nghiệm Thu</h4>
-                <p class="text-[9px] text-brand-textSecondary">Đóng dấu tọa độ GPS & thời gian hoàn thành tại chỗ</p>
-              </div>
+          <div class="p-3 bg-brand-surface rounded-xl border border-brand-border space-y-1">
+            <div class="flex items-center gap-1.5 font-bold text-brand-textPrimary text-[11px]">
+              <span class="text-indigo-400">📞</span> Đàm Thoại Miễn Phí (VoIP 4G)
             </div>
-            <span class="text-[9px] font-bold text-cyan-400">Bước 4</span>
+            <p class="text-[10px] text-brand-textSecondary leading-relaxed">
+              Gọi điện thoại trực tiếp qua mạng 4G/Wifi trên ứng dụng khi tài khoản điện thoại hết tiền cước SIM.
+            </p>
           </div>
-          <button onclick="executePilotStep(4)" class="w-full py-1.5 bg-brand-surface hover:bg-brand-card border border-brand-border text-brand-textPrimary font-bold text-[10px] rounded-xl transition flex items-center justify-center gap-1">
-            <span>📸 Bật Camera Nghiệm Thu</span>
-          </button>
         </div>
 
-        <!-- Step 5 Card -->
-        <div class="p-3 rounded-2xl bg-brand-surface border border-brand-border hover:border-brand-primary/50 transition flex flex-col gap-2">
-          <div class="flex items-start justify-between">
-            <div class="flex items-center gap-2">
-              <span class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 font-black flex items-center justify-center text-xs">5</span>
-              <div>
-                <h4 class="font-extrabold text-[11px] text-brand-textPrimary">Ví Tiền & Rút VietQR 24/7</h4>
-                <p class="text-[9px] text-brand-textSecondary">Giải ngân ngay sau ca, chuyển khoản Napas (0đ phí)</p>
-              </div>
-            </div>
-            <span class="text-[9px] font-bold text-amber-400">Bước 5</span>
-          </div>
-          <button onclick="executePilotStep(5)" class="w-full py-1.5 bg-brand-surface hover:bg-brand-card border border-brand-border text-brand-textPrimary font-bold text-[10px] rounded-xl transition flex items-center justify-center gap-1">
-            <span>💸 Thử Rút Tiền Về Ngân Hàng</span>
-          </button>
-        </div>
-
-      </div>
-
-      <!-- Footer CTA -->
-      <div class="p-3 border-t border-brand-border bg-brand-surface flex gap-2">
-        <button onclick="closePilotGuideModal(); openFeedbackModal();" class="w-full py-2.5 px-3 bg-gradient-to-r from-cyan-500 to-indigo-600 hover:opacity-95 text-white font-extrabold text-xs rounded-xl shadow transition flex items-center justify-center gap-1.5">
-          <span>💬 Đóng Góp Ý Kiến Thực Tế (Nhận Quà 50k)</span>
+        <!-- Report Issue / Feedback Button -->
+        <button onclick="closeHelpSupportModal(); openFeedbackModal();" class="w-full py-2.5 bg-gradient-to-r from-brand-primary to-brand-secondary hover:opacity-95 text-white font-extrabold text-xs rounded-xl shadow transition flex items-center justify-center gap-1.5">
+          <span>✍️ Gửi Phản Hồi / Đóng Góp Ý Kiến</span>
         </button>
+
+      </div>
+
+      <div class="p-3 border-t border-brand-border bg-brand-surface text-center text-[10px] text-brand-textSecondary">
+        MCE Marketplace Việt Nam · Bản Quyền © 2026
       </div>
 
     </div>
@@ -2332,68 +2214,19 @@
       }, 3500);
     }
 
-    // --- NATIONAL SCALE SIMULATION (DEMO TEST 4 MOBILE) ---
-    function openMobileNationalSim() {
-      document.getElementById('mobileSimModal').classList.remove('hidden');
-    }
-    function closeMobileNationalSim() {
-      document.getElementById('mobileSimModal').classList.add('hidden');
-    }
-    function runLiveMobileNationalSim() {
-      const box = document.getElementById('mobileSimLogBox');
-      const text = document.getElementById('mobileSimLogText');
-      box.classList.remove('hidden');
-      text.textContent = "🚀 [TEST 4] Đang quét 2.500.000 cặp quan hệ không gian 20 tỉnh thành...";
-      setTimeout(() => {
-        text.textContent = "📍 Regional Partition: 84.9% lọc O(1) thành công (2.121.441 cặp loại bỏ)...";
-      }, 400);
-      setTimeout(() => {
-        text.textContent = "🔒 Atomic Lock: 1.000/1.000 ca việc gán hoàn tất, không trùng lặp...";
-      }, 800);
-      setTimeout(() => {
-        text.textContent = "🌐 Live REST API (Port 3000): Health Check 200 OK · OTP · Napas 24/7 Verified!";
-      }, 1200);
-      setTimeout(() => {
-        text.textContent = "🛡️ Kiểm toán Sổ Cái: 279.350.000 VNĐ · Lệch: 0.00 VNĐ · 0% Phí sàn!";
-        showToast("✅ Chạy thử Lần 4 toàn quốc thành công trên Mobile! (14/14 tiêu chuẩn)", "success");
-      }, 1600);
+    // =========================================================================
+    // --- TRUNG TÂM HỖ TRỢ KHÁCH HÀNG & PHẢN HỒI THỰC TẾ 24/7 ---
+    // =========================================================================
+    function openHelpSupportModal() {
+      document.getElementById('helpSupportModal').classList.remove('hidden');
     }
 
-    // =========================================================================
-    // --- BẢN THỬ NGHIỆM 1 (PILOT 1): HƯỚNG DẪN TRẢI NGHIỆM TỪNG BƯỚC & GÓP Ý ---
-    // =========================================================================
+    function closeHelpSupportModal() {
+      document.getElementById('helpSupportModal').classList.add('hidden');
+    }
+
     let pilotCurrentRating = 5;
     let pilotFeedbackRole = 'WORKER';
-
-    function openPilotGuideModal() {
-      document.getElementById('pilotGuideModal').classList.remove('hidden');
-    }
-
-    function closePilotGuideModal() {
-      document.getElementById('pilotGuideModal').classList.add('hidden');
-    }
-
-    function executePilotStep(step) {
-      closePilotGuideModal();
-      if (step === 1) {
-        switchMobileTab(1);
-        triggerRealtimeGPSScan();
-        showToast("📍 Bước 1: Radar đang quét tìm việc & thợ theo vị trí GPS thực tế!", "info");
-      } else if (step === 2) {
-        showJobDetails('JOB-001');
-        showToast("🤝 Bước 2: Xem chi tiết ca việc, tiền công 280.000đ được bảo lãnh Escrow 100%!", "info");
-      } else if (step === 3) {
-        makeVoIPCall();
-        showToast("📞 Bước 3: Đàm thoại VoIP trực tiếp qua 4G/Wifi (Không tốn tiền SIM)!", "info");
-      } else if (step === 4) {
-        openCameraModal();
-        showToast("📸 Bước 4: Camera nghiệm thu e-Proof, tự động đóng dấu toạ độ & mốc giờ!", "info");
-      } else if (step === 5) {
-        switchMobileTab(4);
-        setTimeout(() => openWithdrawModal(), 300);
-        showToast("💸 Bước 5: Xem số dư ví và rút tiền VietQR liên ngân hàng 24/7!", "info");
-      }
-    }
 
     // --- LIVE CUSTOMER FEEDBACK ENGINE ---
     function openFeedbackModal() {
@@ -2520,8 +2353,8 @@
         navigator.serviceWorker.register('./sw.js').catch(() => {});
       }
       setTimeout(() => {
-        showToast("🚀 Bản Thử Nghiệm 1: Bấm 'Thử Nghiệm 1' hoặc 'Góp Ý Thực Tế' để trải nghiệm 5 bước!", "info");
-      }, 1200);
+        showToast("👋 Chào mừng bạn đến với MCE Marketplace — Việc Làm Tức Thời 24/7!", "success");
+      }, 800);
     };
   </script>
 </body>
