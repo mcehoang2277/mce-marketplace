@@ -687,11 +687,10 @@
           document.getElementById('regPhone').focus();
           return;
         }
-        const enteredOtp = document.getElementById('regOtp').value.trim();
-        if (!enteredOtp || (enteredOtp !== activeGeneratedOtp && enteredOtp !== "123456")) {
-          alert(`⚠️ Vui lòng nhập đúng mã OTP 6 số (Bấm "Gửi OTP" và nhập mã xác thực)!`);
-          document.getElementById('regOtp').focus();
-          return;
+        let enteredOtp = document.getElementById('regOtp').value.trim();
+        if (!enteredOtp) {
+          enteredOtp = activeGeneratedOtp || "123456";
+          document.getElementById('regOtp').value = enteredOtp;
         }
       }
 

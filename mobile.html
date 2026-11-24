@@ -155,6 +155,10 @@
 
       <!-- Header Actions: Quick Role Switcher + App Store / Auth Pill -->
       <div class="flex items-center gap-1.5">
+        <button onclick="openAuthModal('REGISTER')" title="Đăng ký tài khoản người dùng mới" class="py-1 px-2 rounded-lg text-[10px] font-black bg-gradient-to-r from-emerald-500 to-teal-500 hover:opacity-95 text-slate-950 shadow transition active:scale-95 flex items-center gap-1">
+          <span>✍️ Đăng Ký</span>
+        </button>
+
         <button onclick="openAppStoreModal()" title="Tải ứng dụng cho điện thoại" class="p-1 px-1.5 rounded-lg text-[9px] font-bold bg-brand-surface hover:bg-brand-border border border-brand-border text-brand-accent transition flex items-center gap-1">
           <span>📲 Cài App</span>
         </button>
@@ -173,6 +177,17 @@
     <!-- MAIN SCROLLABLE APP BODY -->
     <main class="flex-1 overflow-y-auto custom-scroll relative flex flex-col bg-brand-bg pb-16">
 
+      <!-- Top Notification / Guest Welcome Bar -->
+      <div id="topAuthNoticeBanner" class="bg-gradient-to-r from-brand-primary/25 via-indigo-950 to-emerald-950/40 px-3 py-1.5 border-b border-brand-border/60 flex items-center justify-between text-[10px]">
+        <div class="flex items-center gap-1.5 text-brand-textPrimary">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="topAuthNoticeText">Bản thương mại MCE — Quét việc tức thời 0% phí sàn</span>
+        </div>
+        <button onclick="openAuthModal('REGISTER')" class="text-[9px] font-extrabold px-2 py-0.5 rounded bg-emerald-500 hover:bg-emerald-600 text-slate-950 transition shadow">
+          Tạo Tài Khoản
+        </button>
+      </div>
+
       <!-- ================= SCREEN 1: EXPLORE / TÌM VIỆC TRÊN BẢN ĐỒ KHÔNG QUA LIST ================= -->
       <div id="screenExplore" class="flex-1 flex flex-col">
         
@@ -180,16 +195,42 @@
         <div id="mapContainerWrapper" class="h-80 w-full relative transition-all duration-300">
           <div id="mobileMap"></div>
 
-          <!-- Top Interactive Bar: Quick Search & Real-time GPS -->
-          <div class="absolute top-2 left-2 right-2 z-20 flex gap-1.5">
-            <div class="flex-1 bg-brand-surface/90 backdrop-blur-md px-2.5 py-1.5 rounded-xl border border-brand-border shadow flex items-center gap-1.5">
-              <svg class="w-3.5 h-3.5 text-brand-textSecondary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-              <input id="inputMapSearch" type="text" placeholder="Tìm việc/khu vực trên bản đồ..." onkeydown="if(event.key==='Enter') searchLocationOnMap()" class="bg-transparent text-[11px] text-brand-textPrimary focus:outline-none w-full placeholder:text-brand-textSecondary/60">
+          <!-- Top Interactive Bar: Quick Search, Scan Now, Auto-Scan Toggle & Radius -->
+          <div class="absolute top-2 left-2 right-2 z-20 flex flex-col gap-1.5">
+            <div class="flex gap-1.5">
+              <div class="flex-1 bg-brand-surface/95 backdrop-blur-md px-2.5 py-1.5 rounded-xl border border-brand-border shadow flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-brand-textSecondary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <input id="inputMapSearch" type="text" placeholder="Tìm việc/khu vực quanh bạn..." onkeydown="if(event.key==='Enter') searchLocationOnMap()" class="bg-transparent text-[11px] text-brand-textPrimary focus:outline-none w-full placeholder:text-brand-textSecondary/60">
+              </div>
+              
+              <!-- Nút Quét Việc Làm Ngay -->
+              <button onclick="triggerManualJobScan()" title="Quét tìm việc làm quanh tọa độ" class="bg-brand-primary hover:bg-brand-secondary text-white px-2.5 py-1.5 rounded-xl shadow border border-brand-primary/40 flex items-center gap-1 text-[10px] font-black transition active:scale-95 whitespace-nowrap">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                <span>📡 Quét Việc</span>
+              </button>
+
+              <!-- Nút Quét Tự Động Toggle -->
+              <button onclick="toggleAutoScanMode()" id="btnAutoScanToggle" title="Bật/Tắt chế độ tự động quét việc" class="bg-brand-surface/95 hover:bg-brand-border border border-brand-border text-brand-textSecondary px-2 py-1.5 rounded-xl shadow flex items-center gap-1 text-[10px] font-bold transition active:scale-95 whitespace-nowrap">
+                <span id="autoScanIcon">🔄</span>
+                <span id="autoScanLabel">Auto: TẮT</span>
+              </button>
             </div>
-            
-            <button onclick="triggerRealtimeGPSScan()" title="Quét GPS vị trí của tôi" class="bg-brand-primary hover:bg-brand-secondary text-white p-2 rounded-xl shadow border border-brand-primary/40 flex items-center justify-center transition active:scale-95">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0013 3.06V1h-2v2.06A8.994 8.994 0 003.06 11H1v2h2.06A8.994 8.994 0 0011 20.94V23h2v-2.06A8.994 8.994 0 0020.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
-            </button>
+
+            <!-- Bán Kính Linh Hoạt: Không loại bỏ ca ở xa / vùng thưa dân -->
+            <div class="flex gap-1 overflow-x-auto custom-scroll py-0.5">
+              <button onclick="setScanRadius('ALL')" id="radBtnAll" class="bg-emerald-500 text-slate-950 text-[9px] font-black py-0.5 px-2.5 rounded-full shadow whitespace-nowrap flex items-center gap-1">
+                <span>🌏 Vùng Thưa Dân (Không Giới Hạn)</span>
+              </button>
+              <button onclick="setScanRadius(50)" id="radBtn50" class="bg-brand-surface/90 text-brand-textSecondary text-[9px] font-bold py-0.5 px-2 rounded-full border border-brand-border whitespace-nowrap">
+                <span>📍 &lt; 50km</span>
+              </button>
+              <button onclick="setScanRadius(20)" id="radBtn20" class="bg-brand-surface/90 text-brand-textSecondary text-[9px] font-bold py-0.5 px-2 rounded-full border border-brand-border whitespace-nowrap">
+                <span>📍 &lt; 20km</span>
+              </button>
+              <button onclick="setScanRadius(5)" id="radBtn5" class="bg-brand-surface/90 text-brand-textSecondary text-[9px] font-bold py-0.5 px-2 rounded-full border border-brand-border whitespace-nowrap">
+                <span>📍 &lt; 5km</span>
+              </button>
+            </div>
           </div>
 
           <!-- Bottom Map Mode Bar: Toggle Fullscreen Map Mode & Off-site Hiring -->
@@ -203,14 +244,6 @@
               <button onclick="toggleOffsiteMode()" id="btnOffsiteToggle" class="text-[9px] bg-brand-surface hover:bg-brand-border px-2.5 py-1 rounded-lg border border-brand-border text-indigo-300 font-semibold transition flex items-center gap-1">
                 <span>🎯 Thuê Chỗ Khác</span>
               </button>
-            </div>
-
-            <!-- Filter Pills -->
-            <div class="flex gap-1.5 overflow-x-auto custom-scroll">
-              <button onclick="filterMapJobs('ALL')" class="bg-brand-primary text-white text-[9px] font-bold py-1 px-2.5 rounded-full shadow whitespace-nowrap">🔥 Tất cả</button>
-              <button onclick="filterMapJobs('PACK')" class="bg-brand-card text-brand-textSecondary text-[9px] font-semibold py-1 px-2.5 rounded-full shadow border border-brand-border whitespace-nowrap">📦 Đóng gói</button>
-              <button onclick="filterMapJobs('PET')" class="bg-brand-card text-brand-textSecondary text-[9px] font-semibold py-1 px-2.5 rounded-full shadow border border-brand-border whitespace-nowrap">🐶 Thú cưng</button>
-              <button onclick="filterMapJobs('QUEUE')" class="bg-brand-card text-brand-textSecondary text-[9px] font-semibold py-1 px-2.5 rounded-full shadow border border-brand-border whitespace-nowrap">⏱️ Xếp hàng</button>
             </div>
           </div>
         </div>
@@ -243,63 +276,30 @@
           </div>
         </div>
 
-        <!-- Optional Static List (Có thể ẩn khi dùng chế độ bản đồ thuần túy) -->
+        <!-- Dynamic Scrollable Job List Section (Nhiều lựa chọn & cuộn mượt mà) -->
         <div id="staticJobListSection" class="px-3 pb-3 space-y-2">
           <div class="flex items-center justify-between text-[11px] font-bold text-brand-textSecondary px-0.5">
-            <span>Danh sách ca việc lân cận:</span>
-            <span class="text-[10px] text-brand-primary">Match Engine AI</span>
+            <span id="jobListCountHeader">Danh sách việc làm (13 ca đang mở):</span>
+            <span class="text-[9px] text-emerald-400 font-extrabold flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+              Đã gồm cả vùng xa
+            </span>
           </div>
 
-          <!-- Job Card 1 -->
-          <div class="bg-brand-card p-3 rounded-2xl border border-brand-border shadow-sm hover:border-brand-primary/60 transition">
-            <div class="flex items-start justify-between">
-              <div>
-                <span class="text-[8px] font-extrabold px-1.5 py-0.5 rounded bg-brand-success/10 text-emerald-400 border border-brand-success/30">0% PHÍ</span>
-                <h4 class="font-bold text-xs text-brand-textPrimary mt-0.5">Phụ đóng gói 300 kiện hàng shopee</h4>
-                <p class="text-[10px] text-brand-textSecondary">12 Tràng Thi · Cách 1.8 km</p>
-              </div>
-              <div class="text-right">
-                <span class="text-xs font-black text-brand-primary">240.000đ</span>
-                <span class="text-[9px] text-brand-textSecondary block">80k/h · 3h</span>
-              </div>
-            </div>
-            <div class="mt-2 pt-2 border-t border-brand-border/60 flex items-center justify-between text-[10px]">
-              <span class="text-brand-textSecondary">14:00 - 17:00</span>
-              <div class="flex gap-1.5">
-                <button onclick="selectJobOnMapDirectly('JOB-001')" class="py-1 px-2 bg-brand-surface border border-brand-border text-brand-textSecondary rounded-lg text-[9px] font-semibold">
-                  Xem Bản Đồ
-                </button>
-                <button onclick="mobileAcceptJob('JOB-001', 'Phụ đóng gói 300 kiện', 240000)" class="py-1 px-3 rounded-lg bg-brand-primary hover:bg-brand-secondary text-white font-bold text-[10px] transition">
-                  Nhận Ca
-                </button>
-              </div>
-            </div>
+          <!-- Category Filter Bar for List -->
+          <div class="flex gap-1.5 overflow-x-auto custom-scroll pb-1">
+            <button onclick="filterListCategory('ALL')" id="catTabAll" class="text-[9px] font-extrabold px-2.5 py-1 rounded-lg bg-brand-primary text-white shadow whitespace-nowrap">🔥 Tất Cả (13)</button>
+            <button onclick="filterListCategory('PACK')" id="catTabPack" class="text-[9px] font-bold px-2 py-1 rounded-lg bg-brand-surface border border-brand-border text-brand-textSecondary hover:text-brand-textPrimary whitespace-nowrap">📦 Đóng Gói / Kho (3)</button>
+            <button onclick="filterListCategory('FARM')" id="catTabFarm" class="text-[9px] font-bold px-2 py-1 rounded-lg bg-brand-surface border border-brand-border text-brand-textSecondary hover:text-brand-textPrimary whitespace-nowrap">🌾 Nông Nghiệp / Tỉnh (3)</button>
+            <button onclick="filterListCategory('CLEAN')" id="catTabClean" class="text-[9px] font-bold px-2 py-1 rounded-lg bg-brand-surface border border-brand-border text-brand-textSecondary hover:text-brand-textPrimary whitespace-nowrap">🧹 Dọn Dẹp / Tiệc (3)</button>
+            <button onclick="filterListCategory('DELIVERY')" id="catTabDeliv" class="text-[9px] font-bold px-2 py-1 rounded-lg bg-brand-surface border border-brand-border text-brand-textSecondary hover:text-brand-textPrimary whitespace-nowrap">🛵 Giao Hàng (2)</button>
+            <button onclick="filterListCategory('PET')" id="catTabPet" class="text-[9px] font-bold px-2 py-1 rounded-lg bg-brand-surface border border-brand-border text-brand-textSecondary hover:text-brand-textPrimary whitespace-nowrap">🐶 Thú Cưng (1)</button>
+            <button onclick="filterListCategory('HEAVY')" id="catTabHeavy" class="text-[9px] font-bold px-2 py-1 rounded-lg bg-brand-surface border border-brand-border text-brand-textSecondary hover:text-brand-textPrimary whitespace-nowrap">💪 Phụ Hồ / Bốc Vác (1)</button>
           </div>
 
-          <!-- Job Card 2 -->
-          <div class="bg-brand-card p-3 rounded-2xl border border-brand-border shadow-sm hover:border-brand-primary/60 transition">
-            <div class="flex items-start justify-between">
-              <div>
-                <span class="text-[8px] font-extrabold px-1.5 py-0.5 rounded bg-brand-warning/10 text-amber-400 border border-brand-warning/30">VIỆC NHẸ</span>
-                <h4 class="font-bold text-xs text-brand-textPrimary mt-0.5">Trông giữ thú cưng chiều thứ 7</h4>
-                <p class="text-[10px] text-brand-textSecondary">45 Lý Thường Kiệt · Cách 1.2 km</p>
-              </div>
-              <div class="text-right">
-                <span class="text-xs font-black text-brand-primary">150.000đ</span>
-                <span class="text-[9px] text-brand-textSecondary block">75k/h · 2h</span>
-              </div>
-            </div>
-            <div class="mt-2 pt-2 border-t border-brand-border/60 flex items-center justify-between text-[10px]">
-              <span class="text-brand-textSecondary">14:00 - 16:00</span>
-              <div class="flex gap-1.5">
-                <button onclick="selectJobOnMapDirectly('JOB-002')" class="py-1 px-2 bg-brand-surface border border-brand-border text-brand-textSecondary rounded-lg text-[9px] font-semibold">
-                  Xem Bản Đồ
-                </button>
-                <button onclick="mobileAcceptJob('JOB-002', 'Trông giữ thú cưng', 150000)" class="py-1 px-3 rounded-lg bg-brand-primary hover:bg-brand-secondary text-white font-bold text-[10px] transition">
-                  Nhận Ca
-                </button>
-              </div>
-            </div>
+          <!-- Dynamic Scrollable Container -->
+          <div id="dynamicJobListContainer" class="max-h-[460px] overflow-y-auto space-y-2.5 custom-scroll pr-0.5">
+            <!-- 13+ dynamic job cards will be rendered here -->
           </div>
         </div>
 
@@ -760,6 +760,8 @@
 
         <!-- FORM REGISTER -->
         <form id="formInAppRegister" onsubmit="handleInAppRegister(event)" class="space-y-3 hidden">
+          <div id="inAppRegAlertBox" class="text-[10px] p-2 rounded-xl border hidden font-bold"></div>
+
           <div>
             <label class="block text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider mb-1">
               Họ và tên thật <span class="text-rose-400">*</span>
@@ -788,7 +790,7 @@
             </div>
             <div class="flex gap-2">
               <span class="flex items-center px-2.5 border border-brand-border rounded-xl bg-brand-surface text-xs font-semibold text-brand-textSecondary">🇻🇳 +84</span>
-              <input id="inAppRegPhone" type="tel" placeholder="0912 345 678" class="flex-1 p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs font-bold text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none">
+              <input id="inAppRegPhone" type="tel" oninput="handleRegPhoneInput(this.value)" placeholder="0912 345 678" class="flex-1 p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs font-bold text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none">
             </div>
 
             <div id="regOtpBanner" class="mt-2 p-2 bg-emerald-500/15 border border-emerald-500/30 rounded-xl text-[10px] text-emerald-300 hidden flex items-center justify-between">
@@ -799,12 +801,17 @@
 
           <div>
             <label class="block text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider mb-1">Mã xác nhận OTP (6 số)</label>
-            <input id="inAppRegOtp" type="text" maxlength="6" placeholder="000000" class="w-full p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs text-center font-mono font-bold tracking-widest text-brand-textPrimary">
+            <input id="inAppRegOtp" type="text" maxlength="6" value="654321" placeholder="654321" class="w-full p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs text-center font-mono font-bold tracking-widest text-brand-textPrimary">
           </div>
 
-          <button type="submit" class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-xs rounded-xl shadow transition active:scale-98">
-            Đăng Ký & Kích Hoạt Tài Khoản
-          </button>
+          <div class="space-y-1.5 pt-1">
+            <button type="submit" class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-xs rounded-xl shadow transition active:scale-98 flex items-center justify-center gap-1.5">
+              <span>🚀 Đăng Ký Tài Khoản Ngay</span>
+            </button>
+            <button type="button" onclick="handleInAppRegister(event)" class="w-full py-2 bg-brand-surface hover:bg-brand-border border border-brand-border text-brand-textPrimary font-bold text-[10px] rounded-xl transition flex items-center justify-center gap-1">
+              <span>⚡ Kích Hoạt Nhanh 1 Chạm (Tự Động Xác Thực)</span>
+            </button>
+          </div>
         </form>
 
         <!-- Quick Switch Preset Accounts -->
@@ -1737,15 +1744,25 @@
     let map, radarCircle, userMarker, offsiteMarker, activeRoutePolyline;
     let jobMarkers = [];
 
+    // Danh sách 13 ca việc phong phú (Nội thành, Vùng ven & Vùng xa/thưa dân)
     const jobData = [
-      { id: 'JOB-001', title: 'Phụ đóng gói 300 kiện hàng shopee', pay: 240000, lat: 21.0285, lng: 105.8544, dist: '1.8 km', type: 'PACK', poster: 'Shop Tràng Thi' },
-      { id: 'JOB-002', title: 'Trông giữ thú cưng chiều thứ 7', pay: 150000, lat: 21.0250, lng: 105.8510, dist: '1.2 km', type: 'PET', poster: 'Chị Mai Lan' },
-      { id: 'JOB-003', title: 'Xếp hàng mua vé xem phim', pay: 120000, lat: 21.0320, lng: 105.8480, dist: '2.1 km', type: 'QUEUE', poster: 'Anh Hoàng' },
-      { id: 'JOB-004', title: 'Bốc xếp kho bánh kẹo Bạch Đằng', pay: 270000, lat: 21.0210, lng: 105.8600, dist: '2.5 km', type: 'PACK', poster: 'Kho Vận 18' }
+      { id: 'JOB-001', title: 'Phụ đóng gói 300 kiện hàng shopee', pay: 240000, lat: 21.0285, lng: 105.8544, dist: '1.8 km', type: 'PACK', poster: 'Shop Tràng Thi', zone: 'NEAR', address: 'Số 12 Tràng Thi, Hoàn Kiếm' },
+      { id: 'JOB-002', title: 'Trông giữ thú cưng chiều thứ 7', pay: 150000, lat: 21.0250, lng: 105.8510, dist: '1.2 km', type: 'PET', poster: 'Chị Mai Lan', zone: 'NEAR', address: '45 Lý Thường Kiệt, Hai Bà Trưng' },
+      { id: 'JOB-003', title: 'Bốc xếp kho bánh kẹo Bạch Đằng', pay: 270000, lat: 21.0210, lng: 105.8600, dist: '2.5 km', type: 'PACK', poster: 'Kho Vận 18', zone: 'NEAR', address: '18 Bạch Đằng, Hai Bà Trưng' },
+      { id: 'JOB-004', title: 'Xếp hàng mua vé xem phim suất sớm', pay: 120000, lat: 21.0320, lng: 105.8480, dist: '3.1 km', type: 'QUEUE', poster: 'Anh Hoàng', zone: 'NEAR', address: 'Rạp Tháng 8, Hàng Bài' },
+      { id: 'JOB-005', title: 'Phụ việc dọn vệ sinh quán cafe tối', pay: 160000, lat: 21.0360, lng: 105.7905, dist: '4.8 km', type: 'CLEAN', poster: 'The Coffee Cầu Giấy', zone: 'NEAR', address: '128 Xuân Thủy, Cầu Giấy' },
+      { id: 'JOB-006', title: 'Giao linh kiện xe máy hỏa tốc', pay: 220000, lat: 21.0120, lng: 105.8200, dist: '6.5 km', type: 'DELIVERY', poster: 'Phụ Tùng Hùng Cường', zone: 'SUBURB', address: '88 Thái Hà, Đống Đa' },
+      { id: 'JOB-007', title: 'Phụ kho đóng kiện hàng cơ khí', pay: 290000, lat: 21.0500, lng: 105.8900, dist: '11.0 km', type: 'PACK', poster: 'Cơ Khí Gia Lâm', zone: 'SUBURB', address: 'KCN Đài Tư, Long Biên' },
+      { id: 'JOB-008', title: 'Thu hái & đóng sọt bưởi Diễn theo ngày', pay: 350000, lat: 21.0450, lng: 105.7100, dist: '14.2 km', type: 'FARM', poster: 'Hợp Tác Xã Hoài Đức', zone: 'REMOTE', address: 'Vườn Bưởi Xã Cát Quế, Hoài Đức' },
+      { id: 'JOB-009', title: 'Chăm sóc vườn lan & tưới tiêu cây cảnh', pay: 260000, lat: 21.1400, lng: 105.8500, dist: '16.5 km', type: 'FARM', poster: 'Nhà Vườn Đông Anh', zone: 'REMOTE', address: 'Thôn Cổ Loa, Đông Anh' },
+      { id: 'JOB-010', title: 'Phân loại nông sản & đóng thùng xuất kho', pay: 320000, lat: 20.8700, lng: 105.8600, dist: '18.5 km', type: 'FARM', poster: 'Kho Nông Sản Thường Tín', zone: 'REMOTE', address: 'Thị Trấn Thường Tín' },
+      { id: 'JOB-011', title: 'Dọn dẹp xưởng gỗ thủ công mỹ nghệ', pay: 380000, lat: 21.0100, lng: 105.5800, dist: '28.5 km', type: 'CLEAN', poster: 'Làng Nghề Thạch Thất', zone: 'REMOTE', address: 'Làng Nghề Chàng Sơn, Thạch Thất' },
+      { id: 'JOB-012', title: 'Phụ hồ & bốc dỡ vật liệu xây dựng', pay: 450000, lat: 21.1300, lng: 105.5000, dist: '38.0 km', type: 'HEAVY', poster: 'Công Trình Sơn Tây', zone: 'REMOTE', address: 'Phường Trung Hưng, Thị Xã Sơn Tây' },
+      { id: 'JOB-013', title: 'Phụ bếp nấu cỗ tiệc gia đình cuối tuần', pay: 400000, lat: 21.1800, lng: 105.7300, dist: '26.0 km', type: 'CLEAN', poster: 'Ẩm Thực Mê Linh', zone: 'REMOTE', address: 'Xã Tiền Phong, Mê Linh' }
     ];
 
     function initMobileMap() {
-      map = L.map('mobileMap', { preferCanvas: true, zoomControl: false }).setView([mobileState.currentCoords.lat, mobileState.currentCoords.lng], 14);
+      map = L.map('mobileMap', { preferCanvas: true, zoomControl: false }).setView([mobileState.currentCoords.lat, mobileState.currentCoords.lng], 13);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
 
       // Current User Pin (Blue Pin with Pulse)
@@ -1756,18 +1773,19 @@
       });
 
       userMarker = L.marker([mobileState.currentCoords.lat, mobileState.currentCoords.lng], { icon: blueIcon }).addTo(map)
-        .bindPopup("<b>📍 Vị trí của bạn (Worker)</b><br><span style='font-size:10px;'>Đang quét việc xung quanh</span>");
+        .bindPopup("<b>📍 Vị trí của bạn (Worker)</b><br><span style='font-size:10px;'>Đang quét việc xung quanh (Cả vùng xa)</span>");
 
-      // Radar 6km circle
+      // Radar circle (mở rộng bao quát cả vùng thưa dân 35km)
       radarCircle = L.circle([mobileState.currentCoords.lat, mobileState.currentCoords.lng], {
         color: '#10b981',
         fillColor: '#10b981',
-        fillOpacity: 0.15,
-        radius: 800
+        fillOpacity: 0.12,
+        radius: 35000
       }).addTo(map);
 
-      // Render job markers directly on map
+      // Render job markers directly on map & scrollable list
       renderJobMarkers(jobData);
+      renderJobList(jobData);
 
       // Map Click Handler: Cho phép chọn vị trí việc làm hoặc chuyển tâm quét
       map.on('click', function(e) {
@@ -1786,15 +1804,21 @@
         iconAnchor: [10, 32]
       });
 
+      const goldIcon = new L.Icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png',
+        iconSize: [20, 32],
+        iconAnchor: [10, 32]
+      });
+
       jobs.forEach(job => {
-        const marker = L.marker([job.lat, job.lng], { icon: redIcon }).addTo(map);
+        const isFar = parseFloat(job.dist) > 12;
+        const marker = L.marker([job.lat, job.lng], { icon: isFar ? goldIcon : redIcon }).addTo(map);
         
-        // Popup with direct 1-touch accept, chat, and call buttons
         const popupContent = `
-          <div style="font-family: sans-serif; font-size: 11px; line-height: 1.4; min-width: 170px;">
+          <div style="font-family: sans-serif; font-size: 11px; line-height: 1.4; min-width: 175px;">
             <div style="font-weight: 800; color: #F8FAFC; margin-bottom: 2px;">${job.title}</div>
             <div style="color: #6366F1; font-weight: 800; font-size: 13px;">${job.pay.toLocaleString('vi-VN')}đ</div>
-            <div style="color: #94A3B8; font-size: 10px; margin-bottom: 6px;">📍 Cách bạn: ${job.dist} · 0% Phí</div>
+            <div style="color: #94A3B8; font-size: 10px; margin-bottom: 6px;">📍 Cách bạn: ${job.dist} · ${isFar ? '🌾 Vùng Xa / Ngoại Ô' : 'Gần bạn'}</div>
             <button onclick="mobileAcceptJob('${job.id}', '${job.title}', ${job.pay})" style="width: 100%; background: #6366F1; color: white; border: none; padding: 6px 8px; border-radius: 8px; font-weight: bold; font-size: 10px; cursor: pointer; margin-bottom: 4px;">
               ⚡ Nhận Ca Này Ngay
             </button>
@@ -1814,6 +1838,189 @@
       });
     }
 
+    // --- DYNAMIC SCROLLABLE JOB LIST ENGINE (DANH SÁCH CUỘN NHIỀU LỰA CHỌN) ---
+    function renderJobList(jobsToRender = jobData) {
+      const container = document.getElementById('dynamicJobListContainer');
+      const header = document.getElementById('jobListCountHeader');
+      if (!container) return;
+      if (header) {
+        header.textContent = `Danh sách việc làm (${jobsToRender.length} ca có sẵn):`;
+      }
+      container.innerHTML = '';
+
+      if (jobsToRender.length === 0) {
+        container.innerHTML = `
+          <div class="p-6 text-center text-xs text-brand-textSecondary bg-brand-card rounded-2xl border border-brand-border space-y-2">
+            <span class="text-2xl block">🔍</span>
+            <p>Không có ca việc nào trong bộ lọc này.</p>
+            <button onclick="setScanRadius('ALL')" class="py-1 px-3 bg-brand-primary text-white text-[10px] font-bold rounded-lg shadow">
+              Mở Rộng Bán Kính (Vùng Thưa Dân)
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      jobsToRender.forEach(job => {
+        const isFar = parseFloat(job.dist) > 12;
+        const distBadge = isFar
+          ? `<span class="text-[8px] font-extrabold px-1.5 py-0.5 rounded bg-blue-500/10 text-cyan-400 border border-blue-500/30">🌾 VÙNG XA / NGOẠI Ô</span>`
+          : `<span class="text-[8px] font-extrabold px-1.5 py-0.5 rounded bg-brand-success/10 text-emerald-400 border border-brand-success/30">0% PHÍ</span>`;
+        
+        const card = document.createElement('div');
+        card.className = "bg-brand-card p-3 rounded-2xl border border-brand-border shadow-sm hover:border-brand-primary/60 transition space-y-2";
+        card.innerHTML = `
+          <div class="flex items-start justify-between">
+            <div class="flex-1 pr-2">
+              <div class="flex items-center gap-1.5">
+                ${distBadge}
+                <span class="text-[9px] font-bold text-brand-textSecondary font-mono">📍 Cách ${job.dist}</span>
+              </div>
+              <h4 class="font-bold text-xs text-brand-textPrimary mt-1 leading-tight">${job.title}</h4>
+              <p class="text-[10px] text-brand-textSecondary mt-0.5 leading-tight">${job.address || ('Người thuê: ' + job.poster)}</p>
+            </div>
+            <div class="text-right flex-shrink-0">
+              <span class="text-xs font-black text-brand-primary block">${job.pay.toLocaleString('vi-VN')}đ</span>
+              <span class="text-[9px] text-emerald-400 font-semibold">100% về ví</span>
+            </div>
+          </div>
+          <div class="pt-2 border-t border-brand-border/60 flex items-center justify-between text-[10px]">
+            <span class="text-brand-textSecondary">Ca hôm nay · Nhận việc ngay</span>
+            <div class="flex gap-1.5">
+              <button onclick="selectJobOnMapDirectly('${job.id}')" class="py-1 px-2.5 bg-brand-surface hover:bg-brand-border border border-brand-border text-brand-textPrimary rounded-lg text-[9px] font-semibold transition">
+                🗺️ Xem Vị Trí
+              </button>
+              <button onclick="mobileAcceptJob('${job.id}', '${job.title}', ${job.pay})" class="py-1 px-3 rounded-lg bg-brand-primary hover:bg-brand-secondary text-white font-bold text-[10px] transition active:scale-95 shadow">
+                ⚡ Nhận Ca
+              </button>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // --- MANUAL JOB SCAN & AUTO-SCAN CONTROLLER ---
+    function triggerManualJobScan() {
+      showToast("📡 Đang quét toàn vùng... Đã tìm thấy " + jobData.length + " ca việc (Bao gồm cả vùng thưa dân & xa)!", "success");
+      
+      // Pulse animation
+      let r = 5000;
+      const pulseInt = setInterval(() => {
+        r += 7000;
+        if (r > 42000) {
+          clearInterval(pulseInt);
+          radarCircle.setRadius(35000);
+        } else {
+          radarCircle.setRadius(r);
+        }
+      }, 50);
+
+      renderJobMarkers(jobData);
+      renderJobList(jobData);
+      if (jobMarkers.length > 0) {
+        const group = new L.featureGroup([userMarker, ...jobMarkers]);
+        map.fitBounds(group.getBounds().pad(0.08));
+      }
+    }
+
+    let isAutoScanRunning = false;
+    let autoScanIntervalId = null;
+
+    function toggleAutoScanMode() {
+      isAutoScanRunning = !isAutoScanRunning;
+      const btn = document.getElementById('btnAutoScanToggle');
+      const icon = document.getElementById('autoScanIcon');
+      const label = document.getElementById('autoScanLabel');
+
+      if (isAutoScanRunning) {
+        btn.className = "bg-emerald-500 text-slate-950 font-black px-2 py-1.5 rounded-xl shadow flex items-center gap-1 text-[10px] transition active:scale-95 whitespace-nowrap";
+        icon.className = "inline-block animate-spin";
+        label.textContent = "Auto: BẬT";
+        showToast("🔄 Đã BẬT Quét Tự Động: Tự động cập nhật việc làm quanh bạn mỗi 6s!", "success");
+
+        autoScanIntervalId = setInterval(() => {
+          radarCircle.setRadius(20000);
+          setTimeout(() => radarCircle.setRadius(35000), 500);
+        }, 6000);
+      } else {
+        btn.className = "bg-brand-surface/95 hover:bg-brand-border border border-brand-border text-brand-textSecondary px-2 py-1.5 rounded-xl shadow flex items-center gap-1 text-[10px] font-bold transition active:scale-95 whitespace-nowrap";
+        icon.className = "";
+        label.textContent = "Auto: TẮT";
+        if (autoScanIntervalId) {
+          clearInterval(autoScanIntervalId);
+          autoScanIntervalId = null;
+        }
+        showToast("⏸️ Đã tắt Chế độ Quét Tự Động.", "info");
+      }
+    }
+
+    // --- RADIUS CONTROLLER (KHÔNG LOẠI BỎ CA Ở XA / VÙNG THƯA DÂN) ---
+    let currentSelectedRadius = 'ALL';
+
+    function setScanRadius(rad) {
+      currentSelectedRadius = rad;
+      ['radBtnAll', 'radBtn50', 'radBtn20', 'radBtn5'].forEach(id => {
+        const b = document.getElementById(id);
+        if (b) {
+          b.className = "bg-brand-surface/90 text-brand-textSecondary text-[9px] font-bold py-0.5 px-2 rounded-full border border-brand-border whitespace-nowrap";
+        }
+      });
+      const activeId = rad === 'ALL' ? 'radBtnAll' : `radBtn${rad}`;
+      const activeB = document.getElementById(activeId);
+      if (activeB) {
+        activeB.className = "bg-emerald-500 text-slate-950 text-[9px] font-black py-0.5 px-2.5 rounded-full shadow whitespace-nowrap";
+      }
+
+      let filtered = jobData;
+      if (rad === 'ALL') {
+        radarCircle.setRadius(40000);
+        showToast("🌏 Hiển thị toàn bộ ca việc (Bao gồm cả vùng xa & thưa dân)!", "info");
+      } else {
+        const maxDist = parseFloat(rad);
+        filtered = jobData.filter(j => parseFloat(j.dist) <= maxDist);
+        radarCircle.setRadius(maxDist * 1000);
+        showToast(`📍 Lọc ca việc trong bán kính < ${rad}km (${filtered.length} ca)`, "info");
+      }
+
+      renderJobMarkers(filtered);
+      renderJobList(filtered);
+      if (jobMarkers.length > 0) {
+        const group = new L.featureGroup([userMarker, ...jobMarkers]);
+        map.fitBounds(group.getBounds().pad(0.1));
+      }
+    }
+
+    function filterListCategory(cat) {
+      const tabs = ['catTabAll', 'catTabPack', 'catTabFarm', 'catTabClean', 'catTabDeliv', 'catTabPet', 'catTabHeavy'];
+      tabs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.className = "text-[9px] font-bold px-2.5 py-1 rounded-lg bg-brand-surface border border-brand-border text-brand-textSecondary hover:text-brand-textPrimary whitespace-nowrap";
+      });
+      const activeMap = {
+        ALL: 'catTabAll',
+        PACK: 'catTabPack',
+        FARM: 'catTabFarm',
+        CLEAN: 'catTabClean',
+        DELIVERY: 'catTabDeliv',
+        PET: 'catTabPet',
+        HEAVY: 'catTabHeavy'
+      };
+      const activeTab = document.getElementById(activeMap[cat] || 'catTabAll');
+      if (activeTab) {
+        activeTab.className = "text-[9px] font-extrabold px-2.5 py-1 rounded-lg bg-brand-primary text-white shadow whitespace-nowrap";
+      }
+
+      let filtered = (cat === 'ALL') ? jobData : jobData.filter(j => j.type === cat);
+      if (currentSelectedRadius !== 'ALL') {
+        const maxDist = parseFloat(currentSelectedRadius);
+        filtered = filtered.filter(j => parseFloat(j.dist) <= maxDist);
+      }
+
+      renderJobMarkers(filtered);
+      renderJobList(filtered);
+    }
+
     // --- MÔ PHỎNG THỰC TẾ: TÌM VIỆC TRÊN BẢN ĐỒ KHÔNG DÙNG LIST ---
     function selectJobOnMapDirectly(jobId) {
       const job = jobData.find(j => j.id === jobId);
@@ -1822,7 +2029,7 @@
       // Update direct match card
       document.getElementById('directJobTitle').textContent = job.title;
       document.getElementById('directJobPay').textContent = job.pay.toLocaleString('vi-VN') + "đ";
-      document.getElementById('directJobMeta').textContent = `Cách bạn: ${job.dist} · Người thuê: ${job.poster}`;
+      document.getElementById('directJobMeta').textContent = `Cách bạn: ${job.dist} · ${job.address || job.poster}`;
 
       // Vẽ đường chỉ đường polyline neon nối từ Worker đến Job
       if (activeRoutePolyline) map.removeLayer(activeRoutePolyline);
@@ -2387,11 +2594,28 @@
     function sendAuthOtp(type) {
       const banner = document.getElementById(type === 'LOGIN' ? 'loginOtpBanner' : 'regOtpBanner');
       if (banner) banner.classList.remove('hidden');
-      showToast("📩 Đã gửi mã xác thực OTP 6 số qua tin nhắn SMS!", "success");
+      const otpInput = document.getElementById(type === 'LOGIN' ? 'inAppLoginOtp' : 'inAppRegOtp');
+      if (otpInput && !otpInput.value) otpInput.value = '654321';
+      showToast("📩 Đã gửi mã xác thực OTP (654321) qua tin nhắn SMS!", "success");
     }
+
+    function handleRegPhoneInput(val) {
+      const clean = (val || '').replace(/[^0-9]/g, '');
+      const banner = document.getElementById('regOtpBanner');
+      const otpInput = document.getElementById('inAppRegOtp');
+      if (clean.length >= 9) {
+        if (banner) banner.classList.remove('hidden');
+        if (otpInput && !otpInput.value) otpInput.value = '654321';
+      }
+    }
+
     function handleInAppLogin(e) {
-      e.preventDefault();
-      const phone = document.getElementById('inAppLoginPhone').value.trim();
+      if (e && e.preventDefault) e.preventDefault();
+      const rawPhone = document.getElementById('inAppLoginPhone').value.trim();
+      let phone = rawPhone.replace(/[^0-9]/g, '');
+      if (phone.startsWith('84') && phone.length === 11) {
+        phone = '0' + phone.slice(2);
+      }
       if (!phone || phone.length < 9) {
         showToast("Vui lòng nhập đúng số điện thoại!", "error");
         return;
@@ -2402,7 +2626,7 @@
         mobileState.userProfile.role = "WORKER";
         mobileState.userProfile.verified = true;
       } else {
-        mobileState.userProfile.name = "Khách Hàng MCE";
+        mobileState.userProfile.name = "Khách Hàng " + phone.slice(-4);
         mobileState.userProfile.role = "WORKER";
       }
       localStorage.setItem('mce_current_user', JSON.stringify(mobileState.userProfile));
@@ -2410,24 +2634,51 @@
       closeAuthModal();
       showToast(`👋 Chào mừng ${mobileState.userProfile.name} đăng nhập thành công!`, "success");
     }
+
     function handleInAppRegister(e) {
-      e.preventDefault();
-      const name = document.getElementById('inAppRegName').value.trim() || "Thành Viên MCE";
-      const phone = document.getElementById('inAppRegPhone').value.trim();
+      if (e && e.preventDefault) e.preventDefault();
+      let name = document.getElementById('inAppRegName').value.trim();
+      const rawPhone = document.getElementById('inAppRegPhone').value.trim();
+      const alertBox = document.getElementById('inAppRegAlertBox');
+      
+      let phone = rawPhone.replace(/[^0-9]/g, '');
+      if (phone.startsWith('84') && phone.length === 11) {
+        phone = '0' + phone.slice(2);
+      }
+      
       if (!phone || phone.length < 9) {
+        if (alertBox) {
+          alertBox.className = "text-[10px] p-2 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-300 font-bold block";
+          alertBox.textContent = "⚠️ Vui lòng nhập số điện thoại hợp lệ (từ 9 đến 11 số)!";
+        }
         showToast("Vui lòng nhập số điện thoại hợp lệ!", "error");
         return;
       }
-      mobileState.userProfile.name = name;
-      mobileState.userProfile.phone = phone;
-      mobileState.userProfile.role = authRoleSelected;
-      mobileState.userProfile.verified = false;
-      mobileState.userProfile.karma = 5.0;
+      
+      if (!name) {
+        name = (authRoleSelected === 'POSTER' ? "Chủ Thuê " : "Thành Viên ") + phone.slice(-4);
+      }
+      
+      if (alertBox) alertBox.classList.add('hidden');
+
+      mobileState.userProfile = {
+        name: name,
+        phone: phone,
+        email: phone + "@mce.vn",
+        role: authRoleSelected || 'WORKER',
+        verified: false,
+        karma: 5.0,
+        registeredAt: new Date().toISOString()
+      };
+      
       localStorage.setItem('mce_current_user', JSON.stringify(mobileState.userProfile));
       syncProfileToUI();
       closeAuthModal();
-      showToast(`🎉 Chúc mừng ${name} đã đăng ký tài khoản thành công! Hãy tiến hành xác minh CCCD để nhận việc.`, "success");
-      setTimeout(() => openEkycModal(), 700);
+      
+      showToast(`🎉 Chúc mừng ${name} đã đăng ký tài khoản thành công!`, "success");
+      
+      const topNotice = document.getElementById('topAuthNoticeText');
+      if (topNotice) topNotice.textContent = `Xin chào ${name} (${phone}) · 0% Phí Sàn`;
     }
     function loginWithGoogleQuick() {
       mobileState.userProfile.name = "Hoàng Minh (Google)";
