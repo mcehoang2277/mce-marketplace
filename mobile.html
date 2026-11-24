@@ -159,14 +159,19 @@
         </div>
       </div>
 
-      <!-- Quick Role Switcher -->
-      <div class="flex items-center gap-1 bg-brand-card p-0.5 rounded-lg border border-brand-border">
-        <button id="btnRoleWorker" onclick="switchRole('WORKER')" class="py-0.5 px-2 rounded text-[10px] font-bold bg-brand-primary text-white transition">
-          🛵 Làm
+      <!-- Quick Role Switcher & Pilot 1 Button -->
+      <div class="flex items-center gap-1.5">
+        <button onclick="openPilotGuideModal()" class="py-1 px-2 rounded-lg text-[9px] font-black bg-gradient-to-r from-amber-500 to-indigo-600 text-white shadow-md active:scale-95 transition flex items-center gap-1">
+          <span>🚀 Thử Nghiệm 1</span>
         </button>
-        <button id="btnRolePoster" onclick="switchRole('POSTER')" class="py-0.5 px-2 rounded text-[10px] font-semibold text-brand-textSecondary hover:text-brand-textPrimary transition">
-          🏢 Thuê
-        </button>
+        <div class="flex items-center gap-0.5 bg-brand-card p-0.5 rounded-lg border border-brand-border">
+          <button id="btnRoleWorker" onclick="switchRole('WORKER')" class="py-0.5 px-2 rounded text-[10px] font-bold bg-brand-primary text-white transition">
+            🛵 Làm
+          </button>
+          <button id="btnRolePoster" onclick="switchRole('POSTER')" class="py-0.5 px-2 rounded text-[10px] font-semibold text-brand-textSecondary hover:text-brand-textPrimary transition">
+            🏢 Thuê
+          </button>
+        </div>
       </div>
     </header>
 
@@ -636,6 +641,12 @@
 
   </div>
 
+  <!-- FLOATING ACTION BUTTON: THU THẬP GÓP Ý THỰC TẾ BẢN 1 -->
+  <button id="btnFloatingFeedback" onclick="openFeedbackModal()" class="fixed bottom-20 right-4 sm:right-[calc(50%-185px)] z-50 bg-gradient-to-r from-cyan-500 via-indigo-500 to-purple-600 hover:opacity-95 text-white font-extrabold text-[11px] py-2 px-3.5 rounded-full shadow-2xl border border-cyan-400/40 flex items-center gap-1.5 active:scale-95 transition-all">
+    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+    <span>💬 Góp Ý Thực Tế</span>
+  </button>
+
   <!-- ================= MODAL 1: IN-APP LIVE CHAT (KHI SIM HẾT TIỀN) ================= -->
   <div id="chatModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
     <div class="bg-brand-card rounded-t-3xl sm:rounded-3xl max-w-sm w-full h-[540px] flex flex-col shadow-2xl border border-brand-border overflow-hidden">
@@ -1036,7 +1047,243 @@
       <div class="p-3 border-t border-brand-border bg-brand-surface flex gap-2">
         <button onclick="closeMobileNationalSim()" class="flex-1 py-2 bg-brand-card hover:bg-brand-border border border-brand-border text-brand-textSecondary hover:text-brand-textPrimary font-bold text-[10px] rounded-xl transition">Đóng</button>
         <button onclick="runLiveMobileNationalSim()" class="flex-2 py-2 px-3 bg-gradient-to-r from-brand-primary via-brand-secondary to-brand-accent text-white font-extrabold text-[10px] rounded-xl shadow transition">
-          ⚡ Chạy Demo Test 4 Ngay
+          ⚡ Trải Nghiệm Hệ Thống Toàn Quốc
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= MODAL: BẢN THỬ NGHIỆM 1 — HƯỚNG DẪN TRẢI NGHIỆM TỪNG BƯỚC ================= -->
+  <div id="pilotGuideModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[9999] flex items-center justify-center p-4 hidden">
+    <div class="bg-brand-card text-brand-textPrimary rounded-3xl max-w-sm w-full max-h-[90vh] flex flex-col border border-brand-border shadow-2xl overflow-hidden">
+      
+      <!-- Header -->
+      <div class="p-4 border-b border-brand-border flex justify-between items-center bg-brand-surface">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 to-indigo-600 flex items-center justify-center text-white text-base shadow">
+            🚀
+          </div>
+          <div>
+            <h3 class="text-xs font-black text-brand-textPrimary flex items-center gap-1.5">
+              Bản Thử Nghiệm 1 (Pilot 1)
+              <span class="text-[9px] bg-amber-500/20 text-amber-300 font-bold px-1.5 py-0.5 rounded border border-amber-500/30">BETA</span>
+            </h3>
+            <p class="text-[9px] text-brand-textSecondary">Trải nghiệm 5 bước tính năng thực tế</p>
+          </div>
+        </div>
+        <button onclick="closePilotGuideModal()" class="text-brand-textSecondary hover:text-brand-textPrimary text-xl font-bold">&times;</button>
+      </div>
+
+      <!-- Body / Steps -->
+      <div class="p-3.5 overflow-y-auto space-y-2.5 custom-scroll flex-1 text-xs">
+        <div class="p-2.5 rounded-xl bg-indigo-950/40 border border-indigo-500/30 text-[10px] text-indigo-200">
+          💡 <strong>Chào mừng bạn!</strong> Đây là bản thử nghiệm thực tế dành cho khách hàng. Hãy bấm vào từng bước dưới đây để trải nghiệm trực tiếp các chức năng cốt lõi:
+        </div>
+
+        <!-- Step 1 Card -->
+        <div class="p-3 rounded-2xl bg-brand-surface border border-brand-border hover:border-brand-primary/50 transition flex flex-col gap-2">
+          <div class="flex items-start justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-brand-primary/20 text-brand-primary font-black flex items-center justify-center text-xs">1</span>
+              <div>
+                <h4 class="font-extrabold text-[11px] text-brand-textPrimary">Quét Radar & Bản Đồ Thực Tế</h4>
+                <p class="text-[9px] text-brand-textSecondary">Định vị GPS, quét việc & thợ quanh 3.5 - 12km</p>
+              </div>
+            </div>
+            <span class="text-[9px] font-bold text-emerald-400">Bước 1</span>
+          </div>
+          <button onclick="executePilotStep(1)" class="w-full py-1.5 bg-brand-primary hover:bg-brand-secondary text-white font-bold text-[10px] rounded-xl transition flex items-center justify-center gap-1">
+            <span>📍 Thử Quét Radar Bản Đồ Ngay</span>
+          </button>
+        </div>
+
+        <!-- Step 2 Card -->
+        <div class="p-3 rounded-2xl bg-brand-surface border border-brand-border hover:border-brand-primary/50 transition flex flex-col gap-2">
+          <div class="flex items-start justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 font-black flex items-center justify-center text-xs">2</span>
+              <div>
+                <h4 class="font-extrabold text-[11px] text-brand-textPrimary">Nhận Việc 1 Chạm & Ký Quỹ Escrow</h4>
+                <p class="text-[9px] text-brand-textSecondary">Không cần CV/phỏng vấn, tiền giữ 100% qua VietQR</p>
+              </div>
+            </div>
+            <span class="text-[9px] font-bold text-indigo-400">Bước 2</span>
+          </div>
+          <button onclick="executePilotStep(2)" class="w-full py-1.5 bg-brand-surface hover:bg-brand-card border border-brand-border text-brand-textPrimary font-bold text-[10px] rounded-xl transition flex items-center justify-center gap-1">
+            <span>🤝 Thử Xem Ca Việc & Ký Quỹ</span>
+          </button>
+        </div>
+
+        <!-- Step 3 Card -->
+        <div class="p-3 rounded-2xl bg-brand-surface border border-brand-border hover:border-brand-primary/50 transition flex flex-col gap-2">
+          <div class="flex items-start justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 font-black flex items-center justify-center text-xs">3</span>
+              <div>
+                <h4 class="font-extrabold text-[11px] text-brand-textPrimary">Gọi Thoại VoIP Khi Hết Tiền SIM</h4>
+                <p class="text-[9px] text-brand-textSecondary">Đàm thoại trực tiếp qua 4G/Wifi (Không tốn cước điện thoại)</p>
+              </div>
+            </div>
+            <span class="text-[9px] font-bold text-emerald-400">Bước 3</span>
+          </div>
+          <button onclick="executePilotStep(3)" class="w-full py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] rounded-xl transition flex items-center justify-center gap-1">
+            <span>📞 Thử Cuộc Gọi VoIP Live</span>
+          </button>
+        </div>
+
+        <!-- Step 4 Card -->
+        <div class="p-3 rounded-2xl bg-brand-surface border border-brand-border hover:border-brand-primary/50 transition flex flex-col gap-2">
+          <div class="flex items-start justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 font-black flex items-center justify-center text-xs">4</span>
+              <div>
+                <h4 class="font-extrabold text-[11px] text-brand-textPrimary">Chụp Ảnh e-Proof Nghiệm Thu</h4>
+                <p class="text-[9px] text-brand-textSecondary">Đóng dấu tọa độ GPS & thời gian hoàn thành tại chỗ</p>
+              </div>
+            </div>
+            <span class="text-[9px] font-bold text-cyan-400">Bước 4</span>
+          </div>
+          <button onclick="executePilotStep(4)" class="w-full py-1.5 bg-brand-surface hover:bg-brand-card border border-brand-border text-brand-textPrimary font-bold text-[10px] rounded-xl transition flex items-center justify-center gap-1">
+            <span>📸 Bật Camera Nghiệm Thu</span>
+          </button>
+        </div>
+
+        <!-- Step 5 Card -->
+        <div class="p-3 rounded-2xl bg-brand-surface border border-brand-border hover:border-brand-primary/50 transition flex flex-col gap-2">
+          <div class="flex items-start justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 font-black flex items-center justify-center text-xs">5</span>
+              <div>
+                <h4 class="font-extrabold text-[11px] text-brand-textPrimary">Ví Tiền & Rút VietQR 24/7</h4>
+                <p class="text-[9px] text-brand-textSecondary">Giải ngân ngay sau ca, chuyển khoản Napas (0đ phí)</p>
+              </div>
+            </div>
+            <span class="text-[9px] font-bold text-amber-400">Bước 5</span>
+          </div>
+          <button onclick="executePilotStep(5)" class="w-full py-1.5 bg-brand-surface hover:bg-brand-card border border-brand-border text-brand-textPrimary font-bold text-[10px] rounded-xl transition flex items-center justify-center gap-1">
+            <span>💸 Thử Rút Tiền Về Ngân Hàng</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Footer CTA -->
+      <div class="p-3 border-t border-brand-border bg-brand-surface flex gap-2">
+        <button onclick="closePilotGuideModal(); openFeedbackModal();" class="w-full py-2.5 px-3 bg-gradient-to-r from-cyan-500 to-indigo-600 hover:opacity-95 text-white font-extrabold text-xs rounded-xl shadow transition flex items-center justify-center gap-1.5">
+          <span>💬 Đóng Góp Ý Kiến Thực Tế (Nhận Quà 50k)</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= MODAL: THU THẬP Ý KIẾN THỰC TẾ KHÁCH HÀNG ================= -->
+  <div id="feedbackModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[9999] flex items-center justify-center p-4 hidden">
+    <div class="bg-brand-card text-brand-textPrimary rounded-3xl max-w-sm w-full max-h-[92vh] flex flex-col border border-brand-border shadow-2xl overflow-hidden">
+      
+      <!-- Header -->
+      <div class="p-4 border-b border-brand-border flex justify-between items-center bg-brand-surface">
+        <div>
+          <h3 class="text-xs font-black text-brand-textPrimary flex items-center gap-1.5">
+            <span>💬</span> Khảo Sát & Góp Ý Thực Tế
+          </h3>
+          <span class="text-[9px] text-emerald-400 font-semibold">Thu thập phản hồi để hoàn thiện sản phẩm</span>
+        </div>
+        <button onclick="closeFeedbackModal()" class="text-brand-textSecondary hover:text-brand-textPrimary text-xl font-bold">&times;</button>
+      </div>
+
+      <!-- Body Form -->
+      <div class="p-4 overflow-y-auto space-y-3.5 custom-scroll flex-1 text-xs">
+        
+        <!-- Role selector -->
+        <div>
+          <label class="block text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider mb-1.5">1. Bạn đang đóng vai trò nào?</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" onclick="selectFeedbackRole('POSTER')" id="fbRolePoster" class="py-2 px-3 rounded-xl border border-brand-border bg-brand-surface text-brand-textSecondary font-bold text-xs flex items-center justify-center gap-1.5 transition">
+              <span>🏢 Chủ Thuê / Shop</span>
+            </button>
+            <button type="button" onclick="selectFeedbackRole('WORKER')" id="fbRoleWorker" class="py-2 px-3 rounded-xl border border-brand-primary bg-brand-primary/20 text-brand-textPrimary font-bold text-xs flex items-center justify-center gap-1.5 transition">
+              <span>🛵 Người Làm / Thợ</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- City selector -->
+        <div>
+          <label class="block text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider mb-1.5">2. Bạn đang ở khu vực nào?</label>
+          <select id="fbCitySelect" class="w-full p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs font-bold text-brand-textPrimary focus:outline-none focus:ring-1 focus:ring-brand-primary">
+            <option value="Hà Nội">🏙️ Hà Nội</option>
+            <option value="TP. Hồ Chí Minh">🏙️ TP. Hồ Chí Minh</option>
+            <option value="Đà Nẵng">🏖️ Đà Nẵng</option>
+            <option value="Hải Phòng">⚓ Hải Phòng</option>
+            <option value="Cần Thơ">🌾 Cần Thơ</option>
+            <option value="Tỉnh thành khác">🏡 Tỉnh / Thành phố khác</option>
+          </select>
+        </div>
+
+        <!-- Star Rating -->
+        <div>
+          <label class="block text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider mb-1.5">3. Đánh giá trải nghiệm thực tế (1 - 5 Sao)</label>
+          <div class="flex items-center justify-center gap-2 p-2 bg-brand-surface rounded-2xl border border-brand-border">
+            <button type="button" onclick="setFeedbackRating(1)" class="star-fb text-2xl text-amber-400 hover:scale-110 transition">★</button>
+            <button type="button" onclick="setFeedbackRating(2)" class="star-fb text-2xl text-amber-400 hover:scale-110 transition">★</button>
+            <button type="button" onclick="setFeedbackRating(3)" class="star-fb text-2xl text-amber-400 hover:scale-110 transition">★</button>
+            <button type="button" onclick="setFeedbackRating(4)" class="star-fb text-2xl text-amber-400 hover:scale-110 transition">★</button>
+            <button type="button" onclick="setFeedbackRating(5)" class="star-fb text-2xl text-amber-400 hover:scale-110 transition">★</button>
+          </div>
+          <p id="starRatingLabel" class="text-center text-[10px] text-amber-400 font-bold mt-1">Xuất sắc (5/5 sao)</p>
+        </div>
+
+        <!-- Favorite features -->
+        <div>
+          <label class="block text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider mb-1.5">4. Tính năng bạn hài lòng nhất?</label>
+          <div class="grid grid-cols-1 gap-1.5 text-[11px]">
+            <label class="flex items-center gap-2 p-2 bg-brand-surface rounded-xl border border-brand-border cursor-pointer">
+              <input type="checkbox" name="fbFeature" value="map" checked class="rounded text-brand-primary">
+              <span>🗺️ Bản đồ quét việc tức thời quanh GPS</span>
+            </label>
+            <label class="flex items-center gap-2 p-2 bg-brand-surface rounded-xl border border-brand-border cursor-pointer">
+              <input type="checkbox" name="fbFeature" value="voip" checked class="rounded text-brand-primary">
+              <span>📞 Gọi thoại VoIP miễn phí khi hết tiền SIM</span>
+            </label>
+            <label class="flex items-center gap-2 p-2 bg-brand-surface rounded-xl border border-brand-border cursor-pointer">
+              <input type="checkbox" name="fbFeature" value="escrow" checked class="rounded text-brand-primary">
+              <span>🔒 Ký quỹ Escrow bảo đảm tiền công 100%</span>
+            </label>
+            <label class="flex items-center gap-2 p-2 bg-brand-surface rounded-xl border border-brand-border cursor-pointer">
+              <input type="checkbox" name="fbFeature" value="proof" checked class="rounded text-brand-primary">
+              <span>📸 Chụp ảnh e-Proof nghiệm thu chống gian lận</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Detailed Feedback -->
+        <div>
+          <label class="block text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider mb-1.5">5. Góp ý thực tế cần cải thiện thêm?</label>
+          <textarea id="fbDetailedNotes" rows="3" placeholder="Ví dụ: Cần thêm tính năng gì, mức giá công việc tại địa phương bạn như thế nào, khoảng cách đi lại có phù hợp không..." class="w-full p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs text-brand-textPrimary focus:outline-none focus:ring-1 focus:ring-brand-primary resize-none placeholder:text-brand-textSecondary/60"></textarea>
+        </div>
+
+        <!-- Contact info for gift -->
+        <div>
+          <label class="block text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider mb-1.5">6. Số điện thoại / Zalo (Nhận Voucher 50k)</label>
+          <input id="fbContactPhone" type="text" placeholder="Ví dụ: 0912345678" class="w-full p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs font-bold text-brand-textPrimary focus:outline-none focus:ring-1 focus:ring-brand-primary">
+          <p class="text-[9px] text-brand-textSecondary mt-1">MCE cam kết bảo mật thông tin và tặng voucher ngay khi app chính thức mở bán.</p>
+        </div>
+
+        <!-- History of submitted feedbacks -->
+        <div id="fbHistoryBox" class="p-2.5 bg-brand-surface/60 rounded-xl border border-brand-border/40 text-[10px] hidden">
+          <div class="font-bold text-emerald-400 mb-1">Các ý kiến đã đóng góp gần đây:</div>
+          <div id="fbHistoryList" class="space-y-1 text-brand-textSecondary"></div>
+        </div>
+
+      </div>
+
+      <!-- Action Button -->
+      <div class="p-3 border-t border-brand-border bg-brand-surface flex gap-2">
+        <button onclick="closeFeedbackModal()" class="flex-1 py-2.5 bg-brand-surface border border-brand-border text-brand-textSecondary font-bold text-xs rounded-xl">Đóng</button>
+        <button onclick="submitPilotFeedback()" class="flex-2 py-2.5 px-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:opacity-95 text-slate-950 font-black text-xs rounded-xl shadow transition">
+          🚀 Gửi Góp Ý Thực Tế
         </button>
       </div>
 
@@ -2112,6 +2359,151 @@
       }, 1600);
     }
 
+    // =========================================================================
+    // --- BẢN THỬ NGHIỆM 1 (PILOT 1): HƯỚNG DẪN TRẢI NGHIỆM TỪNG BƯỚC & GÓP Ý ---
+    // =========================================================================
+    let pilotCurrentRating = 5;
+    let pilotFeedbackRole = 'WORKER';
+
+    function openPilotGuideModal() {
+      document.getElementById('pilotGuideModal').classList.remove('hidden');
+    }
+
+    function closePilotGuideModal() {
+      document.getElementById('pilotGuideModal').classList.add('hidden');
+    }
+
+    function executePilotStep(step) {
+      closePilotGuideModal();
+      if (step === 1) {
+        switchMobileTab(1);
+        triggerRealtimeGPSScan();
+        showToast("📍 Bước 1: Radar đang quét tìm việc & thợ theo vị trí GPS thực tế!", "info");
+      } else if (step === 2) {
+        showJobDetails('JOB-001');
+        showToast("🤝 Bước 2: Xem chi tiết ca việc, tiền công 280.000đ được bảo lãnh Escrow 100%!", "info");
+      } else if (step === 3) {
+        makeVoIPCall();
+        showToast("📞 Bước 3: Đàm thoại VoIP trực tiếp qua 4G/Wifi (Không tốn tiền SIM)!", "info");
+      } else if (step === 4) {
+        openCameraModal();
+        showToast("📸 Bước 4: Camera nghiệm thu e-Proof, tự động đóng dấu toạ độ & mốc giờ!", "info");
+      } else if (step === 5) {
+        switchMobileTab(4);
+        setTimeout(() => openWithdrawModal(), 300);
+        showToast("💸 Bước 5: Xem số dư ví và rút tiền VietQR liên ngân hàng 24/7!", "info");
+      }
+    }
+
+    // --- LIVE CUSTOMER FEEDBACK ENGINE ---
+    function openFeedbackModal() {
+      document.getElementById('feedbackModal').classList.remove('hidden');
+      renderSubmittedFeedbacks();
+    }
+
+    function closeFeedbackModal() {
+      document.getElementById('feedbackModal').classList.add('hidden');
+    }
+
+    function selectFeedbackRole(role) {
+      pilotFeedbackRole = role;
+      const btnP = document.getElementById('fbRolePoster');
+      const btnW = document.getElementById('fbRoleWorker');
+      if (role === 'POSTER') {
+        btnP.className = "py-2 px-3 rounded-xl border border-brand-primary bg-brand-primary/20 text-brand-textPrimary font-bold text-xs flex items-center justify-center gap-1.5 transition";
+        btnW.className = "py-2 px-3 rounded-xl border border-brand-border bg-brand-surface text-brand-textSecondary font-bold text-xs flex items-center justify-center gap-1.5 transition";
+      } else {
+        btnW.className = "py-2 px-3 rounded-xl border border-brand-primary bg-brand-primary/20 text-brand-textPrimary font-bold text-xs flex items-center justify-center gap-1.5 transition";
+        btnP.className = "py-2 px-3 rounded-xl border border-brand-border bg-brand-surface text-brand-textSecondary font-bold text-xs flex items-center justify-center gap-1.5 transition";
+      }
+    }
+
+    function setFeedbackRating(stars) {
+      pilotCurrentRating = stars;
+      const starButtons = document.querySelectorAll('.star-fb');
+      starButtons.forEach((btn, idx) => {
+        if (idx < stars) {
+          btn.classList.add('text-amber-400');
+          btn.classList.remove('text-slate-600');
+        } else {
+          btn.classList.remove('text-amber-400');
+          btn.classList.add('text-slate-600');
+        }
+      });
+      const labels = [
+        "1/5 sao — Cần cải thiện nhiều",
+        "2/5 sao — Chưa hài lòng",
+        "3/5 sao — Bình thường",
+        "4/5 sao — Tốt & Tiện lợi",
+        "5/5 sao — Xuất sắc, rất thực tế!"
+      ];
+      document.getElementById('starRatingLabel').textContent = labels[stars - 1] || "5/5 sao";
+    }
+
+    function submitPilotFeedback() {
+      const city = document.getElementById('fbCitySelect').value;
+      const notes = document.getElementById('fbDetailedNotes').value.trim();
+      const phone = document.getElementById('fbContactPhone').value.trim();
+      
+      const featureCheckboxes = document.querySelectorAll('input[name="fbFeature"]:checked');
+      const features = Array.from(featureCheckboxes).map(c => c.value);
+
+      if (!notes && !phone) {
+        showToast("Vui lòng nhập thêm cảm nhận hoặc số điện thoại của bạn!", "warning");
+        return;
+      }
+
+      const feedbackItem = {
+        id: 'FB-' + Date.now().toString().slice(-4),
+        role: pilotFeedbackRole,
+        city: city,
+        rating: pilotCurrentRating,
+        features: features,
+        notes: notes || 'Trải nghiệm mượt mà, tính năng hữu ích.',
+        phone: phone || 'Ẩn danh',
+        createdAt: new Date().toLocaleDateString('vi-VN') + ' ' + new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+      };
+
+      // Lưu trữ cục bộ
+      let stored = [];
+      try {
+        const raw = localStorage.getItem('mce_pilot_feedbacks');
+        if (raw) stored = JSON.parse(raw);
+      } catch (e) {}
+      stored.unshift(feedbackItem);
+      localStorage.setItem('mce_pilot_feedbacks', JSON.stringify(stored));
+
+      // Reset form
+      document.getElementById('fbDetailedNotes').value = '';
+      closeFeedbackModal();
+      showToast("🎉 Cảm ơn bạn! Đã ghi nhận góp ý thực tế & tặng bạn Voucher MCE-PILOT-50K!", "success");
+    }
+
+    function renderSubmittedFeedbacks() {
+      const box = document.getElementById('fbHistoryBox');
+      const list = document.getElementById('fbHistoryList');
+      let stored = [];
+      try {
+        const raw = localStorage.getItem('mce_pilot_feedbacks');
+        if (raw) stored = JSON.parse(raw);
+      } catch (e) {}
+
+      if (stored.length > 0) {
+        box.classList.remove('hidden');
+        list.innerHTML = stored.slice(0, 3).map(f => `
+          <div class="p-1.5 bg-brand-card rounded-lg border border-brand-border/40 text-[9px]">
+            <div class="flex justify-between items-center text-brand-textPrimary font-bold">
+              <span>${f.role === 'POSTER' ? '🏢 Chủ thuê' : '🛵 Thợ'} · ${f.city}</span>
+              <span class="text-amber-400">★ ${f.rating}/5</span>
+            </div>
+            <p class="text-brand-textSecondary mt-0.5 truncate">"${f.notes}"</p>
+          </div>
+        `).join('');
+      } else {
+        box.classList.add('hidden');
+      }
+    }
+
     // Clock updater
     setInterval(() => {
       const now = new Date();
@@ -2127,6 +2519,9 @@
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js').catch(() => {});
       }
+      setTimeout(() => {
+        showToast("🚀 Bản Thử Nghiệm 1: Bấm 'Thử Nghiệm 1' hoặc 'Góp Ý Thực Tế' để trải nghiệm 5 bước!", "info");
+      }, 1200);
     };
   </script>
 </body>
