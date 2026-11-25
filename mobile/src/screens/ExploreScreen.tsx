@@ -32,13 +32,13 @@ export const ExploreScreen: React.FC<Props> = ({ onSelectJob }) => {
       <View style={styles.mapBanner}>
         <View style={styles.radarPill}>
           <View style={styles.radarDot} />
-          <Text style={styles.radarText}>Quét việc làm trong bán kính 6.0 km</Text>
+          <Text style={styles.radarText}>Danh sách công việc mới nhất</Text>
         </View>
         <Text style={styles.mapSub}>Việc làm đang mở từ hệ thống MCE</Text>
       </View>
 
       <View style={styles.jobList}>
-        <Text style={styles.sectionTitle}>CÁC CA VIỆC ĐƯỢC CHẤM ĐIỂM CAO NHẤT:</Text>
+        <Text style={styles.sectionTitle}>CÔNG VIỆC ĐANG MỞ:</Text>
 
         {loading && <ActivityIndicator color="#6366f1" style={{ marginVertical: 24 }} />}
         {!!loadError && <Text style={styles.metaText}>Không tải được việc làm: {loadError}</Text>}
@@ -73,14 +73,14 @@ export const ExploreScreen: React.FC<Props> = ({ onSelectJob }) => {
                   try {
                     await api.applyToJob(job.id);
                     Alert.alert('Đã gửi ứng tuyển', 'Nhà tuyển dụng có thể xem hồ sơ ứng tuyển của bạn.');
-                    onSelectJob(job);
+                    // Application is submitted; assignment is a separate employer action.
                   } catch (error) {
                     Alert.alert('Không thể ứng tuyển', error instanceof Error ? error.message : 'Đã xảy ra lỗi.');
                   }
                 }}
               >
                 <Zap size={14} color="#ffffff" />
-                <Text style={styles.actionBtnText}>Nhận Ca Này</Text>
+                <Text style={styles.actionBtnText}>Ứng tuyển</Text>
               </TouchableOpacity>
             </View>
           </View>
