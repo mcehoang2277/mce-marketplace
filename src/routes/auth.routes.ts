@@ -3,6 +3,7 @@ import { UserRole } from '@prisma/client';
 import { IdentityService } from '../modules/identity/identity.service';
 import { AppError } from '../core/errors/app-error';
 import { requireAuth } from '../core/auth.middleware';
+import { z } from 'zod';
 
 export const authRouter = Router();
 
@@ -38,6 +39,25 @@ authRouter.post('/auth/login', async (req: Request, res: Response, next: NextFun
     }
     const result = await IdentityService.login(phone, password);
     res.json({ success: true, ...result });
+  } catch (error) {
+    next(error);
+  }
+});
+
+authRouter.patch('/auth/me', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const schema = z.object({
+      fullName: z.string().trim().min(2).max(100).optional(),
+      skills: z.array(z.string().trim().min(1).max(50)).max(30).optional(),
+      desiredMinRate: z.number().int().min(0).max(10000000).nullable().optional(),
+      avatarUrl: z.string().url().max(1000).nullable().optional()
+    }).strict();
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success || Object.keys(parsed.data || {}).length === 0) {
+      throw new AppError('Thông tin cập nhật hồ sơ không hợp lệ hoặc không có thay đổi.', 400);
+    }
+    const user = await IdentityService.updateProfile(req.auth!.id, parsed.data);
+    res.json({ success: true, user });
   } catch (error) {
     next(error);
   }
