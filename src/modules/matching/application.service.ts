@@ -1,6 +1,6 @@
 import { prisma } from '../../core/database/prisma';
 import { AppError } from '../../core/errors/app-error';
-import { GeofenceUtils } from '../../core/utils/geo.utils';
+import { GeoUtils } from '../../core/utils/geo.utils';
 
 export interface ApplicationWithWorker {
   id: string;
@@ -57,7 +57,7 @@ export class ApplicationService {
     // TÍNH TOÁN MATCH SCORE THEO THUẬT TOÁN ĐA TIÊU CHÍ (MULTI-CRITERIA)
     let distanceKm = 1.5;
     if (worker.currentLat && worker.currentLng) {
-      const distanceMeters = GeofenceUtils.calculateHaversineDistance(
+      const distanceMeters = GeoUtils.calculateDistanceMeters(
         { lat: worker.currentLat, lng: worker.currentLng },
         { lat: job.lat, lng: job.lng }
       );
