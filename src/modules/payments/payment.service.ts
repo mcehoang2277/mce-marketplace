@@ -32,6 +32,16 @@ export class PaymentService {
       throw new AppError('Ngân sách công việc không hợp lệ (tối thiểu 10.000 VNĐ).', 400);
     }
 
+    await prisma.paymentTransaction.updateMany({
+      where: {
+        userId: params.userId,
+        jobId: job.id,
+        status: 'PENDING',
+        createdAt: { lt: new Date(Date.now() - 15 * 60 * 1000) }
+      },
+      data: { status: 'EXPIRED' }
+    });
+
     const recentPending = await prisma.paymentTransaction.findFirst({
       where: {
         userId: params.userId,
