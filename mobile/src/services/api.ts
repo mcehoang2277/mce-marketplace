@@ -71,7 +71,7 @@ export const api = {
   },
 
   me() {
-    return request<ApiResponse<{ user: { id: string; name: string; phone: string; role: string; karmaScore: number; isKycVerified: boolean; walletBalanceVnd: number } }>>('/auth/me');
+    return request<ApiResponse<{ user: { id: string; name: string; phone: string; role: string; karmaScore: number; isKycVerified: boolean; isPhoneVerified: boolean; skills: string[]; avatarUrl: string | null; walletBalanceVnd: number } }>>('/auth/me');
   },
 
   listJobs() {
