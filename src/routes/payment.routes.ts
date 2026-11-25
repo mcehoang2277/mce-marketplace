@@ -1,18 +1,14 @@
 import { Router, Request, Response } from 'express';
-import { VietQRService } from '../modules/payments/vietqr.service';
 import { PaymentWebhookController } from '../modules/payments/payment-webhook.controller';
-import { repository } from '../repositories/in-memory.repository';
 
 export const paymentRouter = Router();
 
-paymentRouter.post('/vietqr', (req: Request, res: Response) => {
-  const { jobId, amountVnd } = req.body;
-  const sampleJob = repository.getSampleJob();
-  const id = jobId || sampleJob.id;
-  const amount = amountVnd || 240000;
-  const paymentInfo = VietQRService.generatePayment(id, amount);
-
-  res.json({ success: true, payment: paymentInfo });
+paymentRouter.post('/vietqr', (_req: Request, res: Response) => {
+  return res.status(503).json({
+    success: false,
+    status: 'PAYMENT_CREATION_UNAVAILABLE',
+    message: 'Chưa thể tạo yêu cầu thanh toán cho đến khi thông tin tài khoản nhận tiền và đối soát được cấu hình, kiểm thử.'
+  });
 });
 
 paymentRouter.post('/webhook/payment', (req: Request, res: Response) => {
