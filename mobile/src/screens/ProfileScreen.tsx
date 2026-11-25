@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, Switch } from 'react-native';
-import { User, Phone, Mail, CreditCard, ShieldCheck, CheckCircle2, Save, RefreshCw } from 'lucide-react-native';
+import { User, Phone, Mail, CreditCard, ShieldCheck, CheckCircle2, RefreshCw } from 'lucide-react-native';
 
-export function ProfileScreen() {
-  const [name, setName] = useState('Nguyễn Văn An');
-  const [phone, setPhone] = useState('0981234567');
-  const [email, setEmail] = useState('nguyenvanan.mce@gmail.com');
-  const [idNumber, setIdNumber] = useState('001098012345');
-  const [bank, setBank] = useState('MBBank (Quân Đội)');
-  const [account, setAccount] = useState('0981234567');
+export function ProfileScreen({ onLogout }: { onLogout: () => void }) {
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [idNumber, setIdNumber] = useState('');
+  const [bank, setBank] = useState('');
+  const [account, setAccount] = useState('');
   const [role, setRole] = useState<'WORKER' | 'POSTER'>('WORKER');
 
   // Skills
@@ -25,7 +25,7 @@ export function ProfileScreen() {
       Alert.alert('Lỗi', 'Số điện thoại liên hệ là BẮT BUỘC để nhận ca làm!');
       return;
     }
-    Alert.alert('Thành công', 'Đã lưu và cập nhật thông tin cá nhân thành công!');
+    Alert.alert('Chưa khả dụng', 'API cập nhật hồ sơ chưa được triển khai. Thông tin chưa được lưu.');
   };
 
   const toggleRole = () => {
@@ -46,11 +46,11 @@ export function ProfileScreen() {
           <View style={styles.nameRow}>
             <Text style={styles.profileName}>{name}</Text>
             <View style={styles.kycBadge}>
-              <Text style={styles.kycText}>eKYC CẤP 2</Text>
+              <Text style={styles.kycText}>CHƯA XÁC MINH</Text>
             </View>
           </View>
           <Text style={styles.profileRole}>
-            {role === 'WORKER' ? 'Người Làm Việc (Worker)' : 'Người Cần Thuê (Poster)'} · 4.9⭐
+            {role === 'WORKER' ? 'Người Làm Việc (Worker)' : 'Người Cần Thuê (Poster)'} · Chưa có đánh giá
           </Text>
           <Text style={styles.profilePhoneText}>📞 +84 {phone}</Text>
         </View>
@@ -112,7 +112,7 @@ export function ProfileScreen() {
         <View style={styles.inputGroup}>
           <View style={styles.labelRow}>
             <Text style={styles.label}>Số CCCD Gắn Chip (eKYC)</Text>
-            <Text style={styles.verifiedTag}>✓ Đã khớp CSDL Dân Cư</Text>
+            <Text style={styles.verifiedTag}>Chưa xác minh</Text>
           </View>
           <TextInput
             style={[styles.input, styles.idInput]}
