@@ -66,6 +66,10 @@ export const api = {
     await SecureStore.deleteItemAsync('mce_access_token');
   },
 
+  async hasSession() {
+    return Boolean(await SecureStore.getItemAsync('mce_access_token'));
+  },
+
   listJobs() {
     return request<ApiResponse<{ jobs: Job[] }>>('/jobs');
   },
