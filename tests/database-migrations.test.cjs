@@ -19,6 +19,14 @@ test('PostgreSQL migrations expose the fields required by the current API', { sk
   assert.ok(found.has('User.passwordHash'));
   assert.ok(found.has('CheckEvent.accuracyMeters'));
 
+  const adminRole = await prisma.$queryRaw`
+    SELECT 1
+    FROM pg_enum e
+    JOIN pg_type t ON t.oid = e.enumtypid
+    WHERE t.typname = 'UserRole' AND e.enumlabel = 'ADMIN'
+  `;
+  assert.equal(adminRole.length, 1);
+
   const reviewIndexes = await prisma.$queryRaw`
     SELECT indexname
     FROM pg_indexes
