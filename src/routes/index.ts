@@ -5,6 +5,7 @@ import { paymentRouter } from './payment.routes';
 import { authRouter } from './auth.routes';
 import { ENV } from '../config/env';
 import { walletRouter } from './wallet.routes';
+import { adminRouter } from './admin.routes';
 
 export const apiRouter = Router();
 
@@ -25,3 +26,4 @@ apiRouter.use(escrowRouter);
 apiRouter.use(paymentRouter);
 apiRouter.use(authRouter);
 apiRouter.use(walletRouter);
+apiRouter.use(adminRouter);
