@@ -9,7 +9,7 @@ async function main() {
   const fullName = process.env.ADMIN_FULL_NAME?.trim();
   const password = process.env.ADMIN_PASSWORD;
 
-  if (!phone || !/^\\+?[0-9]{9,15}$/.test(phone)) {
+  if (!phone || !/^\+?[0-9]{9,15}$/.test(phone)) {
     throw new Error('ADMIN_PHONE is required and must contain 9-15 digits (optional leading +).');
   }
   if (!fullName || fullName.length < 2 || fullName.length > 100) {
