@@ -1,16 +1,40 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
+import { requireAuth, requireRole } from '../core/auth.middleware';
+import { AppError } from '../core/errors/app-error';
+import { PaymentService } from '../modules/payments/payment.service';
 import { PaymentWebhookController } from '../modules/payments/payment-webhook.controller';
 
 export const paymentRouter = Router();
 
-paymentRouter.post('/vietqr', (_req: Request, res: Response) => {
-  return res.status(503).json({
-    success: false,
-    status: 'PAYMENT_CREATION_UNAVAILABLE',
-    message: 'Chưa thể tạo yêu cầu thanh toán cho đến khi thông tin tài khoản nhận tiền và đối soát được cấu hình, kiểm thử.'
-  });
+paymentRouter.post('/vietqr', requireAuth, requireRole('POSTER'), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (typeof req.body?.jobId !== 'string' || !req.body.jobId.trim()) {
+      throw new AppError('Thiếu mã công việc cần ký quỹ.', 400);
+    }
+    const payment = await PaymentService.createPaymentRequest({
+      userId: req.auth!.id,
+      jobId: req.body.jobId.trim()
+    });
+    res.status(201).json({
+      success: true,
+      payment,
+      notice: 'QR chỉ là hướng dẫn chuyển khoản. Công việc chỉ mở sau khi ngân hàng/đơn vị đối soát xác nhận giao dịch thật.'
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
+paymentRouter.get('/vietqr/:paymentId', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const payment = await PaymentService.getPaymentStatus(req.params.paymentId, req.auth!.id);
+    res.json({ success: true, payment });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Kept closed until a named bank aggregator and its official signature contract are configured.
 paymentRouter.post('/webhook/payment', (req: Request, res: Response) => {
   return PaymentWebhookController.handleBankWebhook(req, res);
 });
