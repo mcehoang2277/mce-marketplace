@@ -1,8 +1,8 @@
 # MCE Marketplace — Implementation Status
 
-**Working branch:** `fix/mainline-security-workflow`  
-**Base:** latest `main` at the time this branch was created  
-**Production:** Not deployed. `main` is not modified by this work.
+**Working branch:** `feat/marketplace-end-to-end`  
+**Base:** `fix/mainline-security-workflow`  
+**Production:** Not deployed. `main` is not modified.
 
 ## Target architecture
 
@@ -10,59 +10,83 @@
 - Persistence: PostgreSQL through Prisma
 - Native client: Expo / React Native
 - Session storage: Expo SecureStore
+- Payment QR: VietQR transfer QR
+- Bank reconciliation: SePay webhook with HMAC-SHA256
 
-## Changes in this hardening pass
+## Implemented in this branch
 
-- Guarded login against accounts with a missing password hash.
-- Replaced the obsolete geofence helper calls with the shared Haversine distance implementation.
-- Restricted applications to OPEN jobs; draft jobs cannot receive applications.
-- Wired authenticated worker application, poster applicant-list, and poster accept/assign endpoints to the application service.
-- Required a LOCKED escrow before an application can be accepted and the worker assigned.
-- Prevented escrow locking from silently creating or crediting wallet funds. The poster must have an already credited wallet balance.
-- Disabled bank webhook processing until a provider-specific signature and transaction-reconciliation adapter is configured. No webhook payload can credit funds or lock escrow in this state.
-- Replaced simulated GPS check-in, fake photo evidence, and fake payout success in the native active-shift screen with an explicit not-yet-available state.
-- Added this branch to the CI push triggers.
+### Job posting and escrow funding
+- Poster creates a DRAFT job; the server calculates the total amount from start/end time and hourly rate.
+- Authenticated poster can create a VietQR payment request for the exact server-calculated amount.
+- Payment references use random identifiers and pending requests can be reused for a short retry window.
+- The job remains DRAFT and is not discoverable until SePay confirms the matching incoming bank transfer.
+- SePay webhook validates exact raw request bytes with HMAC-SHA256, signed timestamp (±5 minutes), receiving account, incoming direction, unique transaction ID, payment reference, exact amount, job owner and DRAFT status.
+- On a valid payment, a single serializable PostgreSQL transaction writes the payment success, wallet ledger entries, escrow lock, and job OPEN transition.
+- Replayed webhook transaction IDs are idempotently acknowledged; unmatched or mismatched transfers are logged as unprocessed for manual reconciliation.
 
-## Features intentionally unavailable
+### Applications and work lifecycle
+- Worker applications are accepted only for OPEN jobs.
+- Poster can view applicants and accept one applicant only when escrow is LOCKED.
+- Authenticated worker can check in and check out using Expo Location device coordinates.
+- Server validates coordinate ranges, reported GPS accuracy, assigned worker, job state, geofence distance and check-in/check-out order.
+- Check-out moves the job to PENDING_REVIEW.
+- Only the poster can approve completion; escrow release is performed in a serializable transaction and writes both sides of the wallet ledger.
+- Poster and worker can each submit one review per completed job. Karma score is recalculated from received reviews.
 
-- VietQR payment creation and bank webhook crediting.
-- Escrow funding/release/refund routes and real wallet withdrawals.
-- Native GPS check-in/check-out, evidence upload and payout.
-- SMS OTP, eKYC, profile editing and bank-account verification.
-- Dispute management and a complete job lifecycle.
+### Wallet and profile
+- Authenticated read-only wallet balance and ledger history endpoints.
+- Native wallet screen reads available/locked balances and transactions from PostgreSQL.
+- Profile can update display name and skills.
+- Native profile displays phone verification and KYC status without allowing the user to self-assert verification.
 
-These features must remain unavailable until real provider integrations, durable ledger invariants, authenticated APIs, and end-to-end tests exist. A QR image or client-side success state is not proof of payment.
+### Native app
+- Post-job screen creates a job draft and displays the generated VietQR instructions.
+- Payment status can be refreshed from the API.
+- Active-shift screen uses real device location permissions and calls authenticated check-in/check-out endpoints.
+- Profile screen supports edits and post-job review submission.
+- Native app does not simulate successful payments, check-ins or payouts.
 
-## Known architecture and release gaps
+## Not yet production-ready / intentionally unavailable
 
-1. The current payment creation route returns HTTP 503. This is intentional until the bank account and provider contract are configured and tested.
-2. Escrow routes remain disabled. Internal escrow service methods are not a substitute for a reviewed accounting ledger or payment reconciliation.
-3. Job creation currently creates DRAFT records. There is no public publish/funding workflow; therefore draft jobs are not discoverable.
-4. The database migration history needs a reviewed baseline for a clean database before production migration.
-5. The root dependency lockfile should be regenerated and reviewed before using `npm ci`.
-6. Backend CI currently runs Prisma generation, TypeScript compilation and the repository's test suite. A passing build is not evidence of live database, payment, mobile-device or end-to-end correctness.
+1. **SePay live activation:** code supports SePay HMAC, but a SePay account, linked receiving bank account, live HMAC secret, public HTTPS webhook URL and dashboard webhook configuration are still required. The secret must never be committed.
+2. **Photo evidence and anti-spoofing:** check-in/out currently use device-reported GPS accuracy and server geofence checks. Mock-location detection, device attestation, photo evidence upload and evidence retention are not implemented. GPS coordinates alone are not proof against spoofing.
+3. **Withdrawals:** wallet withdrawals and actual bank payouts remain disabled. Internal wallet credits are not a bank transfer.
+4. **Refund operations:** refund service has strict ownership and ledger guards, but no user-facing refund/dispute resolution workflow is exposed.
+5. **KYC/SMS OTP:** no eKYC or SMS provider has been selected/configured. Verification flags cannot be self-edited.
+6. **Bank-account management:** user bank details are not editable or verified in the app.
+7. **Disputes:** dispute workflow, admin review, split settlement and appeal process are not implemented.
+8. **Escrow router:** generic escrow routes remain disabled; funding and completion are exposed only through the guarded payment webhook and job approval flow.
 
 ## Required environment
 
-Configure secrets only in the deployment environment:
+Configure only in protected deployment settings:
 - `DATABASE_URL`
-- `JWT_SECRET` (at least 32 characters of cryptographically random material)
-- `WEBHOOK_HMAC_SECRET` only when a provider-specific webhook verifier is implemented
-- `VIETQR_ACCOUNT_NO` and `VIETQR_ACCOUNT_NAME` only when payment creation is implemented
-- `EXPO_PUBLIC_API_URL` in the Expo environment, including the `/api` path
+- `JWT_SECRET` (at least 32 random characters)
+- `VIETQR_BANK_CODE`
+- `VIETQR_ACCOUNT_NO`
+- `VIETQR_ACCOUNT_NAME`
+- `SEPAY_WEBHOOK_SECRET` (HMAC-SHA256 secret; at least 32 characters)
+- `EXPO_PUBLIC_API_URL` (include the `/api` path)
 
-Never commit real credentials.
+Never commit real credentials. Configure the SePay webhook for incoming transfers only, HMAC-SHA256, JSON body, and the exact public HTTPS endpoint. SePay documents signing as HMAC-SHA256 over `timestamp.raw_body` and provides `X-SePay-Signature` / `X-SePay-Timestamp` headers.
 
 ## Validation
 
-CI is running on the latest branch commits. See the [GitHub Actions runs](https://github.com/mcehoang2277/mce-marketplace/actions). Backend and mobile CI results must both pass on the final branch head before this work is considered validated. No production deployment has been performed.
+GitHub Actions runs backend Prisma generation, TypeScript build and unit tests, plus Expo/React Native TypeScript checks. A green CI run is static/build validation only. It does not prove:
+- PostgreSQL migrations against an empty production-like database;
+- SePay live or sandbox webhook delivery and bank reconciliation;
+- concurrency, webhook replay and malicious payload behavior under integration tests;
+- Android/iOS native builds, location permission UX or real-device behavior.
 
-## Release gates
+No production deployment has been performed.
 
-1. Add a complete baseline Prisma migration and seed strategy; verify it against an empty PostgreSQL database.
-2. Implement payment-provider-specific webhook verification using the exact raw request bytes, receiver account, amount, currency and unique bank transaction ID.
-3. Add an immutable, auditable ledger with idempotent top-up, escrow lock, release, refund and withdrawal operations.
-4. Implement server-side GPS/geofence validation, check-in/check-out state transitions, evidence upload and dispute handling.
-5. Add integration tests for authentication, role boundaries, application concurrency, escrow balance invariants and webhook replay/tampering.
-6. Verify Android and iOS builds and runtime permissions on real devices.
-7. Complete security review before any production release.
+## Required next steps
+
+1. Configure SePay test mode and verify valid signature, invalid signature, stale timestamp, duplicate event, wrong receiving account, wrong amount and unmatched reference.
+2. Add PostgreSQL integration tests for job funding, ledger balance invariants, concurrent webhook replay and escrow release.
+3. Verify migration chain and seed strategy against an empty PostgreSQL database.
+4. Select an eKYC/SMS provider and implement consent, document handling, retention and verification callbacks.
+5. Implement secure evidence upload, dispute handling and admin review.
+6. Select and integrate a bank payout provider before enabling withdrawals.
+7. Build and test Android and iOS on real devices.
+8. Complete independent security review before any production release.
