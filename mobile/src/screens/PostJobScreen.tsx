@@ -19,6 +19,7 @@ export const PostJobScreen: React.FC<Props> = ({ onJobPosted }) => {
   const [busy, setBusy] = useState(false);
   const [createdJobId, setCreatedJobId] = useState<string | null>(null);
   const [payment, setPayment] = useState<Payment | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState('PENDING');
 
   const total = (parseInt(hours, 10) || 0) * (parseInt(rate, 10) || 0);
 
@@ -27,9 +28,28 @@ export const PostJobScreen: React.FC<Props> = ({ onJobPosted }) => {
     try {
       const result = await api.createVietQrPayment(jobId);
       setPayment(result.payment);
+      setPaymentStatus('PENDING');
       Alert.alert('Đã tạo yêu cầu thanh toán', 'Chuyển đúng số tiền và nội dung hiển thị. Công việc chỉ được mở khi ngân hàng/đơn vị đối soát xác nhận giao dịch.');
     } catch (error) {
       Alert.alert('Chưa tạo được QR', error instanceof Error ? error.message : 'Kiểm tra cấu hình tài khoản nhận tiền trên máy chủ.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const refreshPaymentStatus = async () => {
+    if (!payment) return;
+    setBusy(true);
+    try {
+      const result = await api.paymentStatus(payment.paymentId);
+      setPaymentStatus(result.payment.status);
+      if (result.payment.status === 'SUCCESS') {
+        Alert.alert('Đã xác nhận thanh toán', 'Ngân hàng đã xác nhận giao dịch. Công việc đã được mở nhận ứng tuyển.');
+      } else {
+        Alert.alert('Chưa nhận được xác nhận', 'Giao dịch vẫn đang chờ ngân hàng/SePay đối soát.');
+      }
+    } catch (error) {
+      Alert.alert('Không kiểm tra được', error instanceof Error ? error.message : 'Vui lòng thử lại.');
     } finally {
       setBusy(false);
     }
@@ -124,6 +144,7 @@ export const PostJobScreen: React.FC<Props> = ({ onJobPosted }) => {
             <>
               <Image source={{ uri: payment.qrImageUrl }} style={styles.qr} resizeMode="contain" />
               <Text style={styles.paymentAmount}>{payment.amountVnd.toLocaleString('vi-VN')} VNĐ</Text>
+              <Text style={styles.paymentText}>Trạng thái: {paymentStatus === 'SUCCESS' ? 'ĐÃ XÁC NHẬN' : paymentStatus === 'FAILED' ? 'THẤT BẠI' : 'ĐANG CHỜ XÁC NHẬN'}</Text>
               <Text style={styles.paymentText}>Ngân hàng: {payment.bankCode}</Text>
               <Text style={styles.paymentText}>Tài khoản: {payment.accountNumber}</Text>
               <Text style={styles.paymentText}>Chủ tài khoản: {payment.accountName}</Text>
@@ -136,6 +157,10 @@ export const PostJobScreen: React.FC<Props> = ({ onJobPosted }) => {
           <TouchableOpacity style={styles.retryBtn} onPress={() => createQr(createdJobId)} disabled={busy}>
             {busy ? <ActivityIndicator color="#fff" /> : <RefreshCw size={15} color="#fff" />}
             <Text style={styles.submitBtnText}>{payment ? 'Tạo lại yêu cầu thanh toán' : 'Tạo mã VietQR'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.retryBtn} onPress={refreshPaymentStatus} disabled={busy}>
+            {busy ? <ActivityIndicator color="#fff" /> : <RefreshCw size={15} color="#fff" />}
+            <Text style={styles.submitBtnText}>Kiểm tra trạng thái thanh toán</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.doneBtn} onPress={onJobPosted}>
             <Text style={styles.doneText}>Quay lại danh sách việc</Text>
