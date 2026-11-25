@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { UserRole } from '@prisma/client';
+import { Prisma, UserRole } from '@prisma/client';
 import { ENV } from '../../config/env';
 import { prisma } from '../../core/database/prisma';
 import { AppError } from '../../core/errors/app-error';
@@ -96,7 +96,7 @@ export class IdentityService {
       data: {
         ...(input.fullName !== undefined ? { fullName: input.fullName } : {}),
         ...(input.skills !== undefined ? { skills: input.skills } : {}),
-        ...(input.desiredMinRate !== undefined ? { desiredMinRate: input.desiredMinRate === null ? null : new (require('@prisma/client').Prisma.Decimal)(input.desiredMinRate) } : {}),
+        ...(input.desiredMinRate !== undefined ? { desiredMinRate: input.desiredMinRate === null ? null : new Prisma.Decimal(input.desiredMinRate) } : {}),
         ...(input.avatarUrl !== undefined ? { avatarUrl: input.avatarUrl } : {})
       },
       include: { wallet: true }
