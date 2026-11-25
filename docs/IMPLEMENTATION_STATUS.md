@@ -57,7 +57,7 @@ Never commit real credentials.
 
 ## Validation status
 
-A GitHub Actions workflow was added. A previous run detected and helped fix two TypeScript errors in the legacy escrow adapter. The latest branch commit still needs a completed green CI run before build/test can be marked PASS.
+GitHub Actions CI passed on branch commit `a11e460ace926cf22926a970c14e07e4c495575d` (2026-11-25): backend Prisma generation + TypeScript build + 3 GeoUtils tests passed; Expo/React Native TypeScript check passed. This is static/build validation only; no live PostgreSQL integration, device runtime, payment, or end-to-end tests were run.
 
 ## Release gates
 
