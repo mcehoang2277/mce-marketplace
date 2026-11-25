@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { UserRole } from '@prisma/client';
 import { IdentityService } from '../modules/identity/identity.service';
 import { AppError } from '../core/errors/app-error';
+import { requireAuth } from '../core/auth.middleware';
 
 export const authRouter = Router();
 
@@ -37,6 +38,15 @@ authRouter.post('/auth/login', async (req: Request, res: Response, next: NextFun
     }
     const result = await IdentityService.login(phone, password);
     res.json({ success: true, ...result });
+  } catch (error) {
+    next(error);
+  }
+});
+
+authRouter.get('/auth/me', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = await IdentityService.getProfile(req.auth!.id);
+    res.json({ success: true, user });
   } catch (error) {
     next(error);
   }
