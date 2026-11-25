@@ -108,6 +108,18 @@ const checkLocationSchema = z.object({
   deviceInfo: z.string().max(300).optional()
 });
 
+jobRouter.get('/jobs/mine/posted', requireAuth, requireRole('POSTER'), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const jobs = await prisma.job.findMany({
+      where: { posterId: req.auth!.id }, orderBy: { createdAt: 'desc' }, take: 50,
+      include: { worker: { select: { id: true, fullName: true, phone: true, karmaScore: true } },
+        escrowTransaction: { select: { status: true, grossAmount: true, netWorkerPayout: true } },
+        _count: { select: { applications: true } } }
+    });
+    res.json({ success: true, jobs: jobs.map(job => ({ ...job, totalEstimatedVnd: job.totalEstimatedVnd.toNumber(), hourlyRate: job.hourlyRate.toNumber(),
+      escrowTransaction: job.escrowTransaction ? { status: job.escrowTransaction.status, grossAmountVnd: job.escrowTransaction.grossAmount.toNumber(), netWorkerPayoutVnd: job.escrowTransaction.netWorkerPayout.toNumber() } : null })) });
+  } catch (error) { next(error); }
+});
 jobRouter.get('/jobs/mine/completed', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const jobs = await prisma.job.findMany({
