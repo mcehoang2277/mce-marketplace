@@ -72,7 +72,7 @@ Never commit real credentials. Configure the SePay webhook for incoming transfer
 
 ## Validation
 
-GitHub Actions runs backend Prisma generation, TypeScript build and unit tests, plus Expo/React Native TypeScript checks. A green CI run is static/build validation only. It does not prove:
+GitHub Actions starts PostgreSQL 16, applies the complete migration chain to an empty database, runs Prisma generation and TypeScript build, checks migration fields, verifies SePay HMAC behavior and runs an HTTP integration test for successful escrow funding plus duplicate webhook replay. It also runs Expo/React Native TypeScript checks. A green CI run still does not prove:
 - PostgreSQL migrations against an empty production-like database;
 - SePay live or sandbox webhook delivery and bank reconciliation;
 - concurrency, webhook replay and malicious payload behavior under integration tests;
