@@ -172,7 +172,7 @@ model Job {
   escrowTransaction  EscrowTransaction?
   checkEvents        CheckEvent[]
   dispute            Dispute?
-  review             Review?
+  reviews            Review[]
   payments           PaymentTransaction[]
 
   @@index([status])
