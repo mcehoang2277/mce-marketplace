@@ -15,9 +15,13 @@ export function ProfileScreen({ onLogout }: { onLogout: () => void }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [completedJobs, setCompletedJobs] = useState<Array<{ id: string; title: string; posterId: string; workerId: string | null; poster: { id: string; fullName: string }; worker: { id: string; fullName: string } | null; reviews: Array<{ id: string; rating: number }> }>>([]);
+  const [ratings, setRatings] = useState<Record<string, number>>({});
+  const [reviewBusy, setReviewBusy] = useState<string | null>(null);
 
   const loadProfile = async () => {
-    const result = await api.me();
+    const [result, completed] = await Promise.all([api.me(), api.completedJobs()]);
+    setCompletedJobs(completed.jobs);
     const user = result.user as Profile;
     setProfile(user);
     setFullName(user.name);
@@ -26,8 +30,9 @@ export function ProfileScreen({ onLogout }: { onLogout: () => void }) {
 
   useEffect(() => {
     let active = true;
-    api.me()
-      .then((result) => {
+    Promise.all([api.me(), api.completedJobs()])
+      .then(([result, completed]) => {
+        if (active) setCompletedJobs(completed.jobs);
         if (!active) return;
         const user = result.user as Profile;
         setProfile(user);
@@ -82,6 +87,49 @@ export function ProfileScreen({ onLogout }: { onLogout: () => void }) {
           </>
         )}
       </View>
+      {profile && completedJobs.length > 0 && (
+        <View style={styles.reviewCard}>
+          <Text style={styles.reviewHeading}>ĐÁNH GIÁ SAU CÔNG VIỆC</Text>
+          {completedJobs.map((job) => {
+            const reviewee = job.posterId === profile.id ? job.worker : job.poster;
+            const alreadyReviewed = job.reviews.length > 0;
+            return (
+              <View key={job.id} style={styles.reviewItem}>
+                <Text style={styles.reviewJob}>{job.title}</Text>
+                <Text style={styles.reviewMeta}>Đánh giá: {reviewee?.fullName || 'Người tham gia'}</Text>
+                {alreadyReviewed ? (
+                  <Text style={styles.reviewDone}>Bạn đã gửi đánh giá cho công việc này.</Text>
+                ) : (
+                  <>
+                    <View style={styles.ratingRow}>
+                      {[1, 2, 3, 4, 5].map((rating) => (
+                        <TouchableOpacity key={rating} onPress={() => setRatings((old) => ({ ...old, [job.id]: rating }))}>
+                          <Text style={[styles.star, (ratings[job.id] || 5) >= rating && styles.starSelected]}>★</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                    <TouchableOpacity style={styles.reviewButton} disabled={reviewBusy === job.id} onPress={async () => {
+                      setReviewBusy(job.id);
+                      try {
+                        await api.submitReview(job.id, ratings[job.id] || 5);
+                        const refreshed = await api.completedJobs();
+                        setCompletedJobs(refreshed.jobs);
+                        Alert.alert('Đã gửi đánh giá', 'Cảm ơn bạn đã đóng góp điểm uy tín cho cộng đồng MCE.');
+                      } catch (reason) {
+                        Alert.alert('Không thể gửi đánh giá', reason instanceof Error ? reason.message : 'Vui lòng thử lại.');
+                      } finally {
+                        setReviewBusy(null);
+                      }
+                    }}>
+                      <Text style={styles.reviewButtonText}>{reviewBusy === job.id ? 'Đang gửi...' : 'Gửi đánh giá'}</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
+              </View>
+            );
+          })}
+        </View>
+      )}
       <View style={styles.notice}>
         <Text style={styles.noticeTitle}>Xác minh danh tính</Text>
         <Text style={styles.note}>MCE chưa kết nối nhà cung cấp SMS OTP/eKYC. Trạng thái xác minh chỉ được cập nhật sau khi đối tác xác thực độc lập; người dùng không thể tự đánh dấu đã xác minh.</Text>
@@ -109,6 +157,17 @@ const styles = StyleSheet.create({
   saveBtn: { backgroundColor: '#4f46e5', borderRadius: 11, alignItems: 'center', padding: 13, marginTop: 4 },
   saveText: { color: '#fff', fontWeight: '800', fontSize: 12 },
   error: { color: '#fca5a5', fontSize: 12 },
+  reviewCard: { backgroundColor: '#151f32', borderColor: '#334155', borderWidth: 1, borderRadius: 16, padding: 16, gap: 12 },
+  reviewHeading: { color: '#cbd5e1', fontSize: 11, fontWeight: '900' },
+  reviewItem: { borderTopWidth: 1, borderTopColor: '#334155', paddingTop: 10, gap: 6 },
+  reviewJob: { color: '#f8fafc', fontSize: 13, fontWeight: '800' },
+  reviewMeta: { color: '#94a3b8', fontSize: 11 },
+  reviewDone: { color: '#34d399', fontSize: 11 },
+  ratingRow: { flexDirection: 'row', gap: 12 },
+  star: { color: '#475569', fontSize: 24 },
+  starSelected: { color: '#fbbf24' },
+  reviewButton: { backgroundColor: '#059669', alignSelf: 'flex-start', borderRadius: 9, paddingHorizontal: 14, paddingVertical: 9 },
+  reviewButtonText: { color: '#fff', fontWeight: '800', fontSize: 11 },
   notice: { backgroundColor: '#1c1917', borderColor: '#78350f', borderWidth: 1, borderRadius: 16, padding: 16, gap: 8 },
   noticeTitle: { color: '#fdba74', fontSize: 14, fontWeight: '800' },
   note: { color: '#cbd5e1', fontSize: 12, lineHeight: 19 },
