@@ -1,14 +1,15 @@
 {
   "name": "mce-marketplace-core",
   "version": "1.1.0",
-  "description": "Production-Ready Modular Monolith Server for MCE On-Demand Time Marketplace",
+  "description": "TypeScript API for MCE On-Demand Time Marketplace",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "echo 'Static Web Build Complete'",
-    "build:server": "tsc",
+    "build": "npm run prisma:generate && npm run build:server",
+    "build:server": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
+    "prisma:migrate": "prisma migrate deploy",
+    "prisma:migrate:dev": "prisma migrate dev",
     "test": "jest"
   },
   "keywords": [
