@@ -1,8 +1,8 @@
-import { createHmac, timingSafeEqual } from 'crypto';
 import { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 import { ENV } from '../../config/env';
 import { prisma } from '../../core/database/prisma';
+import { verifySePaySignature } from './sepay-signature';
 
 type SePayPayload = {
   id: number;
@@ -34,16 +34,8 @@ export class PaymentWebhookController {
       return res.status(401).json({ success: false, message: 'Thiếu chữ ký hoặc raw body hợp lệ.' });
     }
 
-    const timestamp = Number(timestampHeader);
-    if (!Number.isSafeInteger(timestamp) || Math.abs(Math.floor(Date.now() / 1000) - timestamp) > 300) {
-      return res.status(401).json({ success: false, message: 'Webhook đã quá hạn hoặc timestamp không hợp lệ.' });
-    }
-
-    const expected = `sha256=${createHmac('sha256', secret).update(`${timestampHeader}.`).update(rawBody).digest('hex')}`;
-    const expectedBytes = Buffer.from(expected, 'utf8');
-    const suppliedBytes = Buffer.from(signature, 'utf8');
-    if (expectedBytes.length !== suppliedBytes.length || !timingSafeEqual(expectedBytes, suppliedBytes)) {
-      return res.status(401).json({ success: false, message: 'Chữ ký SePay không hợp lệ.' });
+    if (!verifySePaySignature(secret, timestampHeader, signature, rawBody)) {
+      return res.status(401).json({ success: false, message: 'Chữ ký SePay không hợp lệ hoặc webhook đã quá hạn.' });
     }
 
     let payload: SePayPayload;
