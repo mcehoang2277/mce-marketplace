@@ -26,6 +26,7 @@ export const ENV = {
   VIETQR_ACCOUNT_NO: process.env.VIETQR_ACCOUNT_NO || '',
   VIETQR_ACCOUNT_NAME: process.env.VIETQR_ACCOUNT_NAME || '',
   WEBHOOK_HMAC_SECRET: process.env.WEBHOOK_HMAC_SECRET || '',
+  SEPAY_WEBHOOK_SECRET: process.env.SEPAY_WEBHOOK_SECRET || '',
 
   CORS_ORIGINS: (process.env.CORS_ORIGINS || 'http://localhost:8081,http://localhost:19006')
     .split(',')
