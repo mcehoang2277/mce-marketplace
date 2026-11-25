@@ -96,6 +96,79 @@ export const api = {
     });
   },
 
+
+  async updateProfile(input: { fullName?: string; skills?: string[]; desiredMinRate?: number | null; avatarUrl?: string | null }) {
+    return request<ApiResponse<{ user: unknown }>>('/auth/me', {
+      method: 'PATCH',
+      body: JSON.stringify(input)
+    });
+  },
+
+  createVietQrPayment(jobId: string) {
+    return request<ApiResponse<{ payment: {
+      paymentId: string; referenceCode: string; amountVnd: number; transferContent: string;
+      qrImageUrl: string; bankCode: string; accountNumber: string; accountName: string; status: string;
+    }; notice: string }>>('/vietqr', {
+      method: 'POST',
+      body: JSON.stringify({ jobId })
+    });
+  },
+
+  paymentStatus(paymentId: string) {
+    return request<ApiResponse<{ payment: { id: string; jobId: string | null; referenceCode: string; amount: number; status: string; paidAt: string | null } }>>(
+      `/vietqr/${encodeURIComponent(paymentId)}`
+    );
+  },
+
+  wallet() {
+    return request<ApiResponse<{ wallet: {
+      availableBalanceVnd: number; lockedBalanceVnd: number; totalDepositedVnd: number;
+      totalWithdrawnVnd: number; updatedAt: string | null;
+    } }>>('/wallet');
+  },
+
+  walletTransactions() {
+    return request<ApiResponse<{ transactions: Array<{
+      id: string; type: string; amountVnd: number; balanceBeforeVnd: number;
+      balanceAfterVnd: number; referenceId: string | null; description: string; createdAt: string;
+    }> }>>('/wallet/transactions');
+  },
+
+  myActiveJobs() {
+    return request<ApiResponse<{ jobs: Array<Job & {
+      status: string; workerId: string | null; posterId: string;
+      checkEvents: Array<{ eventType: 'CHECK_IN' | 'CHECK_OUT'; recordedAt: string }>;
+    }> }>>('/jobs/mine/active');
+  },
+
+  checkIn(jobId: string, location: { lat: number; lng: number; accuracyMeters: number }) {
+    return request<ApiResponse<{ jobStatus: string }>>(`/jobs/${encodeURIComponent(jobId)}/check-in`, {
+      method: 'POST',
+      body: JSON.stringify(location)
+    });
+  },
+
+  checkOut(jobId: string, location: { lat: number; lng: number; accuracyMeters: number }) {
+    return request<ApiResponse<{ jobStatus: string }>>(`/jobs/${encodeURIComponent(jobId)}/check-out`, {
+      method: 'POST',
+      body: JSON.stringify(location)
+    });
+  },
+
+  approveCompletion(jobId: string) {
+    return request<ApiResponse<{ result: { status: string; netWorkerPayout: number } }>>(
+      `/jobs/${encodeURIComponent(jobId)}/approve-completion`,
+      { method: 'POST', body: JSON.stringify({}) }
+    );
+  },
+
+  submitReview(jobId: string, rating: number, comment?: string) {
+    return request<ApiResponse<{ review: unknown }>>(`/jobs/${encodeURIComponent(jobId)}/reviews`, {
+      method: 'POST',
+      body: JSON.stringify({ rating, comment })
+    });
+  },
+
   applyToJob(jobId: string) {
     return request<ApiResponse<{ application: { id: string; status: string } }>>(`/jobs/${encodeURIComponent(jobId)}/applications`, {
       method: 'POST',
