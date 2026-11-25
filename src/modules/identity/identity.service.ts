@@ -78,7 +78,7 @@ export class IdentityService {
 
   public static async login(phone: string, password: string): Promise<{ user: UserSession; token: string }> {
     const record = await prisma.user.findUnique({ where: { phone }, include: { wallet: true } });
-    if (!record || !(await bcrypt.compare(password, record.passwordHash))) {
+    if (!record || !record.passwordHash || !(await bcrypt.compare(password, record.passwordHash))) {
       throw new AppError('Số điện thoại hoặc mật khẩu không chính xác.', 401);
     }
 
