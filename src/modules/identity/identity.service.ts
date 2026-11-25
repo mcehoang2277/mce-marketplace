@@ -70,6 +70,12 @@ export class IdentityService {
     }
   }
 
+  public static async getProfile(userId: string): Promise<UserSession> {
+    const record = await prisma.user.findUnique({ where: { id: userId }, include: { wallet: true } });
+    if (!record) throw new AppError('Không tìm thấy tài khoản.', 404);
+    return toSession(record);
+  }
+
   public static async login(phone: string, password: string): Promise<{ user: UserSession; token: string }> {
     const record = await prisma.user.findUnique({ where: { phone }, include: { wallet: true } });
     if (!record || !(await bcrypt.compare(password, record.passwordHash))) {
