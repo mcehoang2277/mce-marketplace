@@ -108,10 +108,13 @@ export class ProductionEscrowService {
   /**
    * 3. Bắt đầu ca việc sau khi Check-in Geofence thành công
    */
-  public static startJob(jobId: string, workerCoords: Coordinates): EscrowAccountRecord {
+  public static startJob(jobId: string, workerCoords: Coordinates, workerId: string): EscrowAccountRecord {
     const escrow = this.getOrThrow(jobId);
     if (escrow.status !== EscrowStatus.LOCKED) {
       throw new AppError(`Không thể bắt đầu ca làm: Trạng thái hiện tại là ${escrow.status}`, 400);
+    }
+    if (!escrow.workerId || escrow.workerId !== workerId) {
+      throw new AppError('Chỉ người lao động đã được gán mới có thể check-in.', 403);
     }
 
     escrow.status = EscrowStatus.IN_PROGRESS;
@@ -123,10 +126,13 @@ export class ProductionEscrowService {
   /**
    * 4. Check-out và nộp bằng chứng công việc
    */
-  public static submitProofOfWork(jobId: string, photoProofUrl: string): EscrowAccountRecord {
+  public static submitProofOfWork(jobId: string, photoProofUrl: string, workerId: string): EscrowAccountRecord {
     const escrow = this.getOrThrow(jobId);
     if (escrow.status !== EscrowStatus.IN_PROGRESS) {
       throw new AppError(`Không thể nộp bằng chứng: Ca làm không ở trạng thái IN_PROGRESS (Hiện tại: ${escrow.status})`, 400);
+    }
+    if (!escrow.workerId || escrow.workerId !== workerId) {
+      throw new AppError('Chỉ người lao động đã được gán mới có thể nộp bằng chứng.', 403);
     }
     if (!photoProofUrl || photoProofUrl.trim().length === 0) {
       throw new AppError('Bắt buộc phải tải lên ảnh chụp bằng chứng hoàn thành ca làm.', 422);

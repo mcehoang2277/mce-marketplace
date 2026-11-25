@@ -1,114 +1,99 @@
-import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { UserRole } from '@prisma/client';
 import { ENV } from '../../config/env';
+import { prisma } from '../../core/database/prisma';
 import { AppError } from '../../core/errors/app-error';
 
 export interface UserSession {
   id: string;
   name: string;
   phone: string;
-  role: 'WORKER' | 'POSTER' | 'BOTH';
+  role: UserRole;
   karmaScore: number;
   isKycVerified: boolean;
   walletBalanceVnd: number;
 }
 
-export class IdentityService {
-  // Bộ nhớ in-memory khởi tạo cho tài khoản demo
-  private static users: Map<string, UserSession & { passwordHash: string }> = new Map([
-    [
-      '0981234567',
-      {
-        id: 'worker-001',
-        name: 'Nguyễn Văn An',
-        phone: '0981234567',
-        role: 'WORKER',
-        karmaScore: 4.9,
-        isKycVerified: true,
-        walletBalanceVnd: 220800,
-        passwordHash: crypto.createHash('sha256').update('123456').digest('hex')
-      }
-    ],
-    [
-      '0912345678',
-      {
-        id: 'poster-001',
-        name: 'Chủ Shop Tràng Thi',
-        phone: '0912345678',
-        role: 'POSTER',
-        karmaScore: 5.0,
-        isKycVerified: true,
-        walletBalanceVnd: 1500000,
-        passwordHash: crypto.createHash('sha256').update('123456').digest('hex')
-      }
-    ]
-  ]);
+type PublicUserRecord = {
+  id: string;
+  fullName: string;
+  phone: string;
+  role: UserRole;
+  karmaScore: number;
+  isKycVerified: boolean;
+  wallet: { availableBalance: { toNumber(): number } } | null;
+};
 
-  /**
-   * Đăng ký tài khoản mới & Xác thực định danh eKYC
-   */
-  public static register(data: {
+function toSession(user: PublicUserRecord): UserSession {
+  return {
+    id: user.id,
+    name: user.fullName,
+    phone: user.phone,
+    role: user.role,
+    karmaScore: user.karmaScore,
+    isKycVerified: user.isKycVerified,
+    walletBalanceVnd: user.wallet?.availableBalance.toNumber() ?? 0
+  };
+}
+
+export class IdentityService {
+  public static async register(data: {
     phone: string;
     password: string;
     fullName: string;
-    role: 'WORKER' | 'POSTER' | 'BOTH';
-    cccdNumber?: string;
-  }): { user: UserSession; token: string } {
-    if (this.users.has(data.phone)) {
-      throw new AppError('Số điện thoại này đã được đăng ký tài khoản.', 409);
+    role: UserRole;
+  }): Promise<{ user: UserSession; token: string }> {
+    const existing = await prisma.user.findUnique({ where: { phone: data.phone } });
+    if (existing) throw new AppError('Số điện thoại này đã được đăng ký tài khoản.', 409);
+
+    const passwordHash = await bcrypt.hash(data.password, 12);
+    try {
+      const created = await prisma.user.create({
+        data: {
+          phone: data.phone,
+          fullName: data.fullName,
+          role: data.role,
+          passwordHash,
+          wallet: { create: { availableBalance: 0, lockedBalance: 0 } }
+        },
+        include: { wallet: true }
+      });
+      const user = toSession(created);
+      return { user, token: this.generateToken(user) };
+    } catch (error) {
+      // Handle concurrent registration attempts without leaking database details.
+      if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002') {
+        throw new AppError('Số điện thoại này đã được đăng ký tài khoản.', 409);
+      }
+      throw error;
     }
-
-    const userId = `user-${Date.now()}`;
-    const passwordHash = crypto.createHash('sha256').update(data.password).digest('hex');
-
-    const newUser: UserSession & { passwordHash: string } = {
-      id: userId,
-      name: data.fullName,
-      phone: data.phone,
-      role: data.role,
-      karmaScore: 5.0,
-      isKycVerified: !!data.cccdNumber,
-      walletBalanceVnd: 0,
-      passwordHash
-    };
-
-    this.users.set(data.phone, newUser);
-
-    const token = this.generateToken(newUser);
-    return { user: this.sanitizeUser(newUser), token };
   }
 
-  /**
-   * Đăng nhập bằng số điện thoại và mật khẩu
-   */
-  public static login(phone: string, password: string): { user: UserSession; token: string } {
-    const user = this.users.get(phone);
-    if (!user) {
+  public static async getProfile(userId: string): Promise<UserSession> {
+    const record = await prisma.user.findUnique({ where: { id: userId }, include: { wallet: true } });
+    if (!record) throw new AppError('Không tìm thấy tài khoản.', 404);
+    return toSession(record);
+  }
+
+  public static async login(phone: string, password: string): Promise<{ user: UserSession; token: string }> {
+    const record = await prisma.user.findUnique({ where: { phone }, include: { wallet: true } });
+    if (!record || !(await bcrypt.compare(password, record.passwordHash))) {
       throw new AppError('Số điện thoại hoặc mật khẩu không chính xác.', 401);
     }
 
-    const inputHash = crypto.createHash('sha256').update(password).digest('hex');
-    if (user.passwordHash !== inputHash) {
-      throw new AppError('Số điện thoại hoặc mật khẩu không chính xác.', 401);
-    }
-
-    const token = this.generateToken(user);
-    return { user: this.sanitizeUser(user), token };
+    const user = toSession(record);
+    return { user, token: this.generateToken(user) };
   }
 
-  /**
-   * Sinh JWT Token phiên làm việc
-   */
   public static generateToken(user: UserSession): string {
+    if (!ENV.JWT_SECRET || ENV.JWT_SECRET.length < 32) {
+      throw new AppError('JWT_SECRET chưa được cấu hình hoặc có độ dài không an toàn (tối thiểu 32 ký tự).', 503);
+    }
     return jwt.sign(
-      { id: user.id, phone: user.phone, role: user.role },
+      { phone: user.phone, role: user.role },
       ENV.JWT_SECRET,
-      { expiresIn: '7d' }
+      { subject: user.id, expiresIn: ENV.JWT_EXPIRES_IN as jwt.SignOptions['expiresIn'] }
     );
-  }
-
-  private static sanitizeUser(user: UserSession & { passwordHash: string }): UserSession {
-    const { passwordHash, ...safeUser } = user;
-    return safeUser;
   }
 }

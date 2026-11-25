@@ -32,6 +32,7 @@ export class EscrowService {
     jobId: string,
     workerCoords: Coordinates,
     jobCoords: Coordinates,
+    workerId: string,
     maxDistanceMeters: number = 150
   ): { success: boolean; distanceMeters: number; message: string } {
     const distanceMeters = GeoUtils.calculateDistanceMeters(workerCoords, jobCoords);
@@ -43,7 +44,7 @@ export class EscrowService {
       };
     }
 
-    ProductionEscrowService.startJob(jobId, workerCoords);
+    ProductionEscrowService.startJob(jobId, workerCoords, workerId);
     return {
       success: true,
       distanceMeters,
@@ -51,8 +52,8 @@ export class EscrowService {
     };
   }
 
-  public static checkOut(jobId: string, photoProofUrl: string): EscrowRecord {
-    const rec = ProductionEscrowService.submitProofOfWork(jobId, photoProofUrl);
+  public static checkOut(jobId: string, photoProofUrl: string, workerId: string): EscrowRecord {
+    const rec = ProductionEscrowService.submitProofOfWork(jobId, photoProofUrl, workerId);
     return this.mapToLegacy(rec);
   }
 

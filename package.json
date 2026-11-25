@@ -1,15 +1,17 @@
 {
   "name": "mce-marketplace-core",
   "version": "1.1.0",
-  "description": "Production-Ready Modular Monolith Server for MCE On-Demand Time Marketplace",
+  "description": "TypeScript API for MCE On-Demand Time Marketplace",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "echo 'Static Web Build Complete'",
-    "build:server": "tsc",
+    "build": "npm run prisma:generate && npm run build:server",
+    "build:server": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "test": "jest"
+    "db:push": "prisma db push",
+    "prisma:migrate:dev": "prisma migrate dev",
+    "typecheck": "npm run prisma:generate && npm run build:server",
+    "test": "npm run build && node --test tests/*.test.cjs"
   },
   "keywords": [
     "matching-engine",
