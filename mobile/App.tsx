@@ -1,16 +1,31 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, StatusBar } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, StatusBar, ActivityIndicator } from 'react-native';
 import { MapPin, Briefcase, PlusCircle, Wallet, User } from 'lucide-react-native';
 import { ExploreScreen } from './src/screens/ExploreScreen';
 import { ActiveShiftScreen } from './src/screens/ActiveShiftScreen';
 import { PostJobScreen } from './src/screens/PostJobScreen';
 import { WalletScreen } from './src/screens/WalletScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
+import { AuthScreen } from './src/screens/AuthScreen';
+import { api } from './src/services/api';
 
 export type TabType = 'EXPLORE' | 'ACTIVE_SHIFT' | 'POST_JOB' | 'WALLET' | 'PROFILE';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('EXPLORE');
+  const [sessionReady, setSessionReady] = useState(false);
+  const [authenticated, setAuthenticated] = useState(false);
+
+  useEffect(() => {
+    api.hasSession().then(setAuthenticated).finally(() => setSessionReady(true));
+  }, []);
+
+  if (!sessionReady) {
+    return <SafeAreaView style={styles.container}><ActivityIndicator color="#818cf8" /></SafeAreaView>;
+  }
+  if (!authenticated) {
+    return <AuthScreen onAuthenticated={() => setAuthenticated(true)} />;
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -38,7 +53,7 @@ export default function App() {
         {activeTab === 'ACTIVE_SHIFT' && <ActiveShiftScreen onCompleteShift={() => setActiveTab('WALLET')} />}
         {activeTab === 'POST_JOB' && <PostJobScreen onJobPosted={() => setActiveTab('EXPLORE')} />}
         {activeTab === 'WALLET' && <WalletScreen />}
-        {activeTab === 'PROFILE' && <ProfileScreen />}
+        {activeTab === 'PROFILE' && <ProfileScreen onLogout={async () => { await api.logout(); setAuthenticated(false); setActiveTab('EXPLORE'); }} />}
       </View>
 
       {/* Bottom Navigation (5 Tabs) */}
