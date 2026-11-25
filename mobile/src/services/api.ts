@@ -134,6 +134,15 @@ export const api = {
     }> }>>('/wallet/transactions');
   },
 
+  completedJobs() {
+    return request<ApiResponse<{ jobs: Array<Job & {
+      status: string; posterId: string; workerId: string | null;
+      poster: { id: string; fullName: string };
+      worker: { id: string; fullName: string } | null;
+      reviews: Array<{ id: string; rating: number }>;
+    }> }>>('/jobs/mine/completed');
+  },
+
   myActiveJobs() {
     return request<ApiResponse<{ jobs: Array<Job & {
       status: string; workerId: string | null; posterId: string;
