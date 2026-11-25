@@ -47,13 +47,13 @@ escrowRouter.post('/escrow/check-in', requireRole('WORKER'), (req: Request, res:
   // Xác thực an ninh toạ độ Geofence 150m chống Fake GPS
   const verification = GeofenceService.validateCheckIn(
     {
-      lat: parseFloat(lat || '21.0286'),
-      lng: parseFloat(lng || '105.8545'),
-      accuracyMeters: parseFloat(accuracyMeters || '15'),
+      lat,
+      lng,
+      accuracyMeters,
       timestamp: Date.now()
     },
     sampleJob.location,
-    lastPing
+    undefined
   );
 
   const record = ProductionEscrowService.startJob(jobId || sampleJob.id, { lat, lng }, req.auth!.id);
