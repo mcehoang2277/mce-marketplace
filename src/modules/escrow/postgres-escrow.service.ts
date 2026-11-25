@@ -247,71 +247,65 @@ export class PostgresEscrowService {
    */
   public static async refundEscrowTx(
     jobId: string,
+    posterId: string,
     reason: string
   ): Promise<EscrowTxResult> {
-    return await prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx) => {
       const job = await tx.job.findUnique({
         where: { id: jobId },
         include: { escrowTransaction: true }
       });
-
-      if (!job) throw new AppError(`Không tìm thấy ca việc ${jobId}`, 404);
+      if (!job) throw new AppError('Không tìm thấy công việc.', 404);
+      if (job.posterId !== posterId) throw new AppError('Chỉ người đăng việc mới có quyền yêu cầu hoàn ký quỹ.', 403);
+      if (job.workerId || job.status !== 'OPEN') {
+        throw new AppError('Công việc đã có người nhận hoặc đã bắt đầu; cần quy trình xử lý tranh chấp.', 409);
+      }
       const escrow = job.escrowTransaction;
-      if (!escrow || escrow.status !== 'LOCKED') {
-        throw new AppError(`Không thể hoàn tiền: Trạng thái ký quỹ là ${escrow?.status}`, 400);
+      if (!escrow || escrow.status !== 'LOCKED') throw new AppError('Không có khoản ký quỹ đang bị khóa.', 409);
+
+      const wallet = await tx.wallet.findUnique({ where: { userId: job.posterId } });
+      if (!wallet || wallet.lockedBalance.lessThan(escrow.grossAmount)) {
+        throw new AppError('Sổ cái không khớp khoản ký quỹ; đã dừng hoàn tiền để bảo toàn số dư.', 409);
       }
+      const changed = await tx.escrowTransaction.updateMany({
+        where: { jobId, status: 'LOCKED' },
+        data: { status: 'REFUNDED', refundedAt: new Date() }
+      });
+      if (changed.count !== 1) throw new AppError('Khoản ký quỹ đã được xử lý ở yêu cầu khác.', 409);
 
-      const posterWallet = await tx.wallet.findUnique({ where: { userId: job.posterId } });
-      if (posterWallet) {
-        const balBefore = posterWallet.availableBalance;
-        const balAfter = balBefore.plus(escrow.grossAmount);
-        const lockedAfter = Prisma.Decimal.max(new Prisma.Decimal(0), posterWallet.lockedBalance.minus(escrow.grossAmount));
-
-        await tx.wallet.update({
-          where: { id: posterWallet.id },
-          data: {
-            availableBalance: balAfter,
-            lockedBalance: lockedAfter
-          }
-        });
-
-        await tx.walletTransaction.create({
-          data: {
-            walletId: posterWallet.id,
-            type: 'ESCROW_REFUND',
-            amount: escrow.grossAmount,
-            balanceBefore: balBefore,
-            balanceAfter: balAfter,
-            referenceId: jobId,
-            description: `Hoàn tiền cọc ca việc hủy: ${reason}`
-          }
-        });
-      }
-
-      const updatedEscrow = await tx.escrowTransaction.update({
-        where: { jobId },
+      const before = wallet.availableBalance;
+      const after = before.plus(escrow.grossAmount);
+      await tx.wallet.update({
+        where: { id: wallet.id },
         data: {
-          status: 'REFUNDED',
-          refundedAt: new Date()
+          availableBalance: { increment: escrow.grossAmount },
+          lockedBalance: { decrement: escrow.grossAmount }
         }
       });
-
-      await tx.job.update({
-        where: { id: jobId },
-        data: { status: 'CANCELLED' }
+      await tx.walletTransaction.create({
+        data: {
+          walletId: wallet.id,
+          type: 'ESCROW_REFUND',
+          amount: escrow.grossAmount,
+          balanceBefore: before,
+          balanceAfter: after,
+          referenceId: jobId,
+          description: `Hoàn ký quỹ công việc: ${reason.slice(0, 500)}`
+        }
       });
+      await tx.job.update({ where: { id: jobId }, data: { status: 'CANCELLED' } });
 
       return {
         jobId,
         posterId: job.posterId,
-        workerId: job.workerId,
+        workerId: null,
         grossAmount: escrow.grossAmount.toNumber(),
         platformFeeVnd: 0,
         netWorkerPayout: 0,
-        status: updatedEscrow.status,
-        refundedAt: updatedEscrow.refundedAt
+        status: 'REFUNDED',
+        refundedAt: new Date()
       };
-    });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   }
 
   /**
