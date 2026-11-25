@@ -6,6 +6,7 @@ import { requireAuth, requireRole } from '../core/auth.middleware';
 import { AppError } from '../core/errors/app-error';
 import { repository } from '../repositories/in-memory.repository';
 import { MatchingService } from '../modules/matching/matching.service';
+import { ApplicationService } from '../modules/matching/application.service';
 
 export const jobRouter = Router();
 
@@ -68,18 +69,30 @@ jobRouter.post('/jobs', requireAuth, requireRole('POSTER'), async (req: Request,
 
 jobRouter.post('/jobs/:jobId/applications', requireAuth, requireRole('WORKER'), async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const job = await prisma.job.findUnique({ where: { id: req.params.jobId } });
-    if (!job || job.status !== JobStatus.OPEN) throw new AppError('Công việc không tồn tại hoặc đã đóng.', 404);
-    if (job.posterId === req.auth!.id) throw new AppError('Bạn không thể ứng tuyển công việc của chính mình.', 403);
-
-    const application = await prisma.application.create({
-      data: { jobId: job.id, workerId: req.auth!.id, matchScore: 0 }
-    });
+    const schema = z.object({ notes: z.string().trim().max(1000).optional() });
+    const parsed = schema.safeParse(req.body ?? {});
+    if (!parsed.success) throw new AppError('Nội dung ứng tuyển không hợp lệ.', 400);
+    const application = await ApplicationService.applyForJob(req.params.jobId, req.auth!.id, parsed.data.notes);
     res.status(201).json({ success: true, application });
   } catch (error) {
-    if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002') {
-      return next(new AppError('Bạn đã ứng tuyển công việc này.', 409));
-    }
+    next(error);
+  }
+});
+
+jobRouter.get('/jobs/:jobId/applications', requireAuth, requireRole('POSTER'), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const applications = await ApplicationService.getJobApplicants(req.params.jobId, req.auth!.id);
+    res.json({ success: true, applications });
+  } catch (error) {
+    next(error);
+  }
+});
+
+jobRouter.post('/jobs/:jobId/applications/:applicationId/accept', requireAuth, requireRole('POSTER'), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await ApplicationService.acceptApplicant(req.params.jobId, req.auth!.id, req.params.applicationId);
+    res.json({ success: true, result });
+  } catch (error) {
     next(error);
   }
 });
