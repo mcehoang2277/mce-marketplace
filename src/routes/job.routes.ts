@@ -57,10 +57,10 @@ jobRouter.post('/jobs', requireAuth, requireRole('POSTER'), async (req: Request,
         endTime,
         totalEstimatedVnd,
         posterId: req.auth!.id,
-        status: JobStatus.OPEN
+        status: JobStatus.DRAFT
       }
     });
-    res.status(201).json({ success: true, job });
+    res.status(201).json({ success: true, job, nextStep: 'ESCROW_FUNDING_REQUIRED' });
   } catch (error) {
     next(error);
   }
