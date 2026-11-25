@@ -13,6 +13,9 @@ export interface UserSession {
   karmaScore: number;
   isKycVerified: boolean;
   walletBalanceVnd: number;
+  skills: string[];
+  avatarUrl: string | null;
+  isPhoneVerified: boolean;
 }
 
 type PublicUserRecord = {
@@ -22,6 +25,9 @@ type PublicUserRecord = {
   role: UserRole;
   karmaScore: number;
   isKycVerified: boolean;
+  isPhoneVerified: boolean;
+  skills: string[];
+  avatarUrl: string | null;
   wallet: { availableBalance: { toNumber(): number } } | null;
 };
 
@@ -33,6 +39,9 @@ function toSession(user: PublicUserRecord): UserSession {
     role: user.role,
     karmaScore: user.karmaScore,
     isKycVerified: user.isKycVerified,
+    isPhoneVerified: user.isPhoneVerified,
+    skills: user.skills,
+    avatarUrl: user.avatarUrl,
     walletBalanceVnd: user.wallet?.availableBalance.toNumber() ?? 0
   };
 }
@@ -74,6 +83,25 @@ export class IdentityService {
     const record = await prisma.user.findUnique({ where: { id: userId }, include: { wallet: true } });
     if (!record) throw new AppError('Không tìm thấy tài khoản.', 404);
     return toSession(record);
+  }
+
+  public static async updateProfile(userId: string, input: {
+    fullName?: string;
+    skills?: string[];
+    desiredMinRate?: number | null;
+    avatarUrl?: string | null;
+  }): Promise<UserSession> {
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(input.fullName !== undefined ? { fullName: input.fullName } : {}),
+        ...(input.skills !== undefined ? { skills: input.skills } : {}),
+        ...(input.desiredMinRate !== undefined ? { desiredMinRate: input.desiredMinRate === null ? null : new (require('@prisma/client').Prisma.Decimal)(input.desiredMinRate) } : {}),
+        ...(input.avatarUrl !== undefined ? { avatarUrl: input.avatarUrl } : {})
+      },
+      include: { wallet: true }
+    });
+    return toSession(updated);
   }
 
   public static async login(phone: string, password: string): Promise<{ user: UserSession; token: string }> {
