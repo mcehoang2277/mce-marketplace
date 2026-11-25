@@ -36,6 +36,8 @@ export function createApp() {
   app.get('/', (_req, res) => res.sendFile(path.join(projectRoot, 'index.html')));
   app.get('/admin', (_req, res) => res.sendFile(path.join(projectRoot, 'public', 'admin.html')));
   app.get('/admin/', (_req, res) => res.sendFile(path.join(projectRoot, 'public', 'admin.html')));
+  app.get('/marketplace', (_req, res) => res.sendFile(path.join(projectRoot, 'public', 'marketplace.html')));
+  app.get('/marketplace/', (_req, res) => res.sendFile(path.join(projectRoot, 'public', 'marketplace.html')));
 
   // The native Expo application is a separate client; APIs remain under the configured prefix.
   app.use(ENV.API_PREFIX, apiRouter);
