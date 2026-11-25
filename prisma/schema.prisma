@@ -267,6 +267,7 @@ model CheckEvent {
   lat                Float
   lng                Float
   distanceMeters     Float          // Calculated distance from job coordinate
+  accuracyMeters     Float?         // Device-reported GPS accuracy, validated server-side
   photoProofUrl      String?
   deviceInfo         String?
   notes              String?
@@ -296,7 +297,7 @@ model Dispute {
 
 model Review {
   id           String   @id @default(uuid())
-  jobId        String   @unique
+  jobId        String
   reviewerId   String
   revieweeId   String
   rating       Int      // 1 to 5
@@ -309,4 +310,5 @@ model Review {
 
   @@index([reviewerId])
   @@index([revieweeId])
+  @@unique([jobId, reviewerId])
 }
