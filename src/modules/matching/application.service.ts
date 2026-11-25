@@ -1,6 +1,7 @@
 import { prisma } from '../../core/database/prisma';
 import { AppError } from '../../core/errors/app-error';
 import { GeoUtils } from '../../core/utils/geo.utils';
+import { Prisma } from '@prisma/client';
 
 export interface ApplicationWithWorker {
   id: string;
@@ -186,35 +187,26 @@ export class ApplicationService {
         throw new AppError('Đơn ứng tuyển không hợp lệ hoặc không thuộc về ca việc này!', 404);
       }
 
-      // Cập nhật đơn được chọn
+      // Atomic compare-and-set prevents two posters/devices from assigning different workers.
+      const assignment = await tx.job.updateMany({
+        where: { id: jobId, posterId, status: 'OPEN' },
+        data: { workerId: targetApp.workerId, status: 'ASSIGNED' }
+      });
+      if (assignment.count !== 1) {
+        throw new AppError('Ca việc vừa được giao cho ứng viên khác. Hãy tải lại danh sách.', 409);
+      }
+
       await tx.application.update({
         where: { id: applicationId },
-        data: {
-          status: 'ACCEPTED',
-          reviewedAt: new Date()
-        }
+        data: { status: 'ACCEPTED', reviewedAt: new Date() }
       });
 
-      // Từ chối các ứng viên khác để giải phóng lịch làm
       await tx.application.updateMany({
-        where: {
-          jobId,
-          id: { not: applicationId }
-        },
-        data: {
-          status: 'REJECTED',
-          reviewedAt: new Date()
-        }
+        where: { jobId, id: { not: applicationId }, status: 'APPLIED' },
+        data: { status: 'REJECTED', reviewedAt: new Date() }
       });
 
-      // Giao việc cho Worker
-      const updatedJob = await tx.job.update({
-        where: { id: jobId },
-        data: {
-          workerId: targetApp.workerId,
-          status: 'ASSIGNED'
-        }
-      });
+      const updatedJob = await tx.job.findUniqueOrThrow({ where: { id: jobId } });
 
       return {
         success: true,
@@ -229,6 +221,6 @@ export class ApplicationService {
         },
         message: `Đã giao việc thành công cho ${targetApp.worker.fullName}! Hệ thống đã mở chế độ Check-in GPS cho Worker.`
       };
-    });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   }
 }
