@@ -2164,5 +2164,23 @@
       }
     };
   </script>
+
+  <!-- Unified customer / worker workspace: embedded in the main website -->
+  <style>
+    #mcePortalLauncher{position:fixed;right:22px;bottom:22px;z-index:8000;background:linear-gradient(120deg,#6366f1,#8b5cf6);color:#fff;border:1px solid #a5b4fc;padding:14px 18px;border-radius:16px;font-weight:800;box-shadow:0 12px 35px #0008;cursor:pointer}
+    #mcePortalShell{position:fixed;inset:0;z-index:9000;background:#080d1a;display:none;flex-direction:column}
+    #mcePortalShell.open{display:flex}#mcePortalBar{height:54px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:8px 18px;background:#111827;border-bottom:1px solid #273449;color:#f8fafc;font:600 13px Inter,system-ui}
+    #mcePortalFrame{width:100%;height:calc(100% - 54px);border:0;background:#080d18}
+  </style>
+  <button id="mcePortalLauncher" type="button" onclick="openMcePortal()">👥 Khu vực khách hàng & người làm</button>
+  <section id="mcePortalShell" aria-label="Khu vực khách hàng và người làm">
+    <div id="mcePortalBar"><span>MCE Marketplace · Khu vực khách hàng & người làm</span><button type="button" onclick="closeMcePortal()" style="background:#263449;color:white;border:0;border-radius:9px;padding:8px 13px;cursor:pointer">Đóng ×</button></div>
+    <iframe id="mcePortalFrame" title="Khách hàng và người làm" src="/marketplace"></iframe>
+  </section>
+  <script>
+    function openMcePortal(){document.getElementById('mcePortalShell').classList.add('open');document.body.style.overflow='hidden'}
+    function closeMcePortal(){document.getElementById('mcePortalShell').classList.remove('open');document.body.style.overflow=''}
+  </script>
+
 </body>
 </html>
