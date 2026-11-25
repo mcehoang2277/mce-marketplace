@@ -39,6 +39,13 @@
 - Profile can update display name and skills.
 - Native profile displays phone verification and KYC status without allowing the user to self-assert verification.
 
+### Administrator access
+- Added a dedicated ADMIN database role; public registration cannot assign it.
+- Added an environment-driven Prisma seed that hashes the administrator password with bcrypt and creates a zero-balance wallet.
+- Admin authorization checks the current PostgreSQL role on every request, so role demotion takes effect even for previously issued JWTs.
+- Added protected read-only endpoints for dashboard counts and a paginated user directory.
+- Setup instructions: docs/ADMIN_SETUP.md. User suspension, dispute resolution and payout controls are not implemented.
+
 ### Native app
 - Post-job screen creates a job draft and displays the generated VietQR instructions.
 - Payment status can be refreshed from the API.
@@ -67,6 +74,7 @@ Configure only in protected deployment settings:
 - `VIETQR_ACCOUNT_NAME`
 - `SEPAY_WEBHOOK_SECRET` (HMAC-SHA256 secret; at least 32 characters)
 - `EXPO_PUBLIC_API_URL` (include the `/api` path)
+- `ADMIN_PHONE`, `ADMIN_FULL_NAME`, `ADMIN_PASSWORD` (local/admin seed only; never commit these values)
 
 Never commit real credentials. Configure the SePay webhook for incoming transfers only, HMAC-SHA256, JSON body, and the exact public HTTPS endpoint. SePay documents signing as HMAC-SHA256 over `timestamp.raw_body` and provides `X-SePay-Signature` / `X-SePay-Timestamp` headers.
 
@@ -84,7 +92,7 @@ No production deployment has been performed.
 
 1. Configure SePay test mode and verify valid signature, invalid signature, stale timestamp, duplicate event, wrong receiving account, wrong amount and unmatched reference.
 2. Add PostgreSQL integration tests for job funding, ledger balance invariants, concurrent webhook replay and escrow release.
-3. Verify migration chain and seed strategy against an empty PostgreSQL database.
+3. Verify migration chain and admin seed strategy against an empty PostgreSQL database.
 4. Select an eKYC/SMS provider and implement consent, document handling, retention and verification callbacks.
 5. Implement secure evidence upload, dispute handling and admin review.
 6. Select and integrate a bank payout provider before enabling withdrawals.
