@@ -88,26 +88,14 @@ export class PostgresEscrowService {
         throw new AppError('Chỉ người tạo ca việc mới có quyền ký quỹ', 403);
       }
 
-      let wallet = await tx.wallet.findUnique({ where: { userId: posterId } });
+      const existingEscrow = await tx.escrowTransaction.findUnique({ where: { jobId } });
+      if (existingEscrow && existingEscrow.status === 'LOCKED') {
+        throw new AppError('Ca việc đã được ký quỹ trước đó.', 409);
+      }
+
+      const wallet = await tx.wallet.findUnique({ where: { userId: posterId } });
       if (!wallet || wallet.availableBalance.toNumber() < amount) {
-        // Tự động cấp hạn mức nạp tức thì nếu là thanh toán chuyển khoản trực tiếp qua VietQR
-        if (!wallet) {
-          wallet = await tx.wallet.create({
-            data: {
-              userId: posterId,
-              availableBalance: new Prisma.Decimal(amount),
-              lockedBalance: new Prisma.Decimal(0)
-            }
-          });
-        } else {
-          wallet = await tx.wallet.update({
-            where: { id: wallet.id },
-            data: {
-              availableBalance: wallet.availableBalance.plus(new Prisma.Decimal(amount)),
-              totalDeposited: wallet.totalDeposited.plus(new Prisma.Decimal(amount))
-            }
-          });
-        }
+        throw new AppError('Số dư ví không đủ. Chỉ khoản tiền đã được xác nhận và ghi có mới được dùng để ký quỹ.', 400);
       }
 
       const balBefore = wallet.availableBalance;
