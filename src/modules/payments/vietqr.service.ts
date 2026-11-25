@@ -35,7 +35,7 @@ export class VietQRService {
 
     return {
       bankCode,
-      bankName: 'Ngân hàng Quân Đội (MB Bank)',
+      bankName: bankCode,
       accountNumber: accountNo,
       accountName,
       amountVnd,
