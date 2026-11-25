@@ -1,8 +1,8 @@
 # MCE Marketplace — Implementation Status
 
-**Working branch:** `feat/typescript-native-foundation`  
-**Base:** `main` at `2f5131516b7420ecabbd5156d9bbf048a98f4194`  
-**Deployment:** Not deployed. Production services and payment routes remain disabled.
+**Working branch:** `fix/mainline-security-workflow`  
+**Base:** latest `main` at the time this branch was created  
+**Production:** Not deployed. `main` is not modified by this work.
 
 ## Target architecture
 
@@ -10,61 +10,59 @@
 - Persistence: PostgreSQL through Prisma
 - Native client: Expo / React Native
 - Session storage: Expo SecureStore
-- Python backend: legacy/reference only; not the primary API
 
-## Implemented on this branch
+## Changes in this hardening pass
 
-- Replaced the no-op build script with Prisma Client generation and TypeScript compilation.
-- Removed embedded fallback database credentials, JWT secrets, and webhook secrets.
-- Added allow-listed CORS origins and request body limits.
-- Added JWT verification and role middleware.
-- Replaced in-memory demo authentication with PostgreSQL-backed user registration/login and bcrypt password hashes.
-- Added authenticated current-user profile endpoint.
-- Added public discovery of OPEN jobs from PostgreSQL.
-- Added Poster-only job draft creation and Worker-only applications.
-- Added a database unique constraint to prevent duplicate applications.
-- Added a native login/register screen and SecureStore-backed token persistence.
-- Connected native job discovery and application actions to the API.
-- Added native job draft creation using foreground device location.
-- Removed simulated wallet balances, fake withdrawals, fake GPS check-in, fake payouts, and fake KYC claims from native screens.
-- Added backend GeoUtils tests and a GitHub Actions workflow for backend build/tests and mobile type-checking.
+- Guarded login against accounts with a missing password hash.
+- Replaced the obsolete geofence helper calls with the shared Haversine distance implementation.
+- Restricted applications to OPEN jobs; draft jobs cannot receive applications.
+- Wired authenticated worker application, poster applicant-list, and poster accept/assign endpoints to the application service.
+- Required a LOCKED escrow before an application can be accepted and the worker assigned.
+- Prevented escrow locking from silently creating or crediting wallet funds. The poster must have an already credited wallet balance.
+- Disabled bank webhook processing until a provider-specific signature and transaction-reconciliation adapter is configured. No webhook payload can credit funds or lock escrow in this state.
+- Replaced simulated GPS check-in, fake photo evidence, and fake payout success in the native active-shift screen with an explicit not-yet-available state.
+- Added this branch to the CI push triggers.
 
-## Explicitly disabled / not production-ready
+## Features intentionally unavailable
 
-- VietQR payment creation and bank webhook processing.
-- Escrow lock, release, dispute, and payout endpoints.
-- Wallet balances and withdrawals.
-- SMS OTP, eKYC, profile editing, bank-account verification.
-- Assignment approval and durable job lifecycle/check-in/check-out.
-- Production job matching from live worker availability.
+- VietQR payment creation and bank webhook crediting.
+- Escrow funding/release/refund routes and real wallet withdrawals.
+- Native GPS check-in/check-out, evidence upload and payout.
+- SMS OTP, eKYC, profile editing and bank-account verification.
+- Dispute management and a complete job lifecycle.
 
-These remain disabled because the current escrow service still uses process memory and the payment integration has no durable, atomic PostgreSQL ledger or verified bank-provider signature contract. New jobs are created as DRAFT and are not shown in OPEN job discovery until the funding and approval flow exists.
+These features must remain unavailable until real provider integrations, durable ledger invariants, authenticated APIs, and end-to-end tests exist. A QR image or client-side success state is not proof of payment.
 
-## Database migration warning
+## Known architecture and release gaps
 
-The repository did not contain a complete Prisma migration history. This branch adds the password-hash column and application uniqueness SQL as an incremental migration, but it is **not** a complete initial schema migration for an empty database. Use a reviewed baseline migration before any production migration deployment. Do not run `prisma migrate deploy` against an empty database based only on this branch.
-
-The root lockfile was stale relative to package.json, so local/CI installation currently uses `npm install` rather than `npm ci`. Regenerate and commit a reviewed lockfile before release.
+1. The current payment creation route returns HTTP 503. This is intentional until the bank account and provider contract are configured and tested.
+2. Escrow routes remain disabled. Internal escrow service methods are not a substitute for a reviewed accounting ledger or payment reconciliation.
+3. Job creation currently creates DRAFT records. There is no public publish/funding workflow; therefore draft jobs are not discoverable.
+4. The database migration history needs a reviewed baseline for a clean database before production migration.
+5. The root dependency lockfile should be regenerated and reviewed before using `npm ci`.
+6. Backend CI currently runs Prisma generation, TypeScript compilation and the repository's test suite. A passing build is not evidence of live database, payment, mobile-device or end-to-end correctness.
 
 ## Required environment
 
-Copy `.env.example` to a private `.env` and configure:
+Configure secrets only in the deployment environment:
 - `DATABASE_URL`
 - `JWT_SECRET` (at least 32 characters of cryptographically random material)
+- `WEBHOOK_HMAC_SECRET` only when a provider-specific webhook verifier is implemented
+- `VIETQR_ACCOUNT_NO` and `VIETQR_ACCOUNT_NAME` only when payment creation is implemented
 - `EXPO_PUBLIC_API_URL` in the Expo environment, including the `/api` path
 
 Never commit real credentials.
 
-## Validation status
+## Validation
 
-GitHub Actions CI passed on branch commit `a11e460ace926cf22926a970c14e07e4c495575d` (2026-11-25): backend Prisma generation + TypeScript build + 3 GeoUtils tests passed; Expo/React Native TypeScript check passed. This is static/build validation only; no live PostgreSQL integration, device runtime, payment, or end-to-end tests were run.
+CI is running on the latest branch commits. See the [GitHub Actions runs](https://github.com/mcehoang2277/mce-marketplace/actions). Backend and mobile CI results must both pass on the final branch head before this work is considered validated. No production deployment has been performed.
 
 ## Release gates
 
-1. Complete and review a baseline Prisma migration and seed strategy.
-2. Move escrow, wallet, and payment idempotency to transactional PostgreSQL records.
-3. Integrate and verify the chosen bank/payment provider's webhook signature contract.
-4. Implement employer review, assignment, disputes, and job state transitions.
-5. Add integration tests for auth, job lifecycle, concurrency, and money invariants.
-6. Verify Android and iOS builds on real devices, including location permissions and secure storage.
-7. Conduct security review and only then consider a release.
+1. Add a complete baseline Prisma migration and seed strategy; verify it against an empty PostgreSQL database.
+2. Implement payment-provider-specific webhook verification using the exact raw request bytes, receiver account, amount, currency and unique bank transaction ID.
+3. Add an immutable, auditable ledger with idempotent top-up, escrow lock, release, refund and withdrawal operations.
+4. Implement server-side GPS/geofence validation, check-in/check-out state transitions, evidence upload and dispute handling.
+5. Add integration tests for authentication, role boundaries, application concurrency, escrow balance invariants and webhook replay/tampering.
+6. Verify Android and iOS builds and runtime permissions on real devices.
+7. Complete security review before any production release.
