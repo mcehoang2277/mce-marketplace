@@ -2,6 +2,8 @@
 ALTER TABLE "CheckEvent"
 ADD COLUMN "accuracyMeters" DOUBLE PRECISION;
 
-DROP INDEX IF EXISTS "Review_jobId_key";
+ALTER TABLE "Review"
+DROP CONSTRAINT IF EXISTS "Review_jobId_key";
+
 CREATE UNIQUE INDEX "Review_jobId_reviewerId_key"
 ON "Review"("jobId", "reviewerId");
