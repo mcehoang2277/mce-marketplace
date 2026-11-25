@@ -108,6 +108,27 @@ const checkLocationSchema = z.object({
   deviceInfo: z.string().max(300).optional()
 });
 
+jobRouter.get('/jobs/mine/completed', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const jobs = await prisma.job.findMany({
+      where: {
+        OR: [{ workerId: req.auth!.id }, { posterId: req.auth!.id }],
+        status: JobStatus.COMPLETED
+      },
+      include: {
+        poster: { select: { id: true, fullName: true } },
+        worker: { select: { id: true, fullName: true } },
+        reviews: { where: { reviewerId: req.auth!.id }, select: { id: true, rating: true } }
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: 30
+    });
+    res.json({ success: true, jobs });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Jobs relevant to the authenticated account; used by the active-shift screen.
 jobRouter.get('/jobs/mine/active', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
