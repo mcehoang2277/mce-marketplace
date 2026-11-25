@@ -8,8 +8,8 @@ if (!process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
     console.log('========================================================================');
     console.log(`🚀 ${ENV.APP_NAME} — PRODUCTION SERVER IS RUNNING`);
     console.log(`📡 URL: http://localhost:${ENV.PORT}`);
-    console.log(`👉 Web Portal: http://localhost:${ENV.PORT}/index.html`);
-    console.log(`👉 Auth Portal: http://localhost:${ENV.PORT}/auth.html`);
+    console.log(`👉 API Base: http://localhost:${ENV.PORT}${ENV.API_PREFIX}`);
+    console.log(`👉 Native client: configure EXPO_PUBLIC_API_URL=http://<host>:${ENV.PORT}${ENV.API_PREFIX}`);
     console.log(`👉 Health Check: http://localhost:${ENV.PORT}/api/health`);
     console.log('========================================================================');
   });
