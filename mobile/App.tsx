@@ -43,7 +43,7 @@ export default function App() {
           </View>
         </View>
         <View style={styles.promoTag}>
-          <Text style={styles.promoText}>0% PHÍ SÀN (90 NGÀY)</Text>
+          <Text style={styles.promoText}>BẢN THỬ NGHIỆM</Text>
         </View>
       </View>
 
