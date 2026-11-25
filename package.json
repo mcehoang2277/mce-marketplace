@@ -8,9 +8,10 @@
     "build:server": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate deploy",
+    "db:push": "prisma db push",
     "prisma:migrate:dev": "prisma migrate dev",
-    "test": "jest"
+    "typecheck": "npm run prisma:generate && npm run build:server",
+    "test": "npm run build && node --test tests/*.test.cjs"
   },
   "keywords": [
     "matching-engine",
