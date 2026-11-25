@@ -128,7 +128,7 @@ export class ApplicationService {
     return job.applications.map((app) => {
       let distanceKm = 2.0;
       if (app.worker.currentLat !== null && app.worker.currentLng !== null) {
-        const dist = GeofenceUtils.calculateHaversineDistance(
+        const dist = GeoUtils.calculateDistanceMeters(
           { lat: app.worker.currentLat, lng: app.worker.currentLng },
           { lat: job.lat, lng: job.lng }
         );
