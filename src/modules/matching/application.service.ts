@@ -33,7 +33,7 @@ export class ApplicationService {
     });
 
     if (!job) throw new AppError(`Không tìm thấy ca việc ${jobId}`, 404);
-    if (job.status !== 'OPEN' && job.status !== 'DRAFT') {
+    if (job.status !== 'OPEN') {
       throw new AppError(`Không thể ứng tuyển: Ca việc đang ở trạng thái ${job.status}`, 400);
     }
     if (job.posterId === workerId) {
@@ -56,7 +56,7 @@ export class ApplicationService {
 
     // TÍNH TOÁN MATCH SCORE THEO THUẬT TOÁN ĐA TIÊU CHÍ (MULTI-CRITERIA)
     let distanceKm = 1.5;
-    if (worker.currentLat && worker.currentLng) {
+    if (worker.currentLat !== null && worker.currentLng !== null) {
       const distanceMeters = GeoUtils.calculateDistanceMeters(
         { lat: worker.currentLat, lng: worker.currentLng },
         { lat: job.lat, lng: job.lng }
@@ -127,7 +127,7 @@ export class ApplicationService {
 
     return job.applications.map((app) => {
       let distanceKm = 2.0;
-      if (app.worker.currentLat && app.worker.currentLng) {
+      if (app.worker.currentLat !== null && app.worker.currentLng !== null) {
         const dist = GeofenceUtils.calculateHaversineDistance(
           { lat: app.worker.currentLat, lng: app.worker.currentLng },
           { lat: job.lat, lng: job.lng }
@@ -173,7 +173,7 @@ export class ApplicationService {
       if (job.posterId !== posterId && posterId !== 'SYSTEM_ADMIN') {
         throw new AppError('Chỉ người đăng ca việc mới có quyền xác nhận ứng viên!', 403);
       }
-      if (job.status === 'ASSIGNED' || job.status === 'IN_PROGRESS' || job.status === 'COMPLETED') {
+      if (job.status !== 'OPEN' || !job.escrowTransaction || job.escrowTransaction.status !== 'LOCKED') {
         throw new AppError(`Ca việc này đã được giao cho người khác (Hiện tại: ${job.status})`, 409);
       }
 
@@ -182,7 +182,7 @@ export class ApplicationService {
         include: { worker: true }
       });
 
-      if (!targetApp || targetApp.jobId !== jobId) {
+      if (!targetApp || targetApp.jobId !== jobId || targetApp.status !== 'APPLIED') {
         throw new AppError('Đơn ứng tuyển không hợp lệ hoặc không thuộc về ca việc này!', 404);
       }
 
