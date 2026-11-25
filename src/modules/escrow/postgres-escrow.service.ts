@@ -75,36 +75,31 @@ export class PostgresEscrowService {
     posterId: string,
     amount: number
   ): Promise<EscrowTxResult> {
-    if (amount <= 0) throw new AppError('Số tiền ký quỹ phải lớn hơn 0', 400);
+    if (!Number.isSafeInteger(amount) || amount <= 0) throw new AppError('Số tiền ký quỹ không hợp lệ.', 400);
 
-    return await prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx) => {
       const job = await tx.job.findUnique({ where: { id: jobId } });
-      if (!job) throw new AppError(`Không tìm thấy ca việc ${jobId}`, 404);
-      if (job.posterId !== posterId) {
-        throw new AppError('Chỉ người tạo ca việc mới có quyền ký quỹ', 403);
-      }
+      if (!job) throw new AppError('Không tìm thấy công việc.', 404);
+      if (job.posterId !== posterId) throw new AppError('Chỉ người đăng việc mới được ký quỹ.', 403);
+      if (job.status !== 'DRAFT') throw new AppError('Công việc không còn ở trạng thái nháp.', 409);
+      if (job.totalEstimatedVnd.toNumber() !== amount) throw new AppError('Số tiền ký quỹ phải đúng bằng ngân sách do máy chủ tính.', 400);
 
       const existingEscrow = await tx.escrowTransaction.findUnique({ where: { jobId } });
-      if (existingEscrow && existingEscrow.status === 'LOCKED') {
-        throw new AppError('Ca việc đã được ký quỹ trước đó.', 409);
-      }
+      if (existingEscrow) throw new AppError('Công việc đã có bản ghi ký quỹ; không thể khóa tiền lần nữa.', 409);
 
       const wallet = await tx.wallet.findUnique({ where: { userId: posterId } });
-      if (!wallet || wallet.availableBalance.toNumber() < amount) {
-        throw new AppError('Số dư ví không đủ. Chỉ khoản tiền đã được xác nhận và ghi có mới được dùng để ký quỹ.', 400);
-      }
-
+      if (!wallet) throw new AppError('Ví chưa có số dư được xác nhận.', 400);
       const balBefore = wallet.availableBalance;
       const balAfter = balBefore.minus(new Prisma.Decimal(amount));
       const lockedAfter = wallet.lockedBalance.plus(new Prisma.Decimal(amount));
-
-      await tx.wallet.update({
-        where: { id: wallet.id },
+      const debited = await tx.wallet.updateMany({
+        where: { id: wallet.id, availableBalance: { gte: new Prisma.Decimal(amount) } },
         data: {
-          availableBalance: balAfter,
-          lockedBalance: lockedAfter
+          availableBalance: { decrement: new Prisma.Decimal(amount) },
+          lockedBalance: { increment: new Prisma.Decimal(amount) }
         }
       });
+      if (debited.count !== 1) throw new AppError('Số dư khả dụng không đủ hoặc vừa thay đổi. Hãy tải lại ví.', 409);
 
       await tx.walletTransaction.create({
         data: {
@@ -114,50 +109,33 @@ export class PostgresEscrowService {
           balanceBefore: balBefore,
           balanceAfter: balAfter,
           referenceId: jobId,
-          description: `Khóa cọc ký quỹ ca việc: ${job.title}`
+          description: `Khóa ký quỹ cho công việc: ${job.title}`
         }
       });
 
-      // MCE CAM KẾT 0% PHÍ SÀN TRONG GIAI ĐOẠN 2
-      const platformFeeVnd = 0;
-      const netWorkerPayout = amount;
-
-      const escrow = await tx.escrowTransaction.upsert({
-        where: { jobId },
-        create: {
+      const escrow = await tx.escrowTransaction.create({
+        data: {
           jobId,
           grossAmount: new Prisma.Decimal(amount),
-          platformFeeRate: 0.0,
+          platformFeeRate: 0,
           platformFeeVnd: new Prisma.Decimal(0),
-          netWorkerPayout: new Prisma.Decimal(netWorkerPayout),
-          status: 'LOCKED',
-          lockedAt: new Date()
-        },
-        update: {
-          grossAmount: new Prisma.Decimal(amount),
-          platformFeeRate: 0.0,
-          platformFeeVnd: new Prisma.Decimal(0),
-          netWorkerPayout: new Prisma.Decimal(netWorkerPayout),
+          netWorkerPayout: new Prisma.Decimal(amount),
           status: 'LOCKED',
           lockedAt: new Date()
         }
       });
-
-      await tx.job.update({
-        where: { id: jobId },
-        data: { status: 'OPEN' }
-      });
+      await tx.job.update({ where: { id: jobId }, data: { status: 'OPEN' } });
 
       return {
         jobId,
         posterId,
         grossAmount: amount,
-        platformFeeVnd,
-        netWorkerPayout,
+        platformFeeVnd: 0,
+        netWorkerPayout: amount,
         status: escrow.status,
         lockedAt: escrow.lockedAt
       };
-    });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   }
 
   /**
