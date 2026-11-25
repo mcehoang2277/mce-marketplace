@@ -6,6 +6,7 @@ on:
       - main
       - feat/typescript-native-foundation
       - fix/mainline-security-workflow
+      - feat/marketplace-end-to-end
   pull_request:
     branches:
       - main
