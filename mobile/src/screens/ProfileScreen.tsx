@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, Switch } from 'react-native';
-import { User, Phone, Mail, CreditCard, ShieldCheck, CheckCircle2, RefreshCw } from 'lucide-react-native';
+import { User, Phone, Mail, CreditCard, ShieldCheck, RefreshCw } from 'lucide-react-native';
 
 export function ProfileScreen({ onLogout }: { onLogout: () => void }) {
   const [name, setName] = useState('');
@@ -20,13 +20,7 @@ export function ProfileScreen({ onLogout }: { onLogout: () => void }) {
     queue: true,
   });
 
-  const handleSave = () => {
-    if (!phone || phone.trim().length < 9) {
-      Alert.alert('Lỗi', 'Số điện thoại liên hệ là BẮT BUỘC để nhận ca làm!');
-      return;
-    }
-    Alert.alert('Chưa khả dụng', 'API cập nhật hồ sơ chưa được triển khai. Thông tin chưa được lưu.');
-  };
+
 
   const toggleRole = () => {
     setRole(prev => prev === 'WORKER' ? 'POSTER' : 'WORKER');
@@ -38,9 +32,6 @@ export function ProfileScreen({ onLogout }: { onLogout: () => void }) {
       <View style={styles.profileHeader}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{name.slice(0, 2).toUpperCase()}</Text>
-          <View style={styles.verifiedDot}>
-            <CheckCircle2 size={12} color="#ffffff" />
-          </View>
         </View>
         <View style={styles.profileInfo}>
           <View style={styles.nameRow}>
