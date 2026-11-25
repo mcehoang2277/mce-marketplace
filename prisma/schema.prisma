@@ -1,4 +1,4 @@
-// Prisma Schema for MCE Hyperlocal Time Marketplace
+// Prisma Schema for MCE Hyperlocal Time Marketplace (Production-Ready)
 
 datasource db {
   provider = "postgresql"
@@ -26,6 +26,13 @@ enum JobStatus {
   CANCELLED
 }
 
+enum ApplicationStatus {
+  APPLIED
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
 enum EscrowStatus {
   PENDING
   LOCKED
@@ -45,95 +52,210 @@ enum CheckEventType {
   CHECK_OUT
 }
 
-model User {
-  id              String        @id @default(uuid())
-  fullName        String
-  phone           String        @unique
-  role            UserRole      @default(BOTH)
-  karmaScore      Float         @default(5.0) // 0.0 - 5.0
-  isKycVerified   Boolean       @default(false)
-  currentLat      Float?
-  currentLng      Float?
-  skills          String[]      @default([])
-  desiredMinRate  Decimal?      @db.Decimal(12, 2)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+enum WalletTransactionType {
+  TOPUP
+  ESCROW_LOCK
+  ESCROW_RELEASE
+  ESCROW_REFUND
+  WITHDRAWAL
+  PLATFORM_FEE
+}
 
-  postedJobs      Job[]         @relation("PosterJobs")
-  assignedJobs    Job[]         @relation("WorkerJobs")
-  applications    Application[]
-  wallet          Wallet?
-  checkEvents     CheckEvent[]
-  reviewsGiven    Review[]      @relation("ReviewsGiven")
-  reviewsReceived Review[]      @relation("ReviewsReceived")
+enum PaymentProvider {
+  VIETQR
+  PAYOS
+  SEPAY
+  MOMO
+  VNPAY
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  EXPIRED
+}
+
+model User {
+  id                 String              @id @default(uuid())
+  fullName           String
+  phone              String              @unique
+  role               UserRole            @default(BOTH)
+  karmaScore         Float               @default(5.0) // 0.0 - 5.0
+  isKycVerified      Boolean             @default(false)
+  isPhoneVerified    Boolean             @default(false)
+  idNumber           String?
+  avatarUrl          String?
+  currentLat         Float?
+  currentLng         Float?
+  skills             String[]            @default([])
+  desiredMinRate     Decimal?            @db.Decimal(12, 2)
+  bankName           String?
+  bankAccountNumber  String?
+  bankAccountOwner   String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  postedJobs         Job[]               @relation("PosterJobs")
+  assignedJobs       Job[]               @relation("WorkerJobs")
+  applications       Application[]
+  wallet             Wallet?
+  checkEvents        CheckEvent[]
+  reviewsGiven       Review[]            @relation("ReviewsGiven")
+  reviewsReceived    Review[]            @relation("ReviewsReceived")
+  payments           PaymentTransaction[]
+
+  @@index([phone])
+  @@index([isKycVerified])
 }
 
 model Wallet {
-  id               String   @id @default(uuid())
-  userId           String   @unique
-  availableBalance Decimal  @default(0.0) @db.Decimal(12, 2)
-  lockedBalance    Decimal  @default(0.0) @db.Decimal(12, 2)
-  updatedAt        DateTime @updatedAt
+  id               String              @id @default(uuid())
+  userId           String              @unique
+  availableBalance Decimal             @default(0.0) @db.Decimal(12, 2)
+  lockedBalance    Decimal             @default(0.0) @db.Decimal(12, 2)
+  totalDeposited   Decimal             @default(0.0) @db.Decimal(12, 2)
+  totalWithdrawn   Decimal             @default(0.0) @db.Decimal(12, 2)
+  updatedAt        DateTime            @updatedAt
 
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions     WalletTransaction[]
+
+  @@index([userId])
+}
+
+model WalletTransaction {
+  id               String                @id @default(uuid())
+  walletId         String
+  type             WalletTransactionType
+  amount           Decimal               @db.Decimal(12, 2)
+  balanceBefore    Decimal               @db.Decimal(12, 2)
+  balanceAfter     Decimal               @db.Decimal(12, 2)
+  referenceId      String?               // Job ID, Escrow ID, or Payment ID
+  description      String
+  createdAt        DateTime              @default(now())
+
+  wallet           Wallet                @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([walletId])
+  @@index([referenceId])
+  @@index([type])
 }
 
 model Job {
-  id                 String             @id @default(uuid())
+  id                 String              @id @default(uuid())
   posterId           String
   workerId           String?
   title              String
   description        String
   category           String
-  riskTier           RiskTier           @default(TIER_1_LOW_RISK)
-  status             JobStatus          @default(DRAFT)
+  riskTier           RiskTier            @default(TIER_1_LOW_RISK)
+  status             JobStatus           @default(DRAFT)
   
   startTime          DateTime
   endTime            DateTime
-  hourlyRate         Decimal            @db.Decimal(12, 2)
-  totalEstimatedVnd  Decimal            @db.Decimal(12, 2)
+  hourlyRate         Decimal             @db.Decimal(12, 2)
+  totalEstimatedVnd  Decimal             @db.Decimal(12, 2)
   
   lat                Float
   lng                Float
   addressText        String
-  requiredSkills     String[]           @default([])
+  requiredSkills     String[]            @default([])
   
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 
-  poster             User               @relation("PosterJobs", fields: [posterId], references: [id])
-  worker             User?              @relation("WorkerJobs", fields: [workerId], references: [id])
+  poster             User                @relation("PosterJobs", fields: [posterId], references: [id])
+  worker             User?               @relation("WorkerJobs", fields: [workerId], references: [id])
   applications       Application[]
   escrowTransaction  EscrowTransaction?
   checkEvents        CheckEvent[]
   dispute            Dispute?
   review             Review?
+  payments           PaymentTransaction[]
+
+  @@index([status])
+  @@index([posterId])
+  @@index([workerId])
+  @@index([lat, lng])
+  @@index([category])
+}
+
+model Application {
+  id          String            @id @default(uuid())
+  jobId       String
+  workerId    String
+  matchScore  Float             // Match Score calculated by engine (0 - 100)
+  status      ApplicationStatus @default(APPLIED)
+  notes       String?
+  createdAt   DateTime          @default(now())
+  reviewedAt  DateTime?
+
+  job         Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  worker      User              @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, workerId])
+  @@index([jobId])
+  @@index([workerId])
+  @@index([status])
 }
 
 model EscrowTransaction {
   id               String       @id @default(uuid())
   jobId            String       @unique
   grossAmount      Decimal      @db.Decimal(12, 2) // Gross VND deposited by Poster
-  platformFeeRate  Float        @default(0.08)     // e.g. 8%
-  platformFeeVnd   Decimal      @db.Decimal(12, 2)
+  platformFeeRate  Float        @default(0.0)      // 0.0% promotional launch policy
+  platformFeeVnd   Decimal      @default(0.0) @db.Decimal(12, 2)
   netWorkerPayout  Decimal      @db.Decimal(12, 2)
   status           EscrowStatus @default(PENDING)
   lockedAt         DateTime?
   releasedAt       DateTime?
+  refundedAt       DateTime?
   
   job              Job          @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([status])
 }
 
-model Application {
-  id          String   @id @default(uuid())
-  jobId       String
-  workerId    String
-  matchScore  Float    // Match Score calculated by engine (0 - 100)
-  status      String   @default("APPLIED") // APPLIED, ACCEPTED, REJECTED
-  createdAt   DateTime @default(now())
+model PaymentTransaction {
+  id               String          @id @default(uuid())
+  userId           String
+  jobId            String?
+  provider         PaymentProvider @default(VIETQR)
+  referenceCode    String          @unique // e.g. MCE_JOB_123456 or MCE_TOPUP_0981234567
+  amount           Decimal         @db.Decimal(12, 2)
+  status           PaymentStatus   @default(PENDING)
+  transferContent  String
+  qrCodeUrl        String?
+  rawResponse      String?         @db.Text
+  paidAt           DateTime?
+  createdAt        DateTime        @default(now())
 
-  job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  worker      User     @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job              Job?            @relation(fields: [jobId], references: [id], onDelete: SetNull)
+
+  @@index([referenceCode])
+  @@index([userId])
+  @@index([status])
+}
+
+model WebhookEvent {
+  id               String          @id @default(uuid())
+  provider         PaymentProvider
+  eventType        String          // e.g. PAYMENT_RECEIVED, TRANSACTION_CONFIRMED
+  idempotencyKey   String          @unique // Unique bank tx id
+  signature        String?
+  payload          String          @db.Text
+  isVerified       Boolean         @default(false)
+  isProcessed      Boolean         @default(false)
+  errorMessage     String?
+  processedAt      DateTime?
+  createdAt        DateTime        @default(now())
+
+  @@index([idempotencyKey])
+  @@index([provider])
+  @@index([isProcessed])
 }
 
 model CheckEvent {
@@ -145,11 +267,16 @@ model CheckEvent {
   lng                Float
   distanceMeters     Float          // Calculated distance from job coordinate
   photoProofUrl      String?
+  deviceInfo         String?
   notes              String?
   recordedAt         DateTime       @default(now())
 
   job                Job            @relation(fields: [jobId], references: [id], onDelete: Cascade)
   worker             User           @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([workerId])
+  @@index([eventType])
 }
 
 model Dispute {
@@ -178,4 +305,7 @@ model Review {
   job          Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
   reviewer     User     @relation("ReviewsGiven", fields: [reviewerId], references: [id])
   reviewee     User     @relation("ReviewsReceived", fields: [revieweeId], references: [id])
+
+  @@index([reviewerId])
+  @@index([revieweeId])
 }
