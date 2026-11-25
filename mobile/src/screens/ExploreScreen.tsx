@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { MapPin, Clock, ShieldCheck, Zap } from 'lucide-react-native';
-import { ActivityIndicator } from 'react-native';
+import { ActivityIndicator, Alert } from 'react-native';
 import { api, Job } from '../services/api';
 
 interface Props {
@@ -69,7 +69,15 @@ export const ExploreScreen: React.FC<Props> = ({ onSelectJob }) => {
               <Text style={styles.escrowNote}>Thông tin do người đăng cung cấp</Text>
               <TouchableOpacity
                 style={styles.actionBtn}
-                onPress={() => onSelectJob(job)}
+                onPress={async () => {
+                  try {
+                    await api.applyToJob(job.id);
+                    Alert.alert('Đã gửi ứng tuyển', 'Nhà tuyển dụng có thể xem hồ sơ ứng tuyển của bạn.');
+                    onSelectJob(job);
+                  } catch (error) {
+                    Alert.alert('Không thể ứng tuyển', error instanceof Error ? error.message : 'Đã xảy ra lỗi.');
+                  }
+                }}
               >
                 <Zap size={14} color="#ffffff" />
                 <Text style={styles.actionBtnText}>Nhận Ca Này</Text>
