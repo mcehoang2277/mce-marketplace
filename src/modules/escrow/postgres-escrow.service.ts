@@ -19,20 +19,21 @@ export class PostgresEscrowService {
   /**
    * 1. Nạp tiền vào ví người dùng (Top-up Wallet) bằng Transaction
    */
-  public static async topupWalletTx(
-    userId: string,
-    amount: number,
-    referenceId: string,
-    description: string
-  ) {
-    if (amount <= 0) throw new AppError('Số tiền nạp phải lớn hơn 0 VNĐ', 400);
+  public static async creditVerifiedPaymentTx(paymentId: string) {
+    return prisma.$transaction(async (tx) => {
+      const payment = await tx.paymentTransaction.findUnique({ where: { id: paymentId } });
+      if (!payment || payment.status !== 'SUCCESS') {
+        throw new AppError('Chỉ giao dịch đã được webhook ngân hàng xác thực mới được ghi có.', 409);
+      }
+      const referenceId = `PAYMENT:${payment.id}`;
+      const existing = await tx.walletTransaction.findFirst({ where: { referenceId, type: 'TOPUP' } });
+      if (existing) return existing;
 
-    return await prisma.$transaction(async (tx) => {
-      let wallet = await tx.wallet.findUnique({ where: { userId } });
+      let wallet = await tx.wallet.findUnique({ where: { userId: payment.userId } });
       if (!wallet) {
         wallet = await tx.wallet.create({
           data: {
-            userId,
+            userId: payment.userId,
             availableBalance: new Prisma.Decimal(0),
             lockedBalance: new Prisma.Decimal(0),
             totalDeposited: new Prisma.Decimal(0),
@@ -40,32 +41,27 @@ export class PostgresEscrowService {
           }
         });
       }
-
       const balBefore = wallet.availableBalance;
-      const balAfter = balBefore.plus(new Prisma.Decimal(amount));
-
-      const updatedWallet = await tx.wallet.update({
+      const balAfter = balBefore.plus(payment.amount);
+      await tx.wallet.update({
         where: { id: wallet.id },
         data: {
-          availableBalance: balAfter,
-          totalDeposited: wallet.totalDeposited.plus(new Prisma.Decimal(amount))
+          availableBalance: { increment: payment.amount },
+          totalDeposited: { increment: payment.amount }
         }
       });
-
-      const txRecord = await tx.walletTransaction.create({
+      return tx.walletTransaction.create({
         data: {
           walletId: wallet.id,
           type: 'TOPUP',
-          amount: new Prisma.Decimal(amount),
+          amount: payment.amount,
           balanceBefore: balBefore,
           balanceAfter: balAfter,
           referenceId,
-          description
+          description: `Nạp tiền từ giao dịch ngân hàng đã xác thực ${payment.referenceCode}`
         }
       });
-
-      return { wallet: updatedWallet, transaction: txRecord };
-    });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   }
 
   /**
@@ -175,87 +171,77 @@ export class PostgresEscrowService {
     jobId: string,
     approverId: string
   ): Promise<EscrowTxResult> {
-    return await prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx) => {
       const job = await tx.job.findUnique({
         where: { id: jobId },
         include: { escrowTransaction: true }
       });
-
       if (!job) throw new AppError(`Không tìm thấy ca việc ${jobId}`, 404);
       if (!job.workerId) throw new AppError('Ca việc chưa có Worker tiếp nhận', 400);
+      if (job.posterId !== approverId) throw new AppError('Chỉ người đăng ca việc mới có quyền nghiệm thu và giải ngân.', 403);
+      if (job.status !== 'PENDING_REVIEW') throw new AppError('Worker phải check-out trước khi người đăng nghiệm thu.', 409);
 
       const escrow = job.escrowTransaction;
       if (!escrow || escrow.status !== 'LOCKED') {
-        throw new AppError(`Không thể giải ngân: Ký quỹ không ở trạng thái LOCKED (Hiện tại: ${escrow?.status})`, 400);
+        throw new AppError('Khoản ký quỹ không ở trạng thái LOCKED.', 409);
       }
 
-      if (job.posterId !== approverId && approverId !== 'SYSTEM_ADMIN') {
-        throw new AppError('Chỉ người đăng ca việc hoặc hệ thống mới có quyền giải ngân', 403);
-      }
-
-      const grossVnd = escrow.grossAmount.toNumber();
-      const netPayout = escrow.netWorkerPayout.toNumber();
-
-      // 1. Cập nhật ví Poster: giảm lockedBalance
       const posterWallet = await tx.wallet.findUnique({ where: { userId: job.posterId } });
-      if (posterWallet) {
-        await tx.wallet.update({
-          where: { id: posterWallet.id },
-          data: {
-            lockedBalance: Prisma.Decimal.max(new Prisma.Decimal(0), posterWallet.lockedBalance.minus(escrow.grossAmount))
-          }
-        });
-
-        await tx.walletTransaction.create({
-          data: {
-            walletId: posterWallet.id,
-            type: 'ESCROW_RELEASE',
-            amount: escrow.grossAmount,
-            balanceBefore: posterWallet.availableBalance,
-            balanceAfter: posterWallet.availableBalance,
-            referenceId: jobId,
-            description: `Giải ngân hoàn tất ca làm: ${job.title}`
-          }
-        });
+      if (!posterWallet || posterWallet.lockedBalance.lessThan(escrow.grossAmount)) {
+        throw new AppError('Số dư ký quỹ không khớp sổ cái; đã dừng giải ngân để bảo toàn tiền.', 409);
       }
 
-      // 2. Cập nhật ví Worker: cộng 100% thù lao
+      const escrowChanged = await tx.escrowTransaction.updateMany({
+        where: { jobId, status: 'LOCKED' },
+        data: { status: 'RELEASED', releasedAt: new Date() }
+      });
+      if (escrowChanged.count !== 1) throw new AppError('Khoản ký quỹ đã được xử lý ở một yêu cầu khác.', 409);
+
+      const posterBefore = posterWallet.availableBalance;
+      const posterLockedAfter = posterWallet.lockedBalance.minus(escrow.grossAmount);
+      await tx.wallet.update({
+        where: { id: posterWallet.id },
+        data: { lockedBalance: { decrement: escrow.grossAmount } }
+      });
+      await tx.walletTransaction.create({
+        data: {
+          walletId: posterWallet.id,
+          type: 'ESCROW_RELEASE',
+          amount: escrow.grossAmount,
+          balanceBefore: posterBefore,
+          balanceAfter: posterBefore,
+          referenceId: jobId,
+          description: `Giải phóng khoản ký quỹ sau nghiệm thu: ${job.title}`
+        }
+      });
+
       let workerWallet = await tx.wallet.findUnique({ where: { userId: job.workerId } });
       if (!workerWallet) {
         workerWallet = await tx.wallet.create({
           data: {
             userId: job.workerId,
-            availableBalance: new Prisma.Decimal(netPayout),
-            lockedBalance: new Prisma.Decimal(0)
-          }
-        });
-      } else {
-        const wBalBefore = workerWallet.availableBalance;
-        const wBalAfter = wBalBefore.plus(new Prisma.Decimal(netPayout));
-        await tx.wallet.update({
-          where: { id: workerWallet.id },
-          data: { availableBalance: wBalAfter }
-        });
-
-        await tx.walletTransaction.create({
-          data: {
-            walletId: workerWallet.id,
-            type: 'ESCROW_RELEASE',
-            amount: new Prisma.Decimal(netPayout),
-            balanceBefore: wBalBefore,
-            balanceAfter: wBalAfter,
-            referenceId: jobId,
-            description: `Nhận 100% thù lao hoàn tất ca việc (0% phí sàn): ${job.title}`
+            availableBalance: new Prisma.Decimal(0),
+            lockedBalance: new Prisma.Decimal(0),
+            totalDeposited: new Prisma.Decimal(0),
+            totalWithdrawn: new Prisma.Decimal(0)
           }
         });
       }
-
-      // 3. Đổi trạng thái Escrow & Job
-      const updatedEscrow = await tx.escrowTransaction.update({
-        where: { jobId },
+      const workerBefore = workerWallet.availableBalance;
+      const workerAfter = workerBefore.plus(escrow.netWorkerPayout);
+      await tx.wallet.update({
+        where: { id: workerWallet.id },
+        data: { availableBalance: { increment: escrow.netWorkerPayout } }
+      });
+      await tx.walletTransaction.create({
         data: {
-          status: 'RELEASED',
-          releasedAt: new Date()
+          walletId: workerWallet.id,
+          type: 'ESCROW_RELEASE',
+          amount: escrow.netWorkerPayout,
+          balanceBefore: workerBefore,
+          balanceAfter: workerAfter,
+          referenceId: jobId,
+          description: `Nhận thù lao ca việc đã nghiệm thu: ${job.title}`
         }
       });
 
@@ -268,13 +254,13 @@ export class PostgresEscrowService {
         jobId,
         posterId: job.posterId,
         workerId: job.workerId,
-        grossAmount: grossVnd,
+        grossAmount: escrow.grossAmount.toNumber(),
         platformFeeVnd: escrow.platformFeeVnd.toNumber(),
-        netWorkerPayout: netPayout,
-        status: updatedEscrow.status,
-        releasedAt: updatedEscrow.releasedAt
+        netWorkerPayout: escrow.netWorkerPayout.toNumber(),
+        status: 'RELEASED',
+        releasedAt: new Date()
       };
-    });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   }
 
   /**
