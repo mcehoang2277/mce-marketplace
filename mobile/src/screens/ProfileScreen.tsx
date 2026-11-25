@@ -59,7 +59,7 @@ export function ProfileScreen({ onLogout }: { onLogout: () => void }) {
       {/* Role Toggle Card */}
       <View style={styles.card}>
         <View style={styles.roleToggleRow}>
-          <Text style={styles.fieldLabel}>Vai trò hoạt động:</Text>
+          <Text style={styles.fieldLabel}>Vai trò hiển thị (chưa đồng bộ máy chủ):</Text>
           <TouchableOpacity style={styles.roleBtn} onPress={toggleRole}>
             <RefreshCw size={14} color="#6366f1" />
             <Text style={styles.roleBtnText}>Đổi sang {role === 'WORKER' ? 'Người Thuê' : 'Người Làm'}</Text>
@@ -162,8 +162,8 @@ export function ProfileScreen({ onLogout }: { onLogout: () => void }) {
 
       {/* Bank Account for VietQR Auto Payout */}
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Tài Khoản Giải Ngân VietQR 24/7</Text>
-        <Text style={styles.subtext}>Tiền thù lao 100% tự động chuyển về tài khoản này ngay khi ca làm kết thúc.</Text>
+        <Text style={styles.cardTitle}>Thông Tin Ngân Hàng (Chưa Kết Nối)</Text>
+        <Text style={styles.subtext}>MCE chưa hỗ trợ lưu tài khoản ngân hàng hoặc tự động giải ngân. Không nhập thông tin thật tại đây.</Text>
 
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Ngân hàng thụ hưởng</Text>
@@ -188,10 +188,8 @@ export function ProfileScreen({ onLogout }: { onLogout: () => void }) {
         </View>
       </View>
 
-      {/* Save Button */}
-      <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-        <Save size={18} color="#ffffff" />
-        <Text style={styles.saveBtnText}>Lưu Thay Đổi & Cập Nhật Hồ Sơ</Text>
+      <TouchableOpacity style={styles.saveBtn} onPress={onLogout}>
+        <Text style={styles.saveBtnText}>Đăng xuất</Text>
       </TouchableOpacity>
     </ScrollView>
   );
