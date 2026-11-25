@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - feat/typescript-native-foundation
+      - fix/mainline-security-workflow
   pull_request:
     branches:
       - main
