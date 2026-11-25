@@ -7,8 +7,8 @@ COPY tsconfig.json ./
 COPY prisma ./prisma
 COPY src ./src
 
-RUN npm ci
-RUN npm run build
+RUN npm install --no-audit --no-fund
+RUN DATABASE_URL=postgresql://build:build@localhost:5432/build npm run build
 RUN npm prune --omit=dev
 
 # Runtime stage
