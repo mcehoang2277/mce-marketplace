@@ -70,6 +70,10 @@ export const api = {
     return Boolean(await SecureStore.getItemAsync('mce_access_token'));
   },
 
+  me() {
+    return request<ApiResponse<{ user: { id: string; name: string; phone: string; role: string; karmaScore: number; isKycVerified: boolean; walletBalanceVnd: number } }>>('/auth/me');
+  },
+
   listJobs() {
     return request<ApiResponse<{ jobs: Job[] }>>('/jobs');
   },
