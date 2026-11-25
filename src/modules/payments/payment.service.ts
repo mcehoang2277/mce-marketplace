@@ -70,7 +70,7 @@ export class PaymentService {
       data: {
         userId: params.userId,
         jobId: job.id,
-        provider: 'VIETQR',
+        provider: 'SEPAY',
         referenceCode,
         amount: new Prisma.Decimal(amount),
         status: 'PENDING',
