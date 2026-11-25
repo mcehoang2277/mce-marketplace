@@ -15,6 +15,25 @@ jobs:
   backend:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: build
+          POSTGRES_PASSWORD: build
+          POSTGRES_DB: build
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U build -d build"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://build:build@localhost:5432/build
+      JWT_SECRET: ci-only-secret-value-not-used-for-deployment-000000000000
+      SEPAY_WEBHOOK_SECRET: ci-only-sepay-hmac-secret-not-used-for-deployment-000000000000
+      VIETQR_ACCOUNT_NO: "1234567890"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -22,10 +41,8 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm install --no-audit --no-fund
+      - run: npx prisma migrate deploy
       - run: npm test
-        env:
-          DATABASE_URL: postgresql://build:build@localhost:5432/build
-          JWT_SECRET: ci-only-secret-value-not-used-for-deployment-000000000000
   mobile:
     runs-on: ubuntu-latest
     timeout-minutes: 10
