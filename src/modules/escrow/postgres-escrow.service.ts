@@ -27,12 +27,27 @@ async function lockWalletsByUserIds(tx: Prisma.TransactionClient, userIds: strin
   }
 }
 
+
+async function runSerializable<T>(operation: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      return await prisma.$transaction(operation, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    } catch (error) {
+      const code = typeof error === 'object' && error !== null && 'code' in error ? String(error.code) : '';
+      if (code !== 'P2034') throw error;
+      if (attempt === 2) throw new AppError('Giao dịch đang được xử lý đồng thời. Vui lòng tải lại và thử lại.', 409);
+      await new Promise((resolve) => setTimeout(resolve, 40 * (attempt + 1)));
+    }
+  }
+  throw new AppError('Không thể hoàn tất giao dịch sau nhiều lần thử.', 409);
+}
+
 export class PostgresEscrowService {
   /**
    * 1. Nạp tiền vào ví người dùng (Top-up Wallet) bằng Transaction
    */
   public static async creditVerifiedPaymentTx(paymentId: string) {
-    return prisma.$transaction(async (tx) => {
+    return runSerializable(async (tx) => {
       const payment = await tx.paymentTransaction.findUnique({ where: { id: paymentId } });
       if (!payment || payment.status !== 'SUCCESS') {
         throw new AppError('Chỉ giao dịch đã được webhook ngân hàng xác thực mới được ghi có.', 409);
@@ -78,7 +93,7 @@ export class PostgresEscrowService {
           description: `Nạp tiền từ giao dịch ngân hàng đã xác thực ${payment.referenceCode}`
         }
       });
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    });
   }
 
   /**
@@ -94,7 +109,7 @@ export class PostgresEscrowService {
   ): Promise<EscrowTxResult> {
     if (!Number.isSafeInteger(amount) || amount <= 0) throw new AppError('Số tiền ký quỹ không hợp lệ.', 400);
 
-    return prisma.$transaction(async (tx) => {
+    return runSerializable(async (tx) => {
       await lockJobRow(tx, jobId);
       const job = await tx.job.findUnique({ where: { id: jobId } });
       if (!job) throw new AppError('Không tìm thấy công việc.', 404);
@@ -164,7 +179,7 @@ export class PostgresEscrowService {
         status: escrow.status,
         lockedAt: escrow.lockedAt
       };
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    });
   }
 
   /**
@@ -178,7 +193,7 @@ export class PostgresEscrowService {
     jobId: string,
     approverId: string
   ): Promise<EscrowTxResult> {
-    return prisma.$transaction(async (tx) => {
+    return runSerializable(async (tx) => {
       await lockJobRow(tx, jobId);
       const job = await tx.job.findUnique({
         where: { id: jobId },
@@ -273,7 +288,7 @@ export class PostgresEscrowService {
         status: 'RELEASED',
         releasedAt: new Date()
       };
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    });
   }
 
   /**
@@ -285,7 +300,7 @@ export class PostgresEscrowService {
     posterId: string,
     reason: string
   ): Promise<EscrowTxResult> {
-    return prisma.$transaction(async (tx) => {
+    return runSerializable(async (tx) => {
       await lockJobRow(tx, jobId);
       const job = await tx.job.findUnique({
         where: { id: jobId },
@@ -354,7 +369,7 @@ export class PostgresEscrowService {
         status: 'REFUNDED',
         refundedAt: new Date()
       };
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    });
   }
 
   /**
@@ -367,7 +382,7 @@ export class PostgresEscrowService {
   ) {
     if (!Number.isSafeInteger(amount) || amount < 10000) throw new AppError('Số tiền rút không hợp lệ (tối thiểu 10.000 VNĐ).', 400);
     const requestId = 'WD-' + randomUUID();
-    return prisma.$transaction(async (tx) => {
+    return runSerializable(async (tx) => {
       await lockWalletsByUserIds(tx, [userId]);
       const wallet = await tx.wallet.findUnique({ where: { userId } });
       if (!wallet) throw new AppError('Không tìm thấy ví.', 404);
@@ -399,6 +414,6 @@ export class PostgresEscrowService {
         }
       });
       return { wallet: updatedWallet, transaction, payoutStatus: 'PENDING_PROVIDER' as const };
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    });
   }
 }

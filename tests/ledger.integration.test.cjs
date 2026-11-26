@@ -30,7 +30,7 @@ test('double-entry ledger rejects unbalanced postings and is idempotent', { skip
         idempotencyKey: key + ':BAD',
         lines: [valid.lines[0], { ...valid.lines[1], amount: 120000 }]
       })),
-      /debits must equal credits/
+      /total debits must equal total credits/
     );
     const first = await prisma.$transaction((tx) => LedgerService.createPosting(tx, valid));
     const second = await prisma.$transaction((tx) => LedgerService.createPosting(tx, valid));
