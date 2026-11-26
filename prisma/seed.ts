@@ -9,6 +9,9 @@ async function main() {
   const fullName = process.env.ADMIN_FULL_NAME?.trim();
   const password = process.env.ADMIN_PASSWORD;
 
+  if (process.env.ADMIN_BOOTSTRAP_CONFIRM !== 'YES_I_UNDERSTAND') {
+    throw new Error('Set ADMIN_BOOTSTRAP_CONFIRM=YES_I_UNDERSTAND only after verifying the target database and dedicated admin phone.');
+  }
   if (!phone || !/^\+?[0-9]{9,15}$/.test(phone)) {
     throw new Error('ADMIN_PHONE is required and must contain 9-15 digits (optional leading +).');
   }
@@ -21,26 +24,21 @@ async function main() {
 
   const passwordHash = await bcrypt.hash(password, 12);
   const admin = await prisma.$transaction(async (tx) => {
-    const user = await tx.user.upsert({
-      where: { phone },
-      update: {
-        fullName,
-        role: UserRole.ADMIN,
-        passwordHash
-      },
-      create: {
-        phone,
-        fullName,
-        role: UserRole.ADMIN,
-        passwordHash
-      },
-      select: {
-        id: true,
-        phone: true,
-        fullName: true,
-        role: true
-      }
-    });
+    const existing = await tx.user.findUnique({ where: { phone }, select: { id: true, role: true } });
+    if (existing && existing.role !== UserRole.ADMIN) {
+      throw new Error('ADMIN_PHONE already belongs to a non-admin account. Use a dedicated admin identity; the seed will not promote a customer account.');
+    }
+
+    const user = existing
+      ? await tx.user.update({
+          where: { id: existing.id },
+          data: { fullName, passwordHash },
+          select: { id: true, phone: true, fullName: true, role: true }
+        })
+      : await tx.user.create({
+          data: { phone, fullName, role: UserRole.ADMIN, passwordHash },
+          select: { id: true, phone: true, fullName: true, role: true }
+        });
 
     await tx.wallet.upsert({
       where: { userId: user.id },
