@@ -21,6 +21,8 @@
 
 
 ### Critical / release blockers
+
+0. **Public legacy simulation:** vercel.json publishes auth.html and mobile.html. Source inspection shows client-generated OTP fallback, local-only registration/login fallback, hardcoded verified/user identity fields, local wallet credits and local withdrawal success even when the API request fails or is absent. Treat these pages as demos, not production; disable or replace before public traffic. Do not treat localStorage/sessionStorage as authentication, KYC or money state.
 1. **Credential exposure history:** Compose credentials were committed. They have been removed from the engineering branch template, but any credential that was ever deployed must be rotated. Removing a string from current source does not erase Git history.
 2. **Demo fixture privacy:** PowerShell server code contains personal-looking sample records and permissive wildcard CORS. Owner must confirm the records are synthetic. If not, incident response and data removal must be planned with explicit approval.
 3. **Financial ledger controls:** current wallet transaction records are not a balanced double-entry journal. Do not scale real funds or enable withdrawals until this is resolved and independently reconciled.
