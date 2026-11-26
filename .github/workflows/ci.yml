@@ -71,6 +71,8 @@ jobs:
       - run: npx prisma migrate deploy
       - run: npm test
       - run: docker compose --env-file .env.docker.example config --quiet
+      - run: docker build --target migrator --tag mce-migrator:ci .
+      - run: docker run --rm --network host -e DATABASE_URL=postgresql://build:build@localhost:5432/build mce-migrator:ci
       - run: docker build --tag mce-marketplace:ci .
       - name: Smoke test production container
         run: |
