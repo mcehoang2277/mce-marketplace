@@ -341,7 +341,7 @@ while ($listener.IsListening) {
         # Admin session verification and read-only console APIs (local JSON database).
         if ($urlPath -eq "/api/auth/me" -and $httpMethod -eq "GET") {
             $header = $request.Headers["Authorization"]
-            $sessionToken = if ($header -match "^Bearer\\s+(.+)$") { $Matches[1] } else { "" }
+            $sessionToken = if ($header -match "^Bearer\s+(.+)$") { $Matches[1] } else { "" }
             $session = if ($sessionToken) { $script:AdminSessions[$sessionToken] } else { $null }
             if (-not $session -or $session.expiresAt -lt (Get-Date)) { Send-Json $response @{ success = $false; message = "Phiên đăng nhập không hợp lệ hoặc đã hết hạn." } 401; continue }
             $db = Get-Db
@@ -352,7 +352,7 @@ while ($listener.IsListening) {
         }
         if ($urlPath -eq "/api/admin/overview" -and $httpMethod -eq "GET") {
             $header = $request.Headers["Authorization"]
-            $sessionToken = if ($header -match "^Bearer\\s+(.+)$") { $Matches[1] } else { "" }
+            $sessionToken = if ($header -match "^Bearer\s+(.+)$") { $Matches[1] } else { "" }
             $session = if ($sessionToken) { $script:AdminSessions[$sessionToken] } else { $null }
             if (-not $session -or $session.expiresAt -lt (Get-Date)) { Send-Json $response @{ success = $false; message = "Không có quyền ADMIN." } 401; continue }
             $db = Get-Db
@@ -362,7 +362,7 @@ while ($listener.IsListening) {
         }
         if ($urlPath -eq "/api/admin/users" -and $httpMethod -eq "GET") {
             $header = $request.Headers["Authorization"]
-            $sessionToken = if ($header -match "^Bearer\\s+(.+)$") { $Matches[1] } else { "" }
+            $sessionToken = if ($header -match "^Bearer\s+(.+)$") { $Matches[1] } else { "" }
             $session = if ($sessionToken) { $script:AdminSessions[$sessionToken] } else { $null }
             if (-not $session -or $session.expiresAt -lt (Get-Date)) { Send-Json $response @{ success = $false; message = "Không có quyền ADMIN." } 401; continue }
             $db = Get-Db
