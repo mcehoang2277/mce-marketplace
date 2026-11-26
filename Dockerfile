@@ -1,5 +1,6 @@
 # Build stage
-FROM node:20-alpine AS builder
+FROM node:20-bookworm-slim AS builder
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/
 WORKDIR /app
 
 COPY package*.json ./
@@ -12,7 +13,8 @@ RUN DATABASE_URL=postgresql://build:build@localhost:5432/build npm run build
 RUN npm prune --omit=dev
 
 # Runtime stage
-FROM node:20-alpine AS runner
+FROM node:20-bookworm-slim AS runner
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/
 WORKDIR /app
 
 ENV NODE_ENV=production
