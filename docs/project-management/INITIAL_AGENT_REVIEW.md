@@ -81,3 +81,12 @@ See ARCHITECTURE.md.
 - Runtime tests: not run from this environment.
 - Production tests: not run.
 - Data authenticity: awaiting repository owner confirmation.
+
+## Agent 3 — additional deployment review
+
+- P0: vercel.json publishes legacy auth.html and mobile.html. auth.html can generate OTP locally, fall back to localStorage registration/login and mark a profile verified; mobile.html can credit a local wallet and display withdrawal success even when the API request fails. The Express API has no Vercel function or external /api rewrite. Do not expose these flows as real account verification or money movement.
+- P0: data/database.json is tracked in the public repository. Its contents were intentionally not opened; owner must confirm synthetic status before any deletion or history rewrite.
+
+## Agent 2/3 — final CI evidence
+
+Code SHA a65f2d2e passed: fresh PostgreSQL migration deploy, 10 backend tests (10 pass / 0 fail / 0 skipped), mobile TypeScript check, Compose config, dedicated migrator image build and run, production Docker image build and smoke test of database readiness, root page and admin page. The exact run is linked in TEST_REPORT.md.
