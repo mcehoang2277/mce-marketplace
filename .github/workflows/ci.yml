@@ -2,6 +2,19 @@ name: CI
 
 on:
   push:
+    paths:
+      - 'src/**'
+      - 'mobile/**'
+      - 'tests/**'
+      - 'prisma/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - '.env.example'
+      - '.env.docker.example'
+      - 'nginx.conf'
+      - '.github/workflows/ci.yml'
     branches:
       - main
       - feat/typescript-native-foundation
@@ -11,6 +24,19 @@ on:
   pull_request:
     branches:
       - main
+    paths:
+      - 'src/**'
+      - 'mobile/**'
+      - 'tests/**'
+      - 'prisma/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - '.env.example'
+      - '.env.docker.example'
+      - 'nginx.conf'
+      - '.github/workflows/ci.yml'
 
 jobs:
   backend:
