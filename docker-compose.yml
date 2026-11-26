@@ -1,12 +1,9 @@
-version: '3.8'
-
 services:
-  # CỔNG ĐẢO NGƯỢC NGINX (REVERSE PROXY & RATE LIMITER)
   nginx:
     image: nginx:1.25-alpine
-    container_name: mce-nginx-gateway
-    restart: always
+    restart: unless-stopped
     ports:
+      # For local use. In production, terminate TLS at a managed ingress/reverse proxy.
       - "80:80"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
@@ -16,66 +13,65 @@ services:
     networks:
       - mce_network
 
-  # ỨNG DỤNG MCE APP NODE (STATELESS SCALABLE CONTAINER)
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: mce-app-node
-    restart: always
+    restart: unless-stopped
     environment:
       NODE_ENV: production
       PORT: 8000
-      DATABASE_URL: "postgresql://mce_admin:mce_secure_password_2026@postgres:5432/mce_marketplace?schema=public"
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_PASSWORD: mce_redis_secret_2026
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in the private .env file using host postgres}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in the private .env file}
+      SEPAY_WEBHOOK_SECRET: ${SEPAY_WEBHOOK_SECRET:-}
+      VIETQR_BANK_CODE: ${VIETQR_BANK_CODE:-MB}
+      VIETQR_ACCOUNT_NO: ${VIETQR_ACCOUNT_NO:-}
+      VIETQR_ACCOUNT_NAME: ${VIETQR_ACCOUNT_NAME:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:8000/api/health"]
       interval: 10s
       timeout: 5s
       retries: 3
+      start_period: 20s
     networks:
       - mce_network
 
-  # CƠ SỞ DỮ LIỆU CHÍNH (POSTGRESQL 16)
   postgres:
     image: postgres:16-alpine
-    container_name: mce-postgres-db
-    restart: always
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: mce_marketplace
-      POSTGRES_USER: mce_admin
-      POSTGRES_PASSWORD: mce_secure_password_2026
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in the private .env file}
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in the private .env file}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the private .env file}
+    # Bind to loopback only; never expose the database to the public Internet.
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - mce_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U mce_admin -d mce_marketplace"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
     networks:
       - mce_network
 
-  # BỘ NHỚ ĐỆM & HÀNG ĐỢI PHÂN TÁN (REDIS 7)
+  # Optional profile only. The current API has no Redis consumer.
   redis:
     image: redis:7-alpine
-    container_name: mce-redis-cache
-    restart: always
-    command: redis-server --appendonly yes --requirepass mce_redis_secret_2026
-    ports:
-      - "6379:6379"
+    profiles: ["cache"]
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD before enabling the cache profile}
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?Set REDIS_PASSWORD before enabling the cache profile}"]
     volumes:
       - mce_redisdata:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "mce_redis_secret_2026", "ping"]
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep -q PONG"]
       interval: 5s
       timeout: 5s
       retries: 5
