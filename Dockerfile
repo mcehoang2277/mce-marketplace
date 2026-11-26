@@ -24,6 +24,9 @@ COPY --from=builder --chown=nodejs:nodejs /app/package*.json ./
 COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
+# The Express app serves the web and admin clients from these paths at runtime.
+COPY --chown=nodejs:nodejs index.html ./index.html
+COPY --chown=nodejs:nodejs public ./public
 
 USER nodejs
 EXPOSE 8000
