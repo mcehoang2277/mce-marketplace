@@ -32,6 +32,7 @@ on:
   pull_request:
     branches:
       - main
+      - agent/cto-roadmap-2026-11
     paths:
       - 'src/**'
       - 'mobile/**'
