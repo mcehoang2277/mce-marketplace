@@ -57,6 +57,7 @@ See ARCHITECTURE.md.
 - requireRole intentionally permits BOTH users for worker/poster operations; confirm this is the intended product policy.
 - GPS accuracy and geofence checks do not prevent a rooted/jailbroken or mock-location device from spoofing coordinates.
 - A green Vercel status does not establish PostgreSQL connectivity, API health, SePay configuration or native app readiness.
+- vercel.json explicitly builds static assets only and has a catch-all route to mobile.html; /api/* is therefore not wired to the Express backend. This is a P0 deployment blocker for API-backed flows.
 - Do not expose raw identity/bank/payment data in logs or admin screens without an explicit operational need.
 
 ## Agent 4 — Optimizer: initial recommendations
