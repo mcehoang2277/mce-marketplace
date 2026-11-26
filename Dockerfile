@@ -10,6 +10,12 @@ COPY src ./src
 
 RUN npm install --no-audit --no-fund
 RUN DATABASE_URL=postgresql://build:build@localhost:5432/build npm run build
+FROM builder AS migrator
+ENV NODE_ENV=production
+CMD ["npx", "prisma", "migrate", "deploy"]
+
+# Keep the full Prisma CLI in the one-off migration image, but prune it from API runtime.
+FROM builder AS production-deps
 RUN npm prune --omit=dev
 
 # Runtime stage
@@ -22,10 +28,10 @@ ENV PORT=8000
 
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 
-COPY --from=builder --chown=nodejs:nodejs /app/package*.json ./
-COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
-COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
+COPY --from=production-deps --chown=nodejs:nodejs /app/package*.json ./
+COPY --from=production-deps --chown=nodejs:nodejs /app/node_modules ./node_modules
+COPY --from=production-deps --chown=nodejs:nodejs /app/dist ./dist
+COPY --from=production-deps --chown=nodejs:nodejs /app/prisma ./prisma
 # The Express app serves the web and admin clients from these paths at runtime.
 COPY --chown=nodejs:nodejs index.html ./index.html
 COPY --chown=nodejs:nodejs public ./public
