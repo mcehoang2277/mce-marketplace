@@ -16,9 +16,12 @@
 
 ## CI evidence
 
-- The reviewed PR #1 head had successful Vercel status checks; these do not prove API/database/native runtime readiness.
-- The engineering branch CI runs were triggered after adding the branch to the workflow. Final result must be checked against the latest branch SHA before merge.
-- Earlier successful workflow runs predate the latest security and Docker changes and must not be used as proof for the current head.
+- **PASS on code SHA a65f2d2e2d67404e2ce0ec18ec5509a7c8f08239**: [GitHub Actions run 45767114046](https://github.com/mcehoang2277/mce-marketplace/actions/runs/45767114046).
+- Backend: PostgreSQL 16 migration deploy, npm build + 10 tests (10 pass, 0 fail, 0 skipped), Compose config validation, migrator image build/run, production Docker image build and container smoke test all passed.
+- Container smoke test checked database readiness plus HTTP routes / and /admin.
+- Mobile: npm install and TypeScript typecheck passed.
+- Subsequent commits 8db783aa and 68e162f3 changed only CI path filters and documentation; new workflow runs are triggered for those workflow changes. Re-check the latest branch run before merge.
+- Earlier successful Vercel status checks on PR #1 do not prove API/database/native runtime readiness.
 
 ## Gaps
 
