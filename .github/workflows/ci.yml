@@ -44,6 +44,8 @@ jobs:
       - run: npm install --no-audit --no-fund
       - run: npx prisma migrate deploy
       - run: npm test
+      - run: docker compose --env-file .env.docker.example config --quiet
+      - run: docker build --tag mce-marketplace:ci .
   mobile:
     runs-on: ubuntu-latest
     timeout-minutes: 10
