@@ -9,3 +9,13 @@ __pycache__/
 .expo/
 *.jks
 backups/
+
+# Local secrets, runtime databases and user evidence
+.env.*
+!.env.example
+!.env.docker.example
+data/database.json
+data/*.db
+*.sqlite
+*.sqlite3
+proofs/
