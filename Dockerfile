@@ -26,7 +26,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=8000
 
-RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
+RUN groupadd --system --gid 1001 nodejs && useradd --system --uid 1001 --gid nodejs --create-home --home-dir /home/nodejs nodejs
 
 COPY --from=production-deps --chown=nodejs:nodejs /app/package*.json ./
 COPY --from=production-deps --chown=nodejs:nodejs /app/node_modules ./node_modules
