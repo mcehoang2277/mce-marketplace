@@ -7,6 +7,7 @@ on:
       - feat/typescript-native-foundation
       - fix/mainline-security-workflow
       - feat/marketplace-end-to-end
+      - agent/cto-roadmap-2026-11
   pull_request:
     branches:
       - main
