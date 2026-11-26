@@ -26,17 +26,15 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=8000
 
-RUN groupadd --system --gid 1001 nodejs && useradd --system --uid 1001 --gid nodejs --create-home --home-dir /home/nodejs nodejs
-
-COPY --from=production-deps --chown=nodejs:nodejs /app/package*.json ./
-COPY --from=production-deps --chown=nodejs:nodejs /app/node_modules ./node_modules
-COPY --from=production-deps --chown=nodejs:nodejs /app/dist ./dist
-COPY --from=production-deps --chown=nodejs:nodejs /app/prisma ./prisma
+COPY --from=production-deps --chown=node:node /app/package*.json ./
+COPY --from=production-deps --chown=node:node /app/node_modules ./node_modules
+COPY --from=production-deps --chown=node:node /app/dist ./dist
+COPY --from=production-deps --chown=node:node /app/prisma ./prisma
 # The Express app serves the web and admin clients from these paths at runtime.
-COPY --chown=nodejs:nodejs index.html ./index.html
-COPY --chown=nodejs:nodejs public ./public
+COPY --chown=node:node index.html ./index.html
+COPY --chown=node:node public ./public
 
-USER nodejs
+USER node
 EXPOSE 8000
 
 HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
