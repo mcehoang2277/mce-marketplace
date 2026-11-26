@@ -44,6 +44,14 @@ on:
       - '.env.example'
       - '.env.docker.example'
       - 'nginx.conf'
+      - '.dockerignore'
+      - 'public/**'
+      - 'index.html'
+      - 'mobile.html'
+      - 'auth.html'
+      - 'vercel.json'
+      - 'manifest.json'
+      - 'sw.js'
       - '.github/workflows/ci.yml'
 
 jobs:
