@@ -16,6 +16,10 @@
 
 ## Open findings
 
+### Deployment blocker
+- **P0 — API routing:** vercel.json builds static pages only and rewrites every unmatched path, including /api/*, to mobile.html. The TypeScript Express API has no Vercel function entrypoint or configured external API rewrite. API-backed auth/payment/admin journeys cannot be considered deployed from Vercel status checks. Host the API separately and configure an explicit HTTPS /api proxy before production.
+
+
 ### Critical / release blockers
 1. **Credential exposure history:** Compose credentials were committed. They have been removed from the engineering branch template, but any credential that was ever deployed must be rotated. Removing a string from current source does not erase Git history.
 2. **Demo fixture privacy:** PowerShell server code contains personal-looking sample records and permissive wildcard CORS. Owner must confirm the records are synthetic. If not, incident response and data removal must be planned with explicit approval.
