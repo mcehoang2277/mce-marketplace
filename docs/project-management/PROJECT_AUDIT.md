@@ -56,3 +56,11 @@ The source contains these pieces, but the full journey has not yet been verified
 ## Scope and evidence limits
 
 This audit used repository source and GitHub metadata. It did not inspect local uncommitted files, connect to production systems, inspect real user records, run a local Docker stack, test a real device, or initiate bank transfers. A green CI job is evidence only for the steps that actually ran.
+
+## Vercel deployment blocker
+
+The checked-in vercel.json builds mobile.html, auth.html, manifest.json and sw.js as static assets and routes all unmatched paths, including /api/*, to mobile.html. There is no Express API function or external API rewrite. In addition, auth.html and mobile.html contain client-side OTP/account/verified/wallet/withdrawal simulation. These pages must not be considered production functionality. See VERCEL_API_DEPLOYMENT.md.
+
+## Current CI evidence
+
+Code SHA a65f2d2e passed backend migration, 10/10 tests, mobile typecheck, Compose validation, migrator image execution, production Docker build and container smoke test. See TEST_REPORT.md for the exact workflow run. Later commits update CI path filters and documentation only.
