@@ -115,7 +115,7 @@ export class ApplicationService {
       where: { id: jobId },
       include: {
         applications: {
-          include: { worker: { select: { id: true, fullName: true, phone: true, karmaScore: true, isKycVerified: true } } },
+          include: { worker: { select: { id: true, fullName: true, phone: true, karmaScore: true, isKycVerified: true, currentLat: true, currentLng: true } } },
           orderBy: { matchScore: 'desc' }
         }
       }
