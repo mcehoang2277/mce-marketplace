@@ -41,3 +41,11 @@
 4. Run local Docker Compose from .env.docker.example copied to .env with unique values.
 5. Verify admin and payment provider configuration only in staging.
 6. Continue reviewer and optimizer passes before merging the stacked PR.
+
+## Latest verification and deployment findings
+
+- Code SHA a65f2d2e passed the full current backend + Docker smoke pipeline: PostgreSQL migration, 10/10 tests, mobile typecheck, Compose config, migrator target build/run, API image build and container smoke test.
+- Dockerfile now uses Debian/OpenSSL, an explicit Prisma migrator target, a pruned production runtime image and the official non-root Node user.
+- Compose includes a one-off migrate profile; see DOCKER_SETUP.md.
+- Vercel remains a P0 blocker: static-only routing sends /api/* to mobile.html, and legacy auth/mobile pages simulate OTP and wallet/payout success.
+- The public repository tracks data/database.json. It was not read or deleted pending owner confirmation that it contains synthetic data only.
