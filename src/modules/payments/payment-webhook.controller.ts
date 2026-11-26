@@ -185,8 +185,20 @@ export class PaymentWebhookController {
       return res.status(200).json({ success: true });
     } catch (error) {
       if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002') {
-        // SePay retries and manual replay keep the same transaction ID.
-        return res.status(200).json({ success: true, duplicate: true });
+        // A duplicate is acknowledged only when this provider event already exists.
+        // Other unique-constraint conflicts (for example, a second payment for the same job)
+        // must remain retryable and visible for reconciliation.
+        try {
+          const existingEvent = await prisma.webhookEvent.findUnique({
+            where: { idempotencyKey },
+            select: { id: true }
+          });
+          if (existingEvent) {
+            return res.status(200).json({ success: true, duplicate: true });
+          }
+        } catch {
+          // Fall through to 500 so the provider retries rather than losing the event.
+        }
       }
       return res.status(500).json({ success: false, message: 'Không thể ghi nhận giao dịch; SePay có thể gửi lại.' });
     }
