@@ -33,6 +33,7 @@ Only mark an item complete when evidence is linked to the exact release candidat
 - [ ] Root lockfile regenerated and clean npm ci succeeds.
 - [ ] Backend build, tests, mobile typecheck and Docker build pass on exact SHA.
 - [ ] Staging smoke tests pass.
+- [ ] Legacy local OTP/auth/wallet/payout simulation pages are removed from public traffic or replaced by API-backed flows.
 - [ ] A real TypeScript API host is configured; Vercel /api/* routes to it rather than static mobile.html.
 - [ ] HTTPS/domain/CORS and payment webhook URL verified.
 - [ ] Production environment secrets set in hosting secret manager.
