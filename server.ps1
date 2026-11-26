@@ -1,6 +1,6 @@
 ﻿param([int]$Port = 3000)
 
-$root = "C:\Users\DELL\.gemini\antigravity\scratch\mce-marketplace"
+$root = $PSScriptRoot
 $dataDir = Join-Path $root "data"
 $proofsDir = Join-Path $root "proofs"
 if (-not (Test-Path $dataDir)) { New-Item -ItemType Directory -Path $dataDir -Force | Out-Null }
