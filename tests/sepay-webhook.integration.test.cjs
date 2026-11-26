@@ -117,13 +117,18 @@ test('SePay webhook funds escrow once and opens the job atomically', { skip: !en
     assert.equal(webhook.isVerified, true);
     assert.equal(webhook.isProcessed, true);
 
-    const replay = await send();
-    assert.equal(replay.status, 200);
-    assert.deepEqual(await replay.json(), { success: true, duplicate: true });
+    const replays = await Promise.all(Array.from({ length: 20 }, () => send()));
+    assert.ok(replays.every((replay) => replay.status === 200));
+    const replayBodies = await Promise.all(replays.map((replay) => replay.json()));
+    assert.ok(replayBodies.every((body) => body.success === true));
     const replayLedgerCount = await prisma.walletTransaction.count({
       where: { referenceId: { in: [job.id, `PAYMENT:${payment.id}`] } }
     });
     assert.equal(replayLedgerCount, 2);
+    const replayJournalCount = await prisma.ledgerPosting.count({
+      where: { idempotencyKey: { in: [`BANK_IN:${transactionId}`, `ESCROW_LOCK:${job.id}`] } }
+    });
+    assert.equal(replayJournalCount, 2);
 
     const suspenseId = transactionId + 1;
     const suspensePayload = { ...payload, id: suspenseId, content: 'MCEFFFFFFFFFFFF', transferAmount: 50000 };
