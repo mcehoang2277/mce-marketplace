@@ -146,7 +146,15 @@ test('SePay webhook funds escrow once and opens the job atomically', { skip: !en
     assert.equal(suspensePosting.lines.filter((line) => line.side === 'DEBIT').reduce((sum, line) => sum + line.amount.toNumber(), 0), 50000);
     assert.equal(suspensePosting.lines.filter((line) => line.side === 'CREDIT').reduce((sum, line) => sum + line.amount.toNumber(), 0), 50000);
   } finally {
-    await prisma.webhookEvent.deleteMany({ where: { idempotencyKey: `SEPAY:${transactionId}` } });
+    const postingKeys = [`BANK_IN:${transactionId}`, `ESCROW_LOCK:${job.id}`, `BANK_SUSPENSE:${transactionId + 1}`];
+    await prisma.ledgerLine.deleteMany({ where: { posting: { idempotencyKey: { in: postingKeys } } } });
+    await prisma.ledgerPosting.deleteMany({ where: { idempotencyKey: { in: postingKeys } } });
+    await prisma.ledgerAccount.deleteMany({
+      where: { code: { in: ['BANK_CLEARING', 'SUSPENSE', `USER_AVAILABLE:${user.id}`, `ESCROW_JOB:${job.id}`] } }
+    });
+    await prisma.webhookEvent.deleteMany({
+      where: { idempotencyKey: { in: [`SEPAY:${transactionId}`, `SEPAY:${transactionId + 1}`] } }
+    });
     await prisma.job.delete({ where: { id: job.id } });
     await prisma.paymentTransaction.delete({ where: { id: payment.id } });
     await prisma.user.delete({ where: { id: user.id } });
