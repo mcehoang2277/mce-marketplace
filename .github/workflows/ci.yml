@@ -55,6 +55,7 @@ on:
       - 'vercel.json'
       - 'manifest.json'
       - 'sw.js'
+      - 'docs/**'
       - '.github/workflows/ci.yml'
 
 jobs:
