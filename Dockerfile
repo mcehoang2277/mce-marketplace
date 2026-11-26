@@ -1,5 +1,6 @@
 # Build stage
-FROM node:20-alpine AS builder
+FROM node:20-bookworm-slim AS builder
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/
 WORKDIR /app
 
 COPY package*.json ./
@@ -9,26 +10,34 @@ COPY src ./src
 
 RUN npm install --no-audit --no-fund
 RUN DATABASE_URL=postgresql://build:build@localhost:5432/build npm run build
+FROM builder AS migrator
+ENV NODE_ENV=production
+CMD ["npx", "prisma", "migrate", "deploy"]
+
+# Keep the full Prisma CLI in the one-off migration image, but prune it from API runtime.
+FROM builder AS production-deps
 RUN npm prune --omit=dev
 
 # Runtime stage
-FROM node:20-alpine AS runner
+FROM node:20-bookworm-slim AS runner
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates wget && rm -rf /var/lib/apt/lists/
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=8000
 
-RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
+COPY --from=production-deps --chown=node:node /app/package*.json ./
+COPY --from=production-deps --chown=node:node /app/node_modules ./node_modules
+COPY --from=production-deps --chown=node:node /app/dist ./dist
+COPY --from=production-deps --chown=node:node /app/prisma ./prisma
+# The Express app serves the web and admin clients from these paths at runtime.
+COPY --chown=node:node index.html ./index.html
+COPY --chown=node:node public ./public
 
-COPY --from=builder --chown=nodejs:nodejs /app/package*.json ./
-COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
-COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
-
-USER nodejs
+USER node
 EXPOSE 8000
 
 HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8000/api/health || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8000/api/health/ready || exit 1
 
 CMD ["node", "dist/server.js"]

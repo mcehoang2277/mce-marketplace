@@ -4,6 +4,7 @@ import { escrowRouter } from './escrow.routes';
 import { paymentRouter } from './payment.routes';
 import { authRouter } from './auth.routes';
 import { ENV } from '../config/env';
+import { prisma } from '../core/database/prisma';
 import { walletRouter } from './wallet.routes';
 import { adminRouter } from './admin.routes';
 
@@ -18,6 +19,24 @@ apiRouter.get('/health', (req, res) => {
     architecture: 'Clean Architecture Modular Monolith',
     timestamp: new Date().toISOString()
   });
+});
+
+// Readiness includes the primary database, unlike the liveness endpoint above.
+apiRouter.get('/health/ready', async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({
+      status: 'READY',
+      dependencies: { database: 'ok' },
+      timestamp: new Date().toISOString()
+    });
+  } catch {
+    res.status(503).json({
+      status: 'NOT_READY',
+      dependencies: { database: 'unavailable' },
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // Gắn kết các sub-routers

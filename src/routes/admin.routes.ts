@@ -90,7 +90,7 @@ adminRouter.patch('/admin/jobs/:jobId/status', async (req: Request, res: Respons
 adminRouter.get('/admin/disputes', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const status = typeof req.query.status === 'string' ? req.query.status : undefined;
-    const disputes = await prisma.dispute.findMany({ where: status ? { status } : {}, orderBy: { createdAt: 'desc' },
+    const disputes = await prisma.dispute.findMany({ where: status ? { status } : {}, orderBy: { createdAt: 'desc' }, take: 100,
       include: { job: { select: { id: true, title: true, status: true, totalEstimatedVnd: true,
         poster: { select: { id: true, fullName: true, phone: true } },
         worker: { select: { id: true, fullName: true, phone: true } } } } } });

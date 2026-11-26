@@ -24,16 +24,17 @@ Trong file .env của backend, đặt cùng thông tin:
     ADMIN_PHONE=so_dien_thoai_admin
     ADMIN_FULL_NAME=Ten_Admin
     ADMIN_PASSWORD=mat_khau_admin_tu_14_ky_tu
+    ADMIN_BOOTSTRAP_CONFIRM=YES_I_UNDERSTAND
 
 Không commit .env lên GitHub. Sau đó chạy:
 
     npm install
-    npm run db:push
+    npx prisma migrate deploy
     npm run db:seed:admin
     npm run build
     npm run dev
 
-Mở http://localhost:8000/admin (hoặc cổng backend đã cấu hình). Seed dùng upsert theo số điện thoại: nếu số điện thoại đã tồn tại trong PostgreSQL, tài khoản đó sẽ được đặt role ADMIN và mật khẩu được cập nhật. Hãy dùng số điện thoại dành riêng cho quản trị để tránh nâng quyền nhầm tài khoản người dùng.
+Mở http://localhost:8000/admin (hoặc cổng backend đã cấu hình). Seed yêu cầu ADMIN_BOOTSTRAP_CONFIRM=YES_I_UNDERSTAND. Nếu số điện thoại đã thuộc tài khoản không phải ADMIN, seed sẽ dừng thay vì tự nâng quyền khách hàng. Chỉ dùng số điện thoại quản trị chuyên dụng và xác minh đúng database trước khi chạy.
 
 ## Phạm vi hiện tại
 

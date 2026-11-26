@@ -30,7 +30,7 @@ export class ApplicationService {
   ) {
     const job = await prisma.job.findUnique({
       where: { id: jobId },
-      include: { applications: true }
+      // Do not hydrate the full application list for a duplicate/eligibility check.
     });
 
     if (!job) throw new AppError(`Không tìm thấy ca việc ${jobId}`, 404);
@@ -115,7 +115,7 @@ export class ApplicationService {
       where: { id: jobId },
       include: {
         applications: {
-          include: { worker: true },
+          include: { worker: { select: { id: true, fullName: true, phone: true, karmaScore: true, isKycVerified: true, currentLat: true, currentLng: true } } },
           orderBy: { matchScore: 'desc' }
         }
       }

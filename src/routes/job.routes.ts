@@ -314,8 +314,12 @@ jobRouter.post('/jobs/:jobId/reviews', requireAuth, async (req: Request, res: Re
   }
 });
 
-// Legacy demo endpoints remain available for comparison; they do not read production job data.
+// Legacy demo endpoints are available only in development. Never expose fixture identities
+// or in-memory candidate records from a production API.
 jobRouter.get('/candidates', requireAuth, async (_req: Request, res: Response) => {
+  if (ENV.NODE_ENV === 'production') {
+    return res.status(404).json({ success: false, message: 'Endpoint không khả dụng.' });
+  }
   const candidates = await repository.findAll();
   res.json({
     success: true,
@@ -334,6 +338,9 @@ jobRouter.get('/candidates', requireAuth, async (_req: Request, res: Response) =
 });
 
 jobRouter.get('/jobs/match', async (_req: Request, res: Response) => {
+  if (ENV.NODE_ENV === 'production') {
+    return res.status(404).json({ success: false, message: 'Endpoint không khả dụng.' });
+  }
   const candidates = await repository.findAll();
   const sampleJob = repository.getSampleJob();
   const matches = MatchingService.rankCandidates(candidates, sampleJob);

@@ -2,14 +2,57 @@ name: CI
 
 on:
   push:
+    paths:
+      - 'src/**'
+      - 'mobile/**'
+      - 'tests/**'
+      - 'prisma/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - '.env.example'
+      - '.env.docker.example'
+      - 'nginx.conf'
+      - '.dockerignore'
+      - 'public/**'
+      - 'index.html'
+      - 'mobile.html'
+      - 'auth.html'
+      - 'vercel.json'
+      - 'manifest.json'
+      - 'sw.js'
+      - '.github/workflows/ci.yml'
     branches:
       - main
       - feat/typescript-native-foundation
       - fix/mainline-security-workflow
       - feat/marketplace-end-to-end
+      - agent/cto-roadmap-2026-11
   pull_request:
     branches:
       - main
+    paths:
+      - 'src/**'
+      - 'mobile/**'
+      - 'tests/**'
+      - 'prisma/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - '.env.example'
+      - '.env.docker.example'
+      - 'nginx.conf'
+      - '.dockerignore'
+      - 'public/**'
+      - 'index.html'
+      - 'mobile.html'
+      - 'auth.html'
+      - 'vercel.json'
+      - 'manifest.json'
+      - 'sw.js'
+      - '.github/workflows/ci.yml'
 
 jobs:
   backend:
@@ -43,6 +86,32 @@ jobs:
       - run: npm install --no-audit --no-fund
       - run: npx prisma migrate deploy
       - run: npm test
+      - run: docker compose --env-file .env.docker.example config --quiet
+      - run: docker build --target migrator --tag mce-migrator:ci .
+      - run: docker run --rm --network host -e DATABASE_URL=postgresql://build:build@localhost:5432/build mce-migrator:ci
+      - run: docker build --tag mce-marketplace:ci .
+      - name: Smoke test production container
+        run: |
+          docker run -d --name mce-api-ci --network host \
+            -e DATABASE_URL=postgresql://build:build@localhost:5432/build \
+            -e JWT_SECRET=ci-only-secret-value-not-used-for-deployment-000000000000 \
+            mce-marketplace:ci
+          ready=0
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8000/api/health/ready >/dev/null; then
+              ready=1
+              break
+            fi
+            sleep 2
+          done
+          if [ "$ready" -ne 1 ]; then
+            docker logs mce-api-ci
+            docker rm -f mce-api-ci || true
+            exit 1
+          fi
+          curl --fail --silent http://127.0.0.1:8000/ >/dev/null
+          curl --fail --silent http://127.0.0.1:8000/admin >/dev/null
+          docker rm -f mce-api-ci
   mobile:
     runs-on: ubuntu-latest
     timeout-minutes: 10

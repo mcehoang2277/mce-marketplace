@@ -18,6 +18,7 @@ In the repository root, add these entries to the existing .env file (do not over
 ADMIN_PHONE="YOUR_ADMIN_PHONE"
 ADMIN_FULL_NAME="MCE Administrator"
 ADMIN_PASSWORD="REPLACE_WITH_A_UNIQUE_RANDOM_PASSWORD_AT_LEAST_14_CHARACTERS"
+ADMIN_BOOTSTRAP_CONFIRM="YES_I_UNDERSTAND"
 ```
 
 Use a phone number in international or local digit format (9–15 digits, optional leading +). Use a unique password of at least 14 characters. Generate it with a password manager. Do not use the example text above as a password.
@@ -41,7 +42,7 @@ Run this explicit command from the repository root:
 npm run db:seed:admin
 ```
 
-The seed is idempotent for the configured phone number: it creates the account if absent, or promotes the matching account to ADMIN and updates its password hash if present. Re-running it rotates that account's password to the current ADMIN_PASSWORD. The account receives a zero-balance wallet if it does not already have one.
+The seed requires ADMIN_BOOTSTRAP_CONFIRM=YES_I_UNDERSTAND. It creates the account if absent. If the phone already belongs to a non-admin user, it fails rather than promoting a customer account. Re-running it for an existing ADMIN rotates that administrator password to the current ADMIN_PASSWORD. The account receives a zero-balance wallet if it does not already have one.
 
 The command prints the admin name, phone and role only. It never prints the password.
 
