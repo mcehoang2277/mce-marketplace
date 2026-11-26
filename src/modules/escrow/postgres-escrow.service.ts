@@ -209,8 +209,11 @@ export class PostgresEscrowService {
         throw new AppError('Khoản ký quỹ không ở trạng thái LOCKED.', 409);
       }
 
+      const walletUserIds = [job.posterId, job.workerId].sort();
       await tx.wallet.createMany({
-        data: [{ userId: job.workerId, availableBalance: 0, lockedBalance: 0, totalDeposited: 0, totalWithdrawn: 0 }],
+        data: walletUserIds.map((userId) => ({
+          userId, availableBalance: 0, lockedBalance: 0, totalDeposited: 0, totalWithdrawn: 0
+        })),
         skipDuplicates: true
       });
       await lockWalletsByUserIds(tx, [job.posterId, job.workerId]);

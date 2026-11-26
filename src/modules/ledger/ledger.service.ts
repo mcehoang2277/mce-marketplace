@@ -50,13 +50,15 @@ export class LedgerService {
       include: { lines: { include: { account: true } } }
     });
     if (existing) {
-      const sameLines = existing.lines.length === normalized.length && normalized.every((expected) =>
-        existing.lines.some((actual) =>
-          actual.account.code === expected.accountCode &&
-          actual.side === expected.side &&
-          actual.amount.equals(expected.amount)
-        )
-      );
+      const expectedFingerprint = normalized
+        .map((line) => [line.accountCode, line.side, line.amount.toFixed(2)].join('|'))
+        .sort()
+        .join(';');
+      const actualFingerprint = existing.lines
+        .map((line) => [line.account.code, line.side, line.amount.toFixed(2)].join('|'))
+        .sort()
+        .join(';');
+      const sameLines = existing.lines.length === normalized.length && actualFingerprint === expectedFingerprint;
       if (
         existing.eventType !== input.eventType ||
         existing.referenceType !== input.referenceType ||
@@ -69,7 +71,13 @@ export class LedgerService {
     }
 
     const accountIds = new Map<string, string>();
+    const accountTypes = new Map<string, LedgerAccountType>();
     for (const line of normalized) {
+      const previousType = accountTypes.get(line.accountCode);
+      if (previousType && previousType !== line.accountType) {
+        throw new Error(`Ledger account type mismatch inside posting for ${line.accountCode}.`);
+      }
+      accountTypes.set(line.accountCode, line.accountType);
       let accountId = accountIds.get(line.accountCode);
       if (!accountId) {
         const account = await tx.ledgerAccount.upsert({
