@@ -23,7 +23,7 @@
 | Bank withdrawals | Not exposed as a production API | Disabled | Internal wallet credit is not a bank payout |
 | Photo evidence / anti-spoofing | Not implemented | Unavailable | Future scope after consent/storage/security design |
 | Notifications/chat | Not verified as production feature | Unavailable | No reliable outbox/notification pipeline confirmed |
-| Vercel production site | Static-only configuration | Not ready for API-backed production | vercel.json catch-all sends /api paths to mobile.html; API host/proxy is missing |
+| Vercel production site | Static-only configuration with legacy demo pages | Not ready for production | vercel.json catch-all sends /api paths to mobile.html; auth.html/mobile.html contain client-side OTP/account/wallet/payout simulation |
 | Python backend | Legacy/demo | Must remain disabled | SQLite and mock records |
 | PowerShell backend | Legacy/local | Must remain disabled | JSON store and fixture records |
 
