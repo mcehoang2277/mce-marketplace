@@ -32,6 +32,6 @@ USER nodejs
 EXPOSE 8000
 
 HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8000/api/health || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8000/api/health/ready || exit 1
 
 CMD ["node", "dist/server.js"]
