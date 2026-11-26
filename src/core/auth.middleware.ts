@@ -28,7 +28,7 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction) {
   }
 
   try {
-    const payload = jwt.verify(header.slice(7), ENV.JWT_SECRET) as JwtPayload;
+    const payload = jwt.verify(header.slice(7), ENV.JWT_SECRET, { algorithms: ['HS256'] }) as JwtPayload;
     if (
       typeof payload.sub !== 'string' ||
       typeof payload.phone !== 'string' ||
@@ -48,12 +48,25 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction) {
 }
 
 export function requireRole(...roles: AuthenticatedUser['role'][]) {
-  return (req: Request, _res: Response, next: NextFunction) => {
+  return async (req: Request, _res: Response, next: NextFunction) => {
     if (!req.auth) return next(new AppError('Chưa xác thực tài khoản.', 401));
-    if (!roles.includes(req.auth.role) && req.auth.role !== 'BOTH') {
-      return next(new AppError('Bạn không có quyền thực hiện thao tác này.', 403));
+
+    try {
+      // Do not trust a potentially stale role claim for privileged mutations.
+      const currentUser = await prisma.user.findUnique({
+        where: { id: req.auth.id },
+        select: { role: true }
+      });
+      if (!currentUser) return next(new AppError('Tài khoản không còn tồn tại.', 401));
+
+      req.auth.role = currentUser.role;
+      if (!roles.includes(currentUser.role) && currentUser.role !== 'BOTH') {
+        return next(new AppError('Bạn không có quyền thực hiện thao tác này.', 403));
+      }
+      return next();
+    } catch (error) {
+      return next(error);
     }
-    return next();
   };
 }
 
