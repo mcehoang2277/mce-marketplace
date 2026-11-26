@@ -132,6 +132,24 @@ function Save-Db($dbObj) {
 # Ensure DB initialized
 $global:db = Get-Db
 
+# Local Admin identity is provisioned from process environment; passwords are never stored in database.json.
+$script:AdminSessions = @{}
+$adminPhone = [Environment]::GetEnvironmentVariable("MCE_ADMIN_PHONE")
+$adminName = [Environment]::GetEnvironmentVariable("MCE_ADMIN_NAME")
+if ($adminPhone -and $adminName) {
+    $adminUser = $global:db.users | Where-Object { $_.phone -eq $adminPhone } | Select-Object -First 1
+    if (-not $adminUser) {
+        $adminUser = @{ id = "admin-local-001"; name = $adminName; phone = $adminPhone; role = "ADMIN"; karmaScore = 5.0; completionRate = 1.0; walletBalance = 0; isVerified = $true; createdAt = (Get-Date).ToString("o") }
+        $userList = [System.Collections.ArrayList]@($global:db.users)
+        $userList.Add($adminUser) | Out-Null
+        $global:db.users = $userList
+    } else {
+        $adminUser.role = "ADMIN"
+        $adminUser.name = $adminName
+    }
+    Save-Db $global:db
+}
+
 $listener = New-Object System.Net.HttpListener
 $listener.Prefixes.Add("http://localhost:$Port/")
 
@@ -201,6 +219,8 @@ while ($listener.IsListening) {
         if ($urlPath -eq "/" -or [string]::IsNullOrEmpty($urlPath)) {
             $urlPath = "/index.html"
         }
+        if ($urlPath -eq "/admin" -or $urlPath -eq "/admin/") { $urlPath = "/public/admin.html" }
+        if ($urlPath -eq "/admin/ops" -or $urlPath -eq "/admin/ops/") { $urlPath = "/public/admin-ops.html" }
 
         # --- REST API ENDPOINTS ---
 
@@ -288,6 +308,17 @@ while ($listener.IsListening) {
         if ($urlPath -eq "/api/auth/login" -and $httpMethod -eq "POST") {
             $body = Read-RequestBody $request
             $db = Get-Db
+            $configuredAdminPhone = [Environment]::GetEnvironmentVariable("MCE_ADMIN_PHONE")
+            $configuredAdminPassword = [Environment]::GetEnvironmentVariable("MCE_ADMIN_PASSWORD")
+            if ($configuredAdminPhone -and $configuredAdminPassword -and $body.phone -eq $configuredAdminPhone -and $body.password -ceq $configuredAdminPassword) {
+                $adminUser = $db.users | Where-Object { $_.phone -eq $configuredAdminPhone -and $_.role -eq "ADMIN" } | Select-Object -First 1
+                if ($adminUser) {
+                    $adminToken = [Guid]::NewGuid().ToString("N") + [Guid]::NewGuid().ToString("N")
+                    $script:AdminSessions[$adminToken] = @{ userId = $adminUser.id; expiresAt = (Get-Date).AddHours(8) }
+                    Send-Json $response @{ success = $true; user = @{ id = $adminUser.id; name = $adminUser.name; phone = $adminUser.phone; role = "ADMIN" }; token = $adminToken }
+                    continue
+                }
+            }
             $user = $db.users | Where-Object { $_.phone -eq $body.phone } | Select-Object -First 1
             if (-not $user) {
                 # Create default user profile for login
@@ -304,6 +335,45 @@ while ($listener.IsListening) {
                 }
             }
             Send-Json $response @{ success = $true; user = $user; token = "jwt-" + $user.id }
+            continue
+        }
+
+        # Admin session verification and read-only console APIs (local JSON database).
+        if ($urlPath -eq "/api/auth/me" -and $httpMethod -eq "GET") {
+            $header = $request.Headers["Authorization"]
+            $sessionToken = if ($header -match "^Bearer\\s+(.+)$") { $Matches[1] } else { "" }
+            $session = if ($sessionToken) { $script:AdminSessions[$sessionToken] } else { $null }
+            if (-not $session -or $session.expiresAt -lt (Get-Date)) { Send-Json $response @{ success = $false; message = "Phiên đăng nhập không hợp lệ hoặc đã hết hạn." } 401; continue }
+            $db = Get-Db
+            $user = $db.users | Where-Object { $_.id -eq $session.userId -and $_.role -eq "ADMIN" } | Select-Object -First 1
+            if (-not $user) { Send-Json $response @{ success = $false; message = "Tài khoản không còn quyền ADMIN." } 403; continue }
+            Send-Json $response @{ success = $true; user = @{ id = $user.id; name = $user.name; phone = $user.phone; role = "ADMIN" } }
+            continue
+        }
+        if ($urlPath -eq "/api/admin/overview" -and $httpMethod -eq "GET") {
+            $header = $request.Headers["Authorization"]
+            $sessionToken = if ($header -match "^Bearer\\s+(.+)$") { $Matches[1] } else { "" }
+            $session = if ($sessionToken) { $script:AdminSessions[$sessionToken] } else { $null }
+            if (-not $session -or $session.expiresAt -lt (Get-Date)) { Send-Json $response @{ success = $false; message = "Không có quyền ADMIN." } 401; continue }
+            $db = Get-Db
+            $openDisputes = @($db.escrows | Where-Object { $_.status -eq "DISPUTED" }).Count
+            Send-Json $response @{ success = $true; overview = @{ users = @($db.users).Count; jobs = @($db.jobs).Count; applications = 0; payments = @($db.transactions).Count; disputes = $openDisputes; openDisputes = $openDisputes } }
+            continue
+        }
+        if ($urlPath -eq "/api/admin/users" -and $httpMethod -eq "GET") {
+            $header = $request.Headers["Authorization"]
+            $sessionToken = if ($header -match "^Bearer\\s+(.+)$") { $Matches[1] } else { "" }
+            $session = if ($sessionToken) { $script:AdminSessions[$sessionToken] } else { $null }
+            if (-not $session -or $session.expiresAt -lt (Get-Date)) { Send-Json $response @{ success = $false; message = "Không có quyền ADMIN." } 401; continue }
+            $db = Get-Db
+            $q = $request.QueryString["q"]
+            $allUsers = @($db.users | Where-Object { -not $q -or $_.name -like "*$q*" -or $_.phone -like "*$q*" })
+            $page = 1; $limit = 20
+            [void][int]::TryParse($request.QueryString["page"], [ref]$page)
+            [void][int]::TryParse($request.QueryString["limit"], [ref]$limit)
+            if ($page -lt 1) { $page = 1 }; if ($limit -lt 1 -or $limit -gt 100) { $limit = 20 }
+            $mapped = @($allUsers | Select-Object -Skip (($page - 1) * $limit) -First $limit | ForEach-Object { @{ id = $_.id; fullName = $_.name; phone = $_.phone; role = $_.role; karmaScore = $_.karmaScore; isKycVerified = [bool]$_.isVerified; isPhoneVerified = [bool]$_.isVerified; createdAt = $_.createdAt; wallet = @{ availableBalance = $_.walletBalance; lockedBalance = 0 } } })
+            Send-Json $response @{ success = $true; pagination = @{ page = $page; limit = $limit; total = $allUsers.Count; totalPages = [Math]::Max(1, [Math]::Ceiling($allUsers.Count / $limit)) }; users = $mapped }
             continue
         }
 
