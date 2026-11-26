@@ -17,5 +17,6 @@
 | OPS-003 | P1 | Mitigated in engineering branch; CI pending | Container health check only checked process liveness | Readiness endpoint checks PostgreSQL |
 | BUILD-002 | P1 | Open | Root package-lock metadata/dependencies are stale versus package.json | Regenerate lockfile; npm ci succeeds cleanly |
 | INFRA-001 | P2 | Mitigated | Redis provisioned without current API consumer | Redis optional profile, not started by default |
+| DEPLOY-001 | P0 | Open | Vercel config builds static HTML only and rewrites all paths, including /api/*, to mobile.html; no Express API function/host is configured | Deploy the TypeScript API separately and route /api/* to that HTTPS host; smoke-test login, jobs, payments and admin from the actual Vercel domain |
 | PERF-001 | P2 | Open | No measured API/web/database performance baseline | Publish reproducible p50/p95/load report |
 | UX-001 | P2 | Open | No complete browser/device E2E evidence | Critical journeys pass browser and real-device matrix |
