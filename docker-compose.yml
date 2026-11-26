@@ -29,7 +29,24 @@ services:
       VIETQR_ACCOUNT_NAME: ${VIETQR_ACCOUNT_NAME:-}
       CORS_ORIGINS: ${CORS_ORIGINS:-}
     depends_on:
+      # One-off migration job. Run with: docker compose --profile migrate run --rm migrate
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: migrator
+    profiles: ["migrate"]
+    restart: "no"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in the private .env file using host postgres}
+    depends_on:
       postgres:
+        condition: service_healthy
+    networks:
+      - mce_network
+
+  postgres:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:8000/api/health/ready"]
