@@ -50,11 +50,18 @@ export class LedgerService {
       include: { lines: { include: { account: true } } }
     });
     if (existing) {
+      const sameLines = existing.lines.length === normalized.length && normalized.every((expected) =>
+        existing.lines.some((actual) =>
+          actual.account.code === expected.accountCode &&
+          actual.side === expected.side &&
+          actual.amount.equals(expected.amount)
+        )
+      );
       if (
         existing.eventType !== input.eventType ||
         existing.referenceType !== input.referenceType ||
         existing.referenceId !== input.referenceId ||
-        !existing.lines.reduce((sum, line) => sum.plus(line.side === LedgerEntrySide.DEBIT ? line.amount : 0), new Prisma.Decimal(0)).equals(debit)
+        !sameLines
       ) {
         throw new Error('Ledger idempotency key was reused with different posting data.');
       }
