@@ -130,7 +130,7 @@ Targets are proposed, not measured results or contractual guarantees.
 
 ## Founder decisions and revised release gates — 2026-11-26
 
-1. Freeze platform fee at 0% for the first launch period; snapshot the policy in every escrow.
+1. Keep platform fee at 0% until a separate explicit Founder decision changes it; snapshot the policy in every escrow.
 2. Treat Web/PWA and Expo as equal first-class clients of one shared API.
 3. Target managed Node.js + managed PostgreSQL; do not deploy or provision paid infrastructure without a separate approval.
 4. Prioritize Ledger, webhook reconciliation, idempotency and concurrency before UI expansion.
