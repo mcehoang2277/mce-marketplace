@@ -61,6 +61,8 @@ export class PaymentService {
         return { ...vietQrData, paymentId: paymentRecord.id, referenceCode };
       }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
     } catch (error) {
+      const code = typeof error === 'object' && error !== null && 'code' in error ? String(error.code) : '';
+      if (!['P2002', 'P2034'].includes(code)) throw error;
       // If a parallel request won the partial unique index, reuse its still-valid intent.
       const existing = await prisma.paymentTransaction.findFirst({
         where: { userId: params.userId, jobId: params.jobId, status: 'PENDING', createdAt: { gte: new Date(Date.now() - 15 * 60 * 1000) } },

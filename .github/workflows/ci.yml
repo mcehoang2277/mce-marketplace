@@ -29,7 +29,6 @@ on:
       - fix/mainline-security-workflow
       - feat/marketplace-end-to-end
       - agent/cto-roadmap-2026-11
-      - feat/ledger-webhook-concurrency
   pull_request:
     branches:
       - main
@@ -78,6 +77,7 @@ jobs:
       JWT_SECRET: ci-only-secret-value-not-used-for-deployment-000000000000
       SEPAY_WEBHOOK_SECRET: ci-only-sepay-hmac-secret-not-used-for-deployment-000000000000
       VIETQR_ACCOUNT_NO: "1234567890"
+      VIETQR_ACCOUNT_NAME: "MCE CI"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

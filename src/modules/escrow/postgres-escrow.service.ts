@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { prisma } from '../../core/database/prisma';
 import { AppError } from '../../core/errors/app-error';
 import { LedgerAccountType, LedgerEntrySide, Prisma } from '@prisma/client';
@@ -364,38 +365,40 @@ export class PostgresEscrowService {
     amount: number,
     bankInfo: { bank: string; account: string; owner: string }
   ) {
-    if (amount < 10000) throw new AppError('Số tiền rút tối thiểu là 10.000 VNĐ', 400);
-
-    return await prisma.$transaction(async (tx) => {
+    if (!Number.isSafeInteger(amount) || amount < 10000) throw new AppError('Số tiền rút không hợp lệ (tối thiểu 10.000 VNĐ).', 400);
+    const requestId = 'WD-' + randomUUID();
+    return prisma.$transaction(async (tx) => {
+      await lockWalletsByUserIds(tx, [userId]);
       const wallet = await tx.wallet.findUnique({ where: { userId } });
-      if (!wallet || wallet.availableBalance.toNumber() < amount) {
-        throw new AppError('Số dư khả dụng không đủ để rút tiền', 400);
-      }
-
+      if (!wallet) throw new AppError('Không tìm thấy ví.', 404);
       const balBefore = wallet.availableBalance;
       const balAfter = balBefore.minus(new Prisma.Decimal(amount));
-
-      const updatedWallet = await tx.wallet.update({
-        where: { id: wallet.id },
+      const reserved = await tx.wallet.updateMany({
+        where: { id: wallet.id, availableBalance: { gte: new Prisma.Decimal(amount) } },
+        data: { availableBalance: { decrement: new Prisma.Decimal(amount) } }
+      });
+      if (reserved.count !== 1) throw new AppError('Số dư khả dụng không đủ hoặc vừa thay đổi.', 409);
+      const updatedWallet = await tx.wallet.findUniqueOrThrow({ where: { id: wallet.id } });
+      await LedgerService.createPosting(tx, {
+        eventType: 'WITHDRAWAL_REQUEST',
+        idempotencyKey: 'WITHDRAWAL_REQUEST:' + requestId,
+        referenceType: 'WITHDRAWAL',
+        referenceId: requestId,
+        description: 'Giữ tiền chờ đối soát và chuyển khoản qua PSP; chưa xác nhận đã chi tiền.',
+        lines: [
+          { accountCode: 'USER_AVAILABLE:' + userId, accountName: 'User available wallet liability', accountType: LedgerAccountType.LIABILITY, side: LedgerEntrySide.DEBIT, amount },
+          { accountCode: 'PAYOUT_PENDING:' + userId, accountName: 'Pending bank payout liability', accountType: LedgerAccountType.LIABILITY, side: LedgerEntrySide.CREDIT, amount }
+        ]
+      });
+      const lastFour = bankInfo.account.replace(/\\D/g, '').slice(-4);
+      const transaction = await tx.walletTransaction.create({
         data: {
-          availableBalance: balAfter,
-          totalWithdrawn: wallet.totalWithdrawn.plus(new Prisma.Decimal(amount))
+          walletId: wallet.id, type: 'WITHDRAWAL', amount: new Prisma.Decimal(amount),
+          balanceBefore: balBefore, balanceAfter: balAfter, referenceId: requestId,
+          description: 'Yêu cầu rút tiền đang chờ PSP: ' + bankInfo.bank + ' (****' + lastFour + '). Chưa xác nhận chuyển khoản.'
         }
       });
-
-      const txRecord = await tx.walletTransaction.create({
-        data: {
-          walletId: wallet.id,
-          type: 'WITHDRAWAL',
-          amount: new Prisma.Decimal(amount),
-          balanceBefore: balBefore,
-          balanceAfter: balAfter,
-          referenceId: `WD-${Date.now().toString().slice(-6)}`,
-          description: `Rút tiền về ${bankInfo.bank} (${bankInfo.account} - ${bankInfo.owner})`
-        }
-      });
-
-      return { wallet: updatedWallet, transaction: txRecord };
-    });
+      return { wallet: updatedWallet, transaction, payoutStatus: 'PENDING_PROVIDER' as const };
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   }
 }
