@@ -163,23 +163,4 @@ export class PaymentWebhookController {
     }
   }
 
-  /**
-   * Endpoint giả lập Webhook ngân hàng dùng cho Testing & QA
-   */
-  public static async simulateWebhook(req: Request, res: Response) {
-    const { jobId, amount, customContent } = req.body;
-    const targetJobId = jobId || 'JOB-001';
-    const targetAmount = amount || 240000;
-    const content = customContent || `MCE ${targetJobId}`;
-    const fakeTxId = `SIM-TX-${Date.now()}`;
-
-    req.body = {
-      id: fakeTxId,
-      amount: targetAmount,
-      content,
-      transactionId: fakeTxId
-    };
-
-    return await PaymentWebhookController.handleBankWebhook(req, res);
-  }
 }
