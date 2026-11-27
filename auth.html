@@ -259,7 +259,7 @@
             <label class="block text-xs font-bold text-brand-textSecondary uppercase tracking-wider mb-1">
               Email / Gmail liên hệ <span class="text-brand-textSecondary text-[10px] lowercase">(không bắt buộc)</span>
             </label>
-            <input id="regEmail" type="email" placeholder="example@gmail.com" value="nguyenvanan.mce@gmail.com" class="w-full px-3 py-2.5 bg-brand-surface border border-brand-border rounded-xl text-sm font-medium text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none">
+            <input id="regEmail" type="email" placeholder="example@gmail.com" value="" class="w-full px-3 py-2.5 bg-brand-surface border border-brand-border rounded-xl text-sm font-medium text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none">
           </div>
 
           <div class="p-3 bg-brand-surface rounded-xl border border-brand-border flex items-center justify-between">
@@ -328,62 +328,15 @@
             </div>
           </div>
 
-          <!-- Ngân hàng VietQR -->
-          <div class="p-3.5 bg-brand-surface rounded-2xl border border-brand-border space-y-2.5">
-            <span class="text-xs font-bold text-brand-success uppercase tracking-wider block">Tài khoản nhận tiền tự động (VietQR):</span>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-              <div>
-                <label class="block text-[10px] font-semibold text-brand-textSecondary mb-1">Ngân hàng</label>
-                <select id="regBankName" class="w-full px-3 py-2 border border-brand-border rounded-xl bg-brand-card text-brand-textPrimary font-medium">
-                  <option value="MBBank">MBBank (Quân Đội)</option>
-                  <option value="Vietcombank">Vietcombank</option>
-                  <option value="Techcombank">Techcombank</option>
-                  <option value="BIDV">BIDV</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-[10px] font-semibold text-brand-textSecondary mb-1">Số tài khoản</label>
-                <input id="regBankAccount" type="text" value="0981234567" class="w-full px-3 py-2 border border-brand-border rounded-xl bg-brand-card font-bold text-brand-textPrimary">
-              </div>
-            </div>
+          <div class="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 space-y-2">
+            <p class="text-sm font-bold text-brand-textPrimary">Thiết lập tài khoản ngân hàng tạm khóa</p>
+            <p class="text-xs text-brand-textSecondary">MCE chưa tích hợp xác minh chủ tài khoản và đối tác chi trả. Không nhập thông tin ngân hàng vào biểu mẫu thử nghiệm. Tính năng này sẽ được mở sau khi hoàn tất kiểm thử an toàn.</p>
           </div>
 
-          <button type="button" onclick="finishRegistration()" class="w-full py-3.5 bg-brand-success hover:bg-emerald-600 text-slate-950 font-black rounded-xl text-sm shadow transition">
-            🎉 Hoàn Tất Đăng Ký & Đăng Nhập Ngay
+          <button type="button" disabled class="w-full py-3.5 bg-brand-border text-brand-textSecondary font-bold rounded-xl text-sm opacity-60 cursor-not-allowed">
+            Đăng ký tạm thời chưa khả dụng
           </button>
         </div>
-      </div>
-    </div>
-
-    <!-- MODAL THÀNH CÔNG -->
-    <div id="successModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-      <div class="bg-brand-card rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl border border-brand-border animate-in zoom-in-95 duration-200">
-        <div class="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-2xl mx-auto mb-3">✓</div>
-        <h3 class="text-base font-black text-brand-textPrimary">Kích Hoạt Tài Khoản Thành Công!</h3>
-        <p class="text-xs text-brand-textSecondary mt-1">Đã cấp chứng nhận định danh MCE Passport ID cho bạn.</p>
-
-        <div class="mt-4 p-3.5 rounded-2xl bg-brand-surface border border-brand-border text-left space-y-1.5 text-xs">
-          <div class="flex justify-between items-center">
-            <span class="text-brand-textSecondary">Chủ tài khoản:</span>
-            <span class="font-bold text-brand-textPrimary" id="successUserName"></span>
-          </div>
-          <div class="flex justify-between items-center">
-            <span class="text-brand-textSecondary">SĐT liên hệ:</span>
-            <span class="font-bold text-brand-primary" id="successUserPhone">0981234567</span>
-          </div>
-          <div class="flex justify-between items-center">
-            <span class="text-brand-textSecondary">Email/Gmail:</span>
-            <span class="font-bold text-brand-textPrimary" id="successUserEmail">nguyenvanan.mce@gmail.com</span>
-          </div>
-          <div class="flex justify-between items-center pt-1 border-t border-brand-border">
-            <span class="text-brand-textSecondary">Chính sách:</span>
-            <span class="font-bold text-emerald-400">0% Phí Sàn (90 Ngày)</span>
-          </div>
-        </div>
-
-        <button onclick="redirectToDashboard()" class="mt-5 w-full py-3 bg-brand-primary hover:bg-brand-secondary text-white font-bold rounded-xl text-xs transition shadow">
-          Vào Sàn Giao Dịch Ngay &rarr;
-        </button>
       </div>
     </div>
 
