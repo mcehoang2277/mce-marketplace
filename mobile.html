@@ -44,10 +44,7 @@
     }
   </script>
 
-  <!-- Leaflet CSS & JS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  
+  <!-- Google Maps JS API sẽ được nạp động theo GOOGLE_MAPS_API_KEY từ /api/config/public -->
   <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -83,11 +80,9 @@
       .desktop-frame-only { display: none !important; }
     }
     
-    #mobileMap { height: 100%; width: 100%; border-radius: 0; z-index: 10; }
-    .leaflet-tile { filter: brightness(0.85) contrast(1.15) invert(0.92) hue-rotate(185deg); }
-    .leaflet-container { background: #080D1A !important; }
-    .leaflet-popup-content-wrapper { background: #151F32 !important; color: #F8FAFC !important; border: 1px solid #273449; border-radius: 12px; }
-    .leaflet-popup-tip { background: #151F32 !important; }
+    #mobileMap { height: 100%; width: 100%; border-radius: 0; z-index: 10; background: #080D1A; }
+    .gm-style .gm-style-iw-c { background: #151F32 !important; color: #F8FAFC !important; border: 1px solid #273449; border-radius: 12px !important; }
+    .gm-style .gm-style-iw-tc::after { background: #151F32 !important; }
 
     /* Soundwave animation for VoIP call */
     .sound-bar {
@@ -255,15 +250,15 @@
         </div>
 
         <!-- 1-Touch Direct Match Banner & Instant Route (Nhận thẳng từ bản đồ) -->
-        <div id="directMatchCard" class="m-3 p-3 bg-brand-card rounded-2xl border border-brand-primary/50 shadow-lg space-y-2">
+        <div id="directMatchCard" class="m-3 p-3 bg-brand-card rounded-2xl border border-brand-primary/50 shadow-lg space-y-2 hidden">
           <div class="flex items-start justify-between">
             <div>
               <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-brand-success/10 text-emerald-400 border border-brand-success/30">⚡ ĐANG CHỌN TRÊN BẢN ĐỒ</span>
-              <h3 id="directJobTitle" class="font-extrabold text-xs text-brand-textPrimary mt-1">Phụ đóng gói 300 kiện hàng shopee</h3>
-              <p id="directJobMeta" class="text-[10px] text-brand-textSecondary mt-0.5">Số 12 Tràng Thi · Cách bạn 0 m · 14:00 - 17:00</p>
+              <h3 id="directJobTitle" class="font-extrabold text-xs text-brand-textPrimary mt-1">Chưa chọn ca việc nào</h3>
+              <p id="directJobMeta" class="text-[10px] text-brand-textSecondary mt-0.5">Chọn một ca việc trên bản đồ hoặc danh sách bên dưới</p>
             </div>
             <div class="text-right">
-              <div id="directJobPay" class="text-sm font-black text-brand-primary">240.000đ</div>
+              <div id="directJobPay" class="text-sm font-black text-brand-primary">0đ</div>
               <div class="text-[9px] text-emerald-400 font-bold">100% về ví (0% phí)</div>
             </div>
           </div>
@@ -285,7 +280,7 @@
         <!-- Dynamic Scrollable Job List Section (Nhiều lựa chọn & cuộn mượt mà) -->
         <div id="staticJobListSection" class="px-3 pb-3 space-y-2">
           <div class="flex items-center justify-between text-[11px] font-bold text-brand-textSecondary px-0.5">
-            <span id="jobListCountHeader">Danh sách việc làm (13 ca đang mở):</span>
+            <span id="jobListCountHeader">Danh sách việc làm (0 ca đang mở):</span>
             <span id="scanOrderBadge" class="text-[9px] text-emerald-400 font-extrabold flex items-center gap-1">
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
               Gần nhất → Xa dần
@@ -294,18 +289,18 @@
 
           <!-- Category Filter Bar for List -->
           <div class="flex gap-1.5 overflow-x-auto custom-scroll pb-1">
-            <button onclick="filterListCategory('ALL')" id="catTabAll" class="text-[9px] font-extrabold px-2.5 py-1 rounded-lg bg-brand-primary text-white shadow whitespace-nowrap">🔥 Tất Cả (13)</button>
-            <button onclick="filterListCategory('PACK')" id="catTabPack" class="text-[9px] font-bold px-2 py-1 rounded-lg bg-brand-surface border border-brand-border text-brand-textSecondary hover:text-brand-textPrimary whitespace-nowrap">📦 Đóng Gói / Kho (3)</button>
-            <button onclick="filterListCategory('FARM')" id="catTabFarm" class="text-[9px] font-bold px-2 py-1 rounded-lg bg-brand-surface border border-brand-border text-brand-textSecondary hover:text-brand-textPrimary whitespace-nowrap">🌾 Nông Nghiệp / Tỉnh (3)</button>
-            <button onclick="filterListCategory('CLEAN')" id="catTabClean" class="text-[9px] font-bold px-2 py-1 rounded-lg bg-brand-surface border border-brand-border text-brand-textSecondary hover:text-brand-textPrimary whitespace-nowrap">🧹 Dọn Dẹp / Tiệc (3)</button>
-            <button onclick="filterListCategory('DELIVERY')" id="catTabDeliv" class="text-[9px] font-bold px-2 py-1 rounded-lg bg-brand-surface border border-brand-border text-brand-textSecondary hover:text-brand-textPrimary whitespace-nowrap">🛵 Giao Hàng (2)</button>
-            <button onclick="filterListCategory('PET')" id="catTabPet" class="text-[9px] font-bold px-2 py-1 rounded-lg bg-brand-surface border border-brand-border text-brand-textSecondary hover:text-brand-textPrimary whitespace-nowrap">🐶 Thú Cưng (1)</button>
-            <button onclick="filterListCategory('HEAVY')" id="catTabHeavy" class="text-[9px] font-bold px-2 py-1 rounded-lg bg-brand-surface border border-brand-border text-brand-textSecondary hover:text-brand-textPrimary whitespace-nowrap">💪 Phụ Hồ / Bốc Vác (1)</button>
+            <button onclick="filterListCategory('ALL')" id="catTabAll" class="text-[9px] font-extrabold px-2.5 py-1 rounded-lg bg-brand-primary text-white shadow whitespace-nowrap">🔥 Tất Cả</button>
+            <button onclick="filterListCategory('PACK')" id="catTabPack" class="text-[9px] font-bold px-2 py-1 rounded-lg bg-brand-surface border border-brand-border text-brand-textSecondary hover:text-brand-textPrimary whitespace-nowrap">📦 Đóng Gói / Kho</button>
+            <button onclick="filterListCategory('FARM')" id="catTabFarm" class="text-[9px] font-bold px-2 py-1 rounded-lg bg-brand-surface border border-brand-border text-brand-textSecondary hover:text-brand-textPrimary whitespace-nowrap">🌾 Nông Nghiệp / Tỉnh</button>
+            <button onclick="filterListCategory('CLEAN')" id="catTabClean" class="text-[9px] font-bold px-2 py-1 rounded-lg bg-brand-surface border border-brand-border text-brand-textSecondary hover:text-brand-textPrimary whitespace-nowrap">🧹 Dọn Dẹp / Tiệc</button>
+            <button onclick="filterListCategory('DELIVERY')" id="catTabDeliv" class="text-[9px] font-bold px-2 py-1 rounded-lg bg-brand-surface border border-brand-border text-brand-textSecondary hover:text-brand-textPrimary whitespace-nowrap">🛵 Giao Hàng</button>
+            <button onclick="filterListCategory('PET')" id="catTabPet" class="text-[9px] font-bold px-2 py-1 rounded-lg bg-brand-surface border border-brand-border text-brand-textSecondary hover:text-brand-textPrimary whitespace-nowrap">🐶 Thú Cưng</button>
+            <button onclick="filterListCategory('HEAVY')" id="catTabHeavy" class="text-[9px] font-bold px-2 py-1 rounded-lg bg-brand-surface border border-brand-border text-brand-textSecondary hover:text-brand-textPrimary whitespace-nowrap">💪 Phụ Hồ / Bốc Vác</button>
           </div>
 
           <!-- Dynamic Scrollable Container -->
           <div id="dynamicJobListContainer" class="max-h-[460px] overflow-y-auto space-y-2.5 custom-scroll pr-0.5">
-            <!-- 13+ dynamic job cards will be rendered here -->
+            <!-- Dynamic job cards from server will render here -->
           </div>
         </div>
 
@@ -417,17 +412,17 @@
           <div class="space-y-2 text-xs">
             <div>
               <label class="block text-[10px] font-bold text-brand-textSecondary mb-1 uppercase tracking-wider">TÊN CÔNG VIỆC</label>
-              <input id="mobilePostTitle" type="text" value="Phụ dọn kho & bốc xếp 50 thùng bánh" class="w-full p-2.5 bg-brand-surface border border-brand-border rounded-xl font-bold text-xs text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none">
+              <input id="mobilePostTitle" type="text" placeholder="Nhập tên công việc cần tuyển..." class="w-full p-2.5 bg-brand-surface border border-brand-border rounded-xl font-bold text-xs text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none">
             </div>
 
             <div class="grid grid-cols-2 gap-2">
               <div>
                 <label class="block text-[10px] font-bold text-brand-textSecondary mb-1 uppercase tracking-wider">SỐ TIẾNG LÀM</label>
-                <input id="mobilePostHours" type="number" value="3" oninput="calcMobilePostEscrow()" class="w-full p-2 bg-brand-surface border border-brand-border rounded-xl font-bold text-xs text-brand-textPrimary text-center focus:outline-none">
+                <input id="mobilePostHours" type="number" min="1" placeholder="VD: 3" oninput="calcMobilePostEscrow()" class="w-full p-2 bg-brand-surface border border-brand-border rounded-xl font-bold text-xs text-brand-textPrimary text-center focus:outline-none">
               </div>
               <div>
                 <label class="block text-[10px] font-bold text-brand-textSecondary mb-1 uppercase tracking-wider">THÙ LAO (VNĐ/H)</label>
-                <input id="mobilePostRate" type="number" value="85000" oninput="calcMobilePostEscrow()" class="w-full p-2 bg-brand-surface border border-brand-border rounded-xl font-bold text-xs text-indigo-400 text-center focus:outline-none">
+                <input id="mobilePostRate" type="number" min="1000" step="1000" placeholder="VD: 80000" oninput="calcMobilePostEscrow()" class="w-full p-2 bg-brand-surface border border-brand-border rounded-xl font-bold text-xs text-indigo-400 text-center focus:outline-none">
               </div>
             </div>
 
@@ -435,16 +430,16 @@
             <div>
               <div class="flex items-center justify-between mb-1">
                 <label class="block text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider">ĐỊA ĐIỂM LÀM VIỆC</label>
-                <button type="button" onclick="pickLocationOnMap()" class="text-[10px] text-brand-primary hover:underline font-semibold">📍 Ghim trên bản đồ</button>
+                <button type="button" onclick="pickLocationOnMap()" class="text-[10px] text-brand-primary hover:underline font-semibold">📍 Ghim trên Google Maps</button>
               </div>
-              <input id="mobilePostAddress" type="text" value="Kho 18 Bạch Đằng, Hai Bà Trưng, Hà Nội" class="w-full p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs text-brand-textPrimary focus:outline-none">
+              <input id="mobilePostAddress" type="text" placeholder="Chọn trên bản đồ hoặc nhập địa chỉ..." class="w-full p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs text-brand-textPrimary focus:outline-none">
               <span class="text-[9px] text-brand-textSecondary block mt-0.5">💡 Bạn có thể tuyển người làm tại bất kỳ chi nhánh/kho nào mà không cần có mặt trực tiếp.</span>
             </div>
 
             <div class="p-3 bg-brand-surface rounded-2xl border border-brand-border flex justify-between items-center">
               <div>
                 <div class="text-[10px] text-brand-textSecondary font-semibold">TỔNG TIỀN CỌC ESCROW:</div>
-                <div id="mobilePostTotal" class="text-base font-black text-brand-primary">255.000 VNĐ</div>
+                <div id="mobilePostTotal" class="text-base font-black text-brand-primary">0 VNĐ</div>
               </div>
               <span class="text-[10px] text-emerald-400 font-extrabold bg-brand-success/10 border border-brand-success/30 px-2 py-1 rounded-xl">
                 Phí sàn: 0 VNĐ
@@ -470,8 +465,8 @@
           </div>
 
           <div>
-            <div id="mobileWalletBalance" class="text-2xl font-black text-brand-textPrimary tracking-tight">480.000 VNĐ</div>
-            <p class="text-[10px] text-emerald-400 mt-0.5">✓ Nhận trọn 100% thù lao theo chính sách 90 ngày đầu</p>
+            <div id="mobileWalletBalance" class="text-2xl font-black text-brand-textPrimary tracking-tight">0 VNĐ</div>
+            <p class="text-[10px] text-emerald-400 mt-0.5">✓ Nhận trọn 100% thù lao theo chính sách 0% phí</p>
           </div>
 
           <div class="pt-2 flex gap-2">
@@ -503,16 +498,15 @@
         <div class="bg-brand-card p-4 rounded-3xl border border-brand-border shadow space-y-3">
           <div class="flex items-center gap-3">
             <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-brand-primary to-brand-secondary text-white font-black text-xl flex items-center justify-center shadow-lg shadow-brand-primary/20 relative">
-              <span id="profileAvatarText">NV</span>
-              <span class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-brand-card flex items-center justify-center text-[10px] text-slate-950 font-bold" title="eKYC Verified">✓</span>
+              <span id="profileAvatarText">MC</span>
             </div>
             <div class="flex-1">
               <div class="flex items-center gap-1.5">
-                <h3 id="displayProfileName" class="font-extrabold text-sm text-brand-textPrimary">Nguyễn Văn An</h3>
-                <span id="displayProfileBadge" class="text-[9px] bg-brand-success/20 text-emerald-300 font-bold px-1.5 py-0.2 rounded border border-brand-success/30">eKYC ĐẠT</span>
+                <h3 id="displayProfileName" class="font-extrabold text-sm text-brand-textPrimary">Khách Chưa Đăng Nhập</h3>
+                <span id="displayProfileBadge" class="text-[9px] bg-amber-500/20 text-amber-300 font-bold px-1.5 py-0.2 rounded border border-amber-500/30">CHƯA eKYC</span>
               </div>
-              <p class="text-[11px] text-brand-textSecondary font-semibold"><span id="displayProfileRole">Người Làm Việc (Worker)</span> · <span id="displayKarmaScore">4.9⭐</span></p>
-              <p id="displayProfilePhone" class="text-[10px] text-indigo-400 font-mono mt-0.5">📞 0981 234 567</p>
+              <p class="text-[11px] text-brand-textSecondary font-semibold"><span id="displayProfileRole">Người Làm (Worker)</span> · <span id="displayKarmaScore">5.0⭐</span></p>
+              <p id="displayProfilePhone" class="text-[10px] text-indigo-400 font-mono mt-0.5">📞 Chưa đăng nhập</p>
             </div>
           </div>
 
@@ -550,7 +544,7 @@
           </div>
           <div class="p-2 bg-brand-surface/80 rounded-xl border border-brand-border/60 flex items-center justify-between text-[10px]">
             <span class="text-brand-textSecondary">Trạng thái định danh:</span>
-            <span id="ekycStatusText" class="text-emerald-400 font-bold">✓ CSDL Quốc Gia Xác Thực</span>
+            <span id="ekycStatusText" class="text-amber-400 font-bold">⚠️ Cần quét CCCD gắn chip</span>
           </div>
         </div>
 
@@ -579,7 +573,7 @@
             <label class="block text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider mb-1">
               Họ và tên thật <span class="text-rose-400">*</span>
             </label>
-            <input id="inputProfileName" type="text" value="Nguyễn Văn An" class="w-full p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs font-bold text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none">
+            <input id="inputProfileName" type="text" placeholder="Nhập họ và tên..." class="w-full p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs font-bold text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none">
           </div>
 
           <div>
@@ -587,11 +581,11 @@
               <label class="text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider">
                 Số điện thoại liên hệ <span class="text-rose-400">* (Bắt buộc)</span>
               </label>
-              <span class="text-[9px] text-emerald-400 font-bold">Đã kích hoạt SMS OTP</span>
+              <span class="text-[9px] text-emerald-400 font-bold">Xác thực OTP</span>
             </div>
             <div class="flex gap-2">
               <span class="flex items-center px-2.5 border border-brand-border rounded-xl bg-brand-surface text-xs font-semibold text-brand-textSecondary">🇻🇳 +84</span>
-              <input id="inputProfilePhone" type="tel" value="0981234567" required class="flex-1 p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs font-bold text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none">
+              <input id="inputProfilePhone" type="tel" placeholder="09xxxxxxxx" required class="flex-1 p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs font-bold text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none">
             </div>
           </div>
 
@@ -599,15 +593,15 @@
             <label class="block text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider mb-1">
               Email / Gmail liên hệ <span class="text-brand-textSecondary text-[9px] lowercase">(liên kết Google)</span>
             </label>
-            <input id="inputProfileEmail" type="email" value="nguyenvanan.mce@gmail.com" class="w-full p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs font-medium text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none">
+            <input id="inputProfileEmail" type="email" placeholder="example@gmail.com" class="w-full p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs font-medium text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none">
           </div>
 
           <div>
             <div class="flex justify-between items-center mb-1">
               <label class="text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider">Số CCCD Gắn Chip (eKYC)</label>
-              <span class="text-[9px] text-emerald-400 font-semibold">✓ CSDL Quốc Gia</span>
+              <span class="text-[9px] text-brand-textSecondary font-semibold">12 chữ số</span>
             </div>
-            <input id="inputProfileIdNumber" type="text" value="001098012345" class="w-full p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs font-mono font-bold text-brand-textPrimary">
+            <input id="inputProfileIdNumber" type="text" placeholder="Chưa xác thực eKYC" class="w-full p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs font-mono font-bold text-brand-textPrimary">
           </div>
 
           <div id="profileSkillsSection" class="space-y-1.5 pt-1">
@@ -646,7 +640,7 @@
               </div>
               <div>
                 <label class="block text-[9px] text-brand-textSecondary mb-0.5">Số tài khoản</label>
-                <input id="inputProfileAccount" type="text" value="0981234567" class="w-full p-2 bg-brand-card border border-brand-border rounded-xl text-xs font-mono font-bold text-brand-textPrimary">
+                <input id="inputProfileAccount" type="text" placeholder="Nhập số tài khoản" class="w-full p-2 bg-brand-card border border-brand-border rounded-xl text-xs font-mono font-bold text-brand-textPrimary">
               </div>
             </div>
           </div>
@@ -746,7 +740,7 @@
             </label>
             <div class="flex gap-2">
               <span class="flex items-center px-2.5 border border-brand-border rounded-xl bg-brand-surface text-xs font-semibold text-brand-textSecondary">🇻🇳 +84</span>
-              <input id="inAppLoginPhone" type="tel" required placeholder="Nhập SĐT (VD: 0981234567)" class="flex-1 p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs font-bold text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none">
+              <input id="inAppLoginPhone" type="tel" required placeholder="Nhập số điện thoại của bạn" class="flex-1 p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs font-bold text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none">
             </div>
           </div>
 
@@ -869,7 +863,7 @@
             <div class="space-y-2 text-left">
               <div>
                 <label class="block text-[9px] font-bold text-brand-textSecondary uppercase mb-0.5">Họ và tên trên CCCD <span class="text-rose-400">*</span></label>
-                <input id="ekycInputFullName" type="text" placeholder="VD: NGUYỄN VĂN AN" class="w-full p-2 bg-brand-card border border-brand-border rounded-xl text-xs font-bold text-brand-textPrimary focus:outline-none focus:ring-1 focus:ring-brand-primary">
+                <input id="ekycInputFullName" type="text" placeholder="NHẬP HỌ TÊN ĐÚNG TRÊN CCCD" class="w-full p-2 bg-brand-card border border-brand-border rounded-xl text-xs font-bold text-brand-textPrimary focus:outline-none focus:ring-1 focus:ring-brand-primary">
               </div>
               <div>
                 <label class="block text-[9px] font-bold text-brand-textSecondary uppercase mb-0.5">Số CCCD gắn chip (12 chữ số) <span class="text-rose-400">*</span></label>
@@ -1035,7 +1029,7 @@
             <span class="text-red-600">NAPAS 24/7</span>
           </div>
           <!-- Dynamic QR image -->
-          <img id="escrowQrImage" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=00020101021238540010A0000007270124000697042201100981234567530370454062550005802VN62210817MCEESCROWJOB998163047248" class="w-44 h-44 mx-auto rounded-lg" alt="VietQR Escrow">
+          <img id="escrowQrImage" src="" class="w-44 h-44 mx-auto rounded-lg bg-slate-100" alt="VietQR Escrow">
           <div class="text-[9px] text-slate-600 font-semibold">Quét bằng ứng dụng của bất kỳ ngân hàng nào</div>
         </div>
 
@@ -1043,7 +1037,7 @@
         <div class="p-3 bg-brand-surface rounded-2xl border border-brand-border text-left space-y-1.5">
           <div class="flex justify-between items-center text-xs">
             <span class="text-brand-textSecondary">Số tiền cần nạp:</span>
-            <strong id="escrowPayAmountText" class="text-sm font-black text-emerald-400">255.000 VNĐ</strong>
+            <strong id="escrowPayAmountText" class="text-sm font-black text-emerald-400">0 VNĐ</strong>
           </div>
           <div class="flex justify-between items-center text-xs">
             <span class="text-brand-textSecondary">Ngân hàng thụ hưởng:</span>
@@ -1052,14 +1046,13 @@
           <div class="flex justify-between items-center text-xs">
             <span class="text-brand-textSecondary">Số tài khoản MCE:</span>
             <div class="flex items-center gap-1">
-              <strong class="font-mono text-indigo-400 font-bold">0981234567</strong>
-              <button type="button" onclick="navigator.clipboard.writeText('0981234567'); showToast('Đã sao chép số TK!', 'info')" class="text-[9px] bg-brand-card hover:bg-brand-border border border-brand-border px-1.5 py-0.5 rounded text-brand-textSecondary">Copy</button>
+              <strong id="escrowBankAccountText" class="font-mono text-indigo-400 font-bold">Theo cấu hình VietQR</strong>
             </div>
           </div>
           <div class="flex justify-between items-center text-xs">
             <span class="text-brand-textSecondary">Nội dung chuyển khoản:</span>
             <div class="flex items-center gap-1">
-              <strong id="escrowTransferContent" class="font-mono text-amber-400 font-bold">MCE ESCROW JOB9981</strong>
+              <strong id="escrowTransferContent" class="font-mono text-amber-400 font-bold">--</strong>
               <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('escrowTransferContent').textContent); showToast('Đã sao chép nội dung!', 'info')" class="text-[9px] bg-brand-card hover:bg-brand-border border border-brand-border px-1.5 py-0.5 rounded text-brand-textSecondary">Copy</button>
             </div>
           </div>
@@ -1174,7 +1167,7 @@
             🏢
           </div>
           <div>
-            <h4 class="font-extrabold text-xs text-brand-textPrimary leading-tight">Chủ Shop Tràng Thi</h4>
+            <h4 id="chatPeerName" class="font-extrabold text-xs text-brand-textPrimary leading-tight">Người Thuê / Đối Tác</h4>
             <span class="text-[9px] text-emerald-400 font-semibold flex items-center gap-1">
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
               Trực tuyến (Nhắn tin qua 4G - Không tốn tiền SIM)
@@ -1193,23 +1186,6 @@
       <div id="chatMessagesList" class="flex-1 p-3 overflow-y-auto space-y-2.5 text-xs">
         <div class="text-center text-[9px] text-brand-textSecondary my-1">
           Hôm nay · Kênh nhắn tin bảo mật nội bộ MCE Marketplace
-        </div>
-        
-        <!-- Poster Message -->
-        <div class="flex items-start gap-2">
-          <div class="w-6 h-6 rounded-full bg-brand-surface border border-brand-border flex items-center justify-center text-[10px]">🏢</div>
-          <div class="max-w-[75%] bg-brand-surface p-2.5 rounded-2xl rounded-tl-xs border border-brand-border text-brand-textPrimary text-[11px] leading-relaxed">
-            Chào bạn! Bạn đến số 12 Tràng Thi thì gọi mình hoặc nhắn ở đây nhé, mình ra cửa đón.
-            <span class="text-[8px] text-brand-textSecondary block mt-1 text-right">09:30</span>
-          </div>
-        </div>
-
-        <!-- Worker Message (User) -->
-        <div class="flex items-start justify-end gap-2">
-          <div class="max-w-[75%] bg-brand-primary p-2.5 rounded-2xl rounded-tr-xs text-white text-[11px] leading-relaxed">
-            Vâng anh, em đang di chuyển tới, khoảng 10 phút nữa em có mặt ạ!
-            <span class="text-[8px] text-white/70 block mt-1 text-right">09:31 · Đã đọc</span>
-          </div>
         </div>
       </div>
 
@@ -1246,8 +1222,8 @@
           <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
           CUỘC GỌI QUA INTERNET (SIM 0 ĐỒNG)
         </span>
-        <h3 class="text-base font-extrabold text-brand-textPrimary mt-2">Chủ Shop Tràng Thi</h3>
-        <p class="text-xs text-brand-textSecondary mt-0.5">Người Thuê · Ca đóng gói 300 kiện</p>
+        <h3 id="callPeerName" class="text-base font-extrabold text-brand-textPrimary mt-2">Người Thuê / Đối Tác</h3>
+        <p id="callJobSub" class="text-xs text-brand-textSecondary mt-0.5">Kênh gọi nội bộ MCE</p>
       </div>
 
       <!-- Animated Avatar with Soundwaves -->
@@ -1357,10 +1333,10 @@
 
       <!-- Job Card Details -->
       <div class="p-3 bg-brand-surface rounded-2xl border border-brand-border/60 space-y-1.5">
-        <h4 id="applyJobTitle" class="font-black text-xs text-brand-textPrimary leading-tight">Phụ đóng gói 300 kiện hàng shopee</h4>
-        <p id="applyJobAddress" class="text-[10px] text-brand-textSecondary leading-tight">Số 12 Tràng Thi, Hoàn Kiếm, Hà Nội</p>
+        <h4 id="applyJobTitle" class="font-black text-xs text-brand-textPrimary leading-tight">--</h4>
+        <p id="applyJobAddress" class="text-[10px] text-brand-textSecondary leading-tight">--</p>
         <div class="flex items-center justify-between pt-1">
-          <span id="applyJobPay" class="text-xs font-black text-emerald-400">240.000đ (100% về ví)</span>
+          <span id="applyJobPay" class="text-xs font-black text-emerald-400">0đ</span>
           <span class="text-[8px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">🔒 Tiền Ký Quỹ Đã Khóa</span>
         </div>
       </div>
@@ -1414,8 +1390,8 @@
       <!-- Job Banner -->
       <div class="p-2.5 bg-brand-surface/70 rounded-xl border border-brand-border/40 text-[10px]">
         <span class="text-brand-textSecondary">Ca làm việc:</span>
-        <strong id="reviewJobTitle" class="text-brand-textPrimary block font-bold leading-tight">Phụ đóng gói 300 kiện hàng shopee</strong>
-        <span class="text-brand-textSecondary">Thù lao: </span><span id="reviewJobPay" class="font-bold text-brand-primary">240.000đ</span>
+        <strong id="reviewJobTitle" class="text-brand-textPrimary block font-bold leading-tight">--</strong>
+        <span class="text-brand-textSecondary">Thù lao: </span><span id="reviewJobPay" class="font-bold text-brand-primary">0đ</span>
       </div>
 
       <!-- Applicant Profile Card -->
@@ -1424,8 +1400,8 @@
           <div class="flex items-center gap-2">
             <div class="w-8 h-8 rounded-full bg-brand-primary/20 border border-brand-primary/40 flex items-center justify-center text-sm">🛵</div>
             <div>
-              <strong id="reviewApplicantName" class="text-xs text-brand-textPrimary block font-bold">Nguyễn Văn An</strong>
-              <span id="reviewApplicantPhone" class="text-[9px] text-brand-textSecondary font-mono">0981234567</span>
+              <strong id="reviewApplicantName" class="text-xs text-brand-textPrimary block font-bold">Ứng viên</strong>
+              <span id="reviewApplicantPhone" class="text-[9px] text-brand-textSecondary font-mono">--</span>
             </div>
           </div>
           <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">✓ Đã eKYC CCCD</span>
@@ -1526,7 +1502,7 @@
       <div class="p-3 bg-brand-surface rounded-2xl border border-brand-border flex justify-between items-center">
         <div>
           <span class="text-[10px] text-brand-textSecondary font-semibold">Số dư khả dụng:</span>
-          <div id="withdrawModalAvailableBalance" class="text-base font-black text-emerald-400">480.000 VNĐ</div>
+          <div id="withdrawModalAvailableBalance" class="text-base font-black text-emerald-400">0 VNĐ</div>
         </div>
         <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 font-bold border border-emerald-500/30">
           Miễn 100% phí
@@ -1564,8 +1540,8 @@
           <div>
             <label class="block text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider mb-1">Số tài khoản & Chủ tài khoản</label>
             <div class="grid grid-cols-2 gap-1.5">
-              <input id="inputWithdrawAccount" type="text" value="0981234567" placeholder="Số TK" class="w-full p-2 bg-brand-surface border border-brand-border rounded-xl text-xs font-mono font-bold text-brand-textPrimary">
-              <input id="inputWithdrawOwner" type="text" value="NGUYEN VAN AN" placeholder="Chủ TK" class="w-full p-2 bg-brand-surface border border-brand-border rounded-xl text-xs font-bold text-brand-textPrimary uppercase">
+              <input id="inputWithdrawAccount" type="text" placeholder="Số TK" class="w-full p-2 bg-brand-surface border border-brand-border rounded-xl text-xs font-mono font-bold text-brand-textPrimary">
+              <input id="inputWithdrawOwner" type="text" placeholder="CHỦ TÀI KHOẢN" class="w-full p-2 bg-brand-surface border border-brand-border rounded-xl text-xs font-bold text-brand-textPrimary uppercase">
             </div>
           </div>
         </div>
@@ -1815,7 +1791,8 @@
       role: 'WORKER', // 'WORKER' or 'POSTER'
       currentTab: 1,
       activeJob: null,
-      selectedJobId: 'JOB-001',
+      selectedJobId: null,
+      selectedPostCoords: null,
       walletBalance: 0,
       shiftStatus: 'READY',
       currentCoords: { lat: 21.0285, lng: 105.8544 }, // Tọa độ dự phòng khi chưa có GPS thực tế
@@ -1868,29 +1845,98 @@
       console.warn("Storage profile load", e);
     }
 
-    // --- LEAFLET MAP ON MOBILE (INTERACTIVE LIVE RADAR) ---
-    let map, radarCircle, gpsAccuracyCircle, userMarker, offsiteMarker, activeRoutePolyline;
+    // --- GOOGLE MAPS JS API ON MOBILE (INTERACTIVE LIVE RADAR) ---
+    let map, radarCircle, gpsAccuracyCircle, userMarker, offsiteMarker, activeRoutePolyline, activeInfoWindow, googleGeocoder, googleMapsLoadPromise;
     let jobMarkers = [];
     let currentSelectedRadius = 'ALL';
     let currentSelectedCategory = 'ALL';
     let currentSearchQuery = '';
-
-    // Danh sách 13 ca việc phong phú (Nội thành, Vùng ven & Vùng xa/thưa dân)
-    const jobData = [
-      { id: 'JOB-001', title: 'Phụ đóng gói 300 kiện hàng shopee', pay: 240000, lat: 21.0285, lng: 105.8544, dist: '0 m', distanceKm: 0, type: 'PACK', poster: 'Shop Tràng Thi', zone: 'NEAR', address: 'Số 12 Tràng Thi, Hoàn Kiếm' },
-      { id: 'JOB-002', title: 'Trông giữ thú cưng chiều thứ 7', pay: 150000, lat: 21.0250, lng: 105.8510, dist: '0.5 km', distanceKm: 0.5, type: 'PET', poster: 'Chị Mai Lan', zone: 'NEAR', address: '45 Lý Thường Kiệt, Hai Bà Trưng' },
-      { id: 'JOB-003', title: 'Bốc xếp kho bánh kẹo Bạch Đằng', pay: 270000, lat: 21.0210, lng: 105.8600, dist: '1.0 km', distanceKm: 1.0, type: 'PACK', poster: 'Kho Vận 18', zone: 'NEAR', address: '18 Bạch Đằng, Hai Bà Trưng' },
-      { id: 'JOB-004', title: 'Xếp hàng mua vé xem phim suất sớm', pay: 120000, lat: 21.0320, lng: 105.8480, dist: '0.8 km', distanceKm: 0.8, type: 'QUEUE', poster: 'Anh Hoàng', zone: 'NEAR', address: 'Rạp Tháng 8, Hàng Bài' },
-      { id: 'JOB-005', title: 'Phụ việc dọn vệ sinh quán cafe tối', pay: 160000, lat: 21.0360, lng: 105.7905, dist: '6.7 km', distanceKm: 6.7, type: 'CLEAN', poster: 'The Coffee Cầu Giấy', zone: 'NEAR', address: '128 Xuân Thủy, Cầu Giấy' },
-      { id: 'JOB-006', title: 'Giao linh kiện xe máy hỏa tốc', pay: 220000, lat: 21.0120, lng: 105.8200, dist: '4.0 km', distanceKm: 4.0, type: 'DELIVERY', poster: 'Phụ Tùng Hùng Cường', zone: 'SUBURB', address: '88 Thái Hà, Đống Đa' },
-      { id: 'JOB-007', title: 'Phụ kho đóng kiện hàng cơ khí', pay: 290000, lat: 21.0500, lng: 105.8900, dist: '4.4 km', distanceKm: 4.4, type: 'PACK', poster: 'Cơ Khí Gia Lâm', zone: 'SUBURB', address: 'KCN Đài Tư, Long Biên' },
-      { id: 'JOB-008', title: 'Thu hái & đóng sọt bưởi Diễn theo ngày', pay: 350000, lat: 21.0450, lng: 105.7100, dist: '15.1 km', distanceKm: 15.1, type: 'FARM', poster: 'Hợp Tác Xã Hoài Đức', zone: 'REMOTE', address: 'Vườn Bưởi Xã Cát Quế, Hoài Đức' },
-      { id: 'JOB-009', title: 'Chăm sóc vườn lan & tưới tiêu cây cảnh', pay: 260000, lat: 21.1400, lng: 105.8500, dist: '12.4 km', distanceKm: 12.4, type: 'FARM', poster: 'Nhà Vườn Đông Anh', zone: 'REMOTE', address: 'Thôn Cổ Loa, Đông Anh' },
-      { id: 'JOB-010', title: 'Phân loại nông sản & đóng thùng xuất kho', pay: 320000, lat: 20.8700, lng: 105.8600, dist: '17.6 km', distanceKm: 17.6, type: 'FARM', poster: 'Kho Nông Sản Thường Tín', zone: 'REMOTE', address: 'Thị Trấn Thường Tín' },
-      { id: 'JOB-011', title: 'Dọn dẹp xưởng gỗ thủ công mỹ nghệ', pay: 380000, lat: 21.0100, lng: 105.5800, dist: '28.6 km', distanceKm: 28.6, type: 'CLEAN', poster: 'Làng Nghề Thạch Thất', zone: 'REMOTE', address: 'Làng Nghề Chàng Sơn, Thạch Thất' },
-      { id: 'JOB-012', title: 'Phụ hồ & bốc dỡ vật liệu xây dựng', pay: 450000, lat: 21.1300, lng: 105.5000, dist: '38.4 km', distanceKm: 38.4, type: 'HEAVY', poster: 'Công Trình Sơn Tây', zone: 'REMOTE', address: 'Phường Trung Hưng, Thị Xã Sơn Tây' },
-      { id: 'JOB-013', title: 'Phụ bếp nấu cỗ tiệc gia đình cuối tuần', pay: 400000, lat: 21.1800, lng: 105.7300, dist: '21.2 km', distanceKm: 21.2, type: 'CLEAN', poster: 'Ẩm Thực Mê Linh', zone: 'REMOTE', address: 'Xã Tiền Phong, Mê Linh' }
+    const MCE_DARK_MAP_STYLE = [
+      { elementType: 'geometry', stylers: [{ color: '#0f172a' }] },
+      { elementType: 'labels.text.stroke', stylers: [{ color: '#0f172a' }] },
+      { elementType: 'labels.text.fill', stylers: [{ color: '#94a3b8' }] },
+      { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#e2e8f0' }] },
+      { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#64748b' }] },
+      { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#1e293b' }] },
+      { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#334155' }] },
+      { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#020617' }] }
     ];
+
+    // Dữ liệu ca việc thực tế từ máy chủ (không dùng dữ liệu mẫu demo)
+    let jobData = [];
+
+    function normalizeServerJob(raw) {
+      const lat = Number(raw.lat ?? raw.location?.lat ?? 0);
+      const lng = Number(raw.lng ?? raw.location?.lng ?? 0);
+      const hours = Number(raw.hours || (raw.startTime && raw.endTime ? Math.max(1, (new Date(raw.endTime) - new Date(raw.startTime)) / 3600000) : 1));
+      const pay = Number(raw.totalEstimatedVnd ?? raw.pay ?? (Number(raw.hourlyRate || 0) * hours));
+      return {
+        id: raw.id,
+        title: raw.title || 'Ca việc MCE',
+        pay: pay,
+        lat: lat,
+        lng: lng,
+        dist: '--',
+        distanceKm: 0,
+        type: (raw.category || raw.type || 'PACK').toUpperCase(),
+        poster: raw.posterName || raw.poster?.fullName || raw.poster || 'Người thuê MCE',
+        address: raw.addressText || raw.address || ''
+      };
+    }
+
+    async function loadRealJobsFromServer() {
+      try {
+        const res = await fetch('/api/jobs');
+        if (!res.ok) return;
+        const data = await res.json();
+        const rows = Array.isArray(data.jobs) ? data.jobs : [];
+        jobData = rows.map(normalizeServerJob).filter(j => Number.isFinite(j.lat) && Number.isFinite(j.lng) && (j.lat !== 0 || j.lng !== 0));
+        applyScanFiltersAndRender({ fitBounds: jobData.length > 0, preserveSelected: true });
+      } catch (e) {
+        console.warn('Could not load /api/jobs', e);
+      }
+    }
+
+    async function ensureMobileGoogleMaps() {
+      if (window.google && window.google.maps) return true;
+      if (!googleMapsLoadPromise) {
+        googleMapsLoadPromise = (async () => {
+          let apiKey = (localStorage.getItem('mce_google_maps_key') || '').trim();
+          if (!apiKey) {
+            try {
+              const cfgRes = await fetch('/api/config/public');
+              if (cfgRes.ok) {
+                const cfg = await cfgRes.json();
+                apiKey = (cfg.googleMapsApiKey || '').trim();
+              }
+            } catch {}
+          }
+          if (!apiKey) return false;
+          await new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=places&language=vi&region=VN`;
+            script.async = true;
+            script.onload = resolve;
+            script.onerror = () => reject(new Error('Không tải được Google Maps API. Vui lòng kiểm tra GOOGLE_MAPS_API_KEY.'));
+            document.head.appendChild(script);
+          });
+          return true;
+        })();
+      }
+      return googleMapsLoadPromise;
+    }
+
+    function applyTemporaryGoogleMapsKey() {
+      const input = document.getElementById('tempGoogleMapsKeyInput');
+      const key = input ? input.value.trim() : '';
+      if (!key) {
+        showToast('⚠️ Vui lòng nhập Google Maps API Key hợp lệ.', 'error');
+        return;
+      }
+      localStorage.setItem('mce_google_maps_key', key);
+      googleMapsLoadPromise = null;
+      initMobileMap();
+    }
 
     function calculateHaversineKm(lat1, lng1, lat2, lng2) {
       const toRad = (deg) => deg * Math.PI / 180;
@@ -1940,7 +1986,12 @@
     }
 
     function updateDirectMatchCard(job) {
-      if (!job) return;
+      const card = document.getElementById('directMatchCard');
+      if (!job) {
+        if (card) card.classList.add('hidden');
+        return;
+      }
+      if (card) card.classList.remove('hidden');
       mobileState.selectedJobId = job.id;
       const titleEl = document.getElementById('directJobTitle');
       const payEl = document.getElementById('directJobPay');
@@ -1965,16 +2016,17 @@
       const selectedJob = preserveSelected
         ? filtered.find(j => j.id === mobileState.selectedJobId) || filtered[0]
         : filtered[0];
-      if (selectedJob) {
-        updateDirectMatchCard(selectedJob);
-      }
+      updateDirectMatchCard(selectedJob || null);
 
-      if (fitBounds && map && userMarker) {
+      if (fitBounds && map && window.google?.maps) {
         if (jobMarkers.length > 0) {
-          const group = new L.featureGroup([userMarker, ...jobMarkers]);
-          map.fitBounds(group.getBounds().pad(0.08));
+          const bounds = new google.maps.LatLngBounds();
+          bounds.extend({ lat: mobileState.currentCoords.lat, lng: mobileState.currentCoords.lng });
+          jobMarkers.forEach(m => { if (m.getPosition()) bounds.extend(m.getPosition()); });
+          map.fitBounds(bounds, 40);
         } else {
-          map.setView([mobileState.currentCoords.lat, mobileState.currentCoords.lng], 13);
+          map.setCenter({ lat: mobileState.currentCoords.lat, lng: mobileState.currentCoords.lng });
+          map.setZoom(13);
         }
       }
       return filtered;
@@ -2026,8 +2078,8 @@
         orderBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full ${source === 'REAL_GPS' ? 'bg-emerald-400' : 'bg-amber-400'} animate-ping"></span>${originLabel}`;
       }
 
-      if (userMarker) {
-        userMarker.setPopupContent(getUserMarkerPopupHtml());
+      if (userMarker && activeInfoWindow && activeInfoWindow.anchor === userMarker) {
+        activeInfoWindow.setContent(getUserMarkerPopupHtml());
       }
 
       const headerSub = document.getElementById('headerSubtext');
@@ -2045,93 +2097,143 @@
       }
     }
 
-    function initMobileMap() {
-      recomputeJobsFromOrigin();
+    async function initMobileMap() {
+      const mapEl = document.getElementById('mobileMap');
+      let mapsReady = false;
+      try {
+        mapsReady = await ensureMobileGoogleMaps();
+      } catch (err) {
+        if (mapEl) {
+          mapEl.innerHTML = `<div class="h-full flex flex-col items-center justify-center p-4 text-center text-xs text-rose-300 space-y-2"><div>❌ ${err.message}</div></div>`;
+        }
+      }
 
-      map = L.map('mobileMap', { preferCanvas: true, zoomControl: false }).setView([mobileState.currentCoords.lat, mobileState.currentCoords.lng], 13);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
+      if (!mapsReady || !window.google?.maps) {
+        if (mapEl) {
+          mapEl.innerHTML = `
+            <div class="h-full flex flex-col items-center justify-center p-5 text-center space-y-2.5 bg-brand-bg text-xs">
+              <span class="text-2xl">🗺️</span>
+              <div class="font-extrabold text-brand-textPrimary">Google Maps API Key chưa được cấu hình</div>
+              <p class="text-[10px] text-brand-textSecondary max-w-xs leading-relaxed">
+                Để hiển thị bản đồ Google Maps chính xác và mới nhất, hãy cấu hình <code class="text-emerald-400">GOOGLE_MAPS_API_KEY</code> trong <code>.env</code> hoặc nhập nhanh key để kiểm thử:
+              </p>
+              <div class="flex gap-1.5 w-full max-w-xs">
+                <input id="tempGoogleMapsKeyInput" type="password" placeholder="Dán Google Maps API Key..." class="flex-1 px-2.5 py-1.5 bg-brand-surface border border-brand-border rounded-lg text-[11px] text-brand-textPrimary focus:outline-none">
+                <button type="button" onclick="applyTemporaryGoogleMapsKey()" class="px-3 py-1.5 bg-brand-primary text-white font-bold rounded-lg text-[10px]">Kích hoạt</button>
+              </div>
+            </div>`;
+        }
+        await loadRealJobsFromServer();
+        updateGpsStatusUI();
+        requestPersonalGPSLocation({ silent: true, fitBounds: false });
+        return;
+      }
 
-      // Current User Pin (Blue Pin — ưu tiên GPS thực tế, có thể kéo nếu muốn tự ghim)
-      const blueIcon = new L.Icon({
-        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-        iconSize: [22, 34],
-        iconAnchor: [11, 34]
+      const originPos = { lat: mobileState.currentCoords.lat, lng: mobileState.currentCoords.lng };
+      googleGeocoder = new google.maps.Geocoder();
+      activeInfoWindow = new google.maps.InfoWindow();
+
+      map = new google.maps.Map(mapEl, {
+        center: originPos,
+        zoom: 13,
+        styles: MCE_DARK_MAP_STYLE,
+        disableDefaultUI: true,
+        zoomControl: true,
+        mapTypeControl: true
       });
 
-      userMarker = L.marker([mobileState.currentCoords.lat, mobileState.currentCoords.lng], {
-        icon: blueIcon,
-        draggable: true
-      }).addTo(map).bindPopup(getUserMarkerPopupHtml());
+      userMarker = new google.maps.Marker({
+        position: originPos,
+        map: map,
+        draggable: true,
+        title: 'Vị trí của bạn',
+        icon: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+      });
 
-      userMarker.on('dragend', function(e) {
-        const pos = e.target.getLatLng();
+      userMarker.addListener('click', () => {
+        activeInfoWindow.setContent(getUserMarkerPopupHtml());
+        activeInfoWindow.open(map, userMarker);
+      });
+
+      userMarker.addListener('dragend', function(e) {
         updateScanLocation(
-          pos.lat,
-          pos.lng,
+          e.latLng.lat(),
+          e.latLng.lng(),
           "📌 Đã đặt vị trí cá nhân thủ công — đang tính khoảng cách tỏa ra xung quanh!",
           { source: 'MANUAL_PIN', accuracyMeters: null, panTo: true, preserveSelected: false }
         );
       });
 
-      // GPS accuracy halo
-      gpsAccuracyCircle = L.circle([mobileState.currentCoords.lat, mobileState.currentCoords.lng], {
-        color: '#38bdf8',
+      gpsAccuracyCircle = new google.maps.Circle({
+        map: map,
+        center: originPos,
+        radius: 0,
+        strokeColor: '#38bdf8',
+        strokeOpacity: 0.8,
+        strokeWeight: 1,
         fillColor: '#38bdf8',
-        fillOpacity: 0.14,
-        weight: 1,
-        radius: 0
-      }).addTo(map);
-
-      // Radar circle (mở rộng bao quát cả vùng thưa dân 35km)
-      radarCircle = L.circle([mobileState.currentCoords.lat, mobileState.currentCoords.lng], {
-        color: '#10b981',
-        fillColor: '#10b981',
-        fillOpacity: 0.10,
-        radius: 35000
-      }).addTo(map);
-
-      // Render job markers & list sorted outward from origin
-      applyScanFiltersAndRender({ fitBounds: false, preserveSelected: false });
-      updateGpsStatusUI();
-
-      // Ưu tiên tự động lấy định vị GPS cá nhân thực tế ngay khi mở ứng dụng
-      requestPersonalGPSLocation({ silent: false, fitBounds: false });
-
-      // Map Click Handler: Chọn vị trí tuyển (Poster) hoặc đặt ghim vị trí cá nhân
-      map.on('click', function(e) {
-        handleMapClick(e.latlng);
+        fillOpacity: 0.14
       });
+
+      radarCircle = new google.maps.Circle({
+        map: map,
+        center: originPos,
+        radius: 35000,
+        strokeColor: '#10b981',
+        strokeOpacity: 0.7,
+        strokeWeight: 1.5,
+        fillColor: '#10b981',
+        fillOpacity: 0.08
+      });
+
+      const searchInput = document.getElementById('inputMapSearch');
+      if (searchInput && google.maps.places?.Autocomplete) {
+        const ac = new google.maps.places.Autocomplete(searchInput, { componentRestrictions: { country: 'vn' } });
+        ac.addListener('place_changed', () => {
+          const place = ac.getPlace();
+          if (!place?.geometry?.location) return;
+          updateScanLocation(place.geometry.location.lat(), place.geometry.location.lng(), `📍 Đã chuyển tới ${place.name || place.formatted_address}`, {
+            source: 'MANUAL_PIN',
+            accuracyMeters: null,
+            panTo: true,
+            zoom: 14
+          });
+        });
+      }
+
+      map.addListener('click', function(e) {
+        handleMapClick({ lat: e.latLng.lat(), lng: e.latLng.lng() });
+      });
+
+      await loadRealJobsFromServer();
+      updateGpsStatusUI();
+      requestPersonalGPSLocation({ silent: false, fitBounds: false });
     }
 
     function renderJobMarkers(jobs) {
-      // Clear old markers
-      jobMarkers.forEach(m => map.removeLayer(m));
+      jobMarkers.forEach(m => m.setMap(null));
       jobMarkers = [];
-
-      const redIcon = new L.Icon({
-        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-        iconSize: [20, 32],
-        iconAnchor: [10, 32]
-      });
-
-      const goldIcon = new L.Icon({
-        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png',
-        iconSize: [20, 32],
-        iconAnchor: [10, 32]
-      });
+      if (!map || !window.google?.maps) return;
 
       jobs.forEach((job, idx) => {
         const km = typeof job.distanceKm === 'number' ? job.distanceKm : (parseFloat(job.dist) || 0);
         const isFar = km > 12;
-        const marker = L.marker([job.lat, job.lng], { icon: isFar ? goldIcon : redIcon }).addTo(map);
+        const marker = new google.maps.Marker({
+          position: { lat: job.lat, lng: job.lng },
+          map: map,
+          title: job.title,
+          icon: isFar
+            ? 'https://maps.google.com/mapfiles/ms/icons/yellow-dot.png'
+            : 'https://maps.google.com/mapfiles/ms/icons/red-dot.png'
+        });
         const proximityLabel = idx === 0 ? '⚡ Gần bạn nhất' : (isFar ? '🌾 Vùng Xa / Ngoại Ô' : 'Gần bạn');
 
         const popupContent = `
-          <div style="font-family: sans-serif; font-size: 11px; line-height: 1.4; min-width: 175px;">
+          <div style="font-family: sans-serif; font-size: 11px; line-height: 1.4; min-width: 175px; color: #F8FAFC;">
             <div style="font-weight: 800; color: #F8FAFC; margin-bottom: 2px;">${job.title}</div>
             <div style="color: #6366F1; font-weight: 800; font-size: 13px;">${job.pay.toLocaleString('vi-VN')}đ</div>
             <div style="color: #94A3B8; font-size: 10px; margin-bottom: 6px;">📍 Cách bạn: ${job.dist} · ${proximityLabel}</div>
-            <button onclick="mobileAcceptJob('${job.id}', '${job.title}', ${job.pay})" style="width: 100%; background: #6366F1; color: white; border: none; padding: 6px 8px; border-radius: 8px; font-weight: bold; font-size: 10px; cursor: pointer; margin-bottom: 4px;">
+            <button onclick="mobileAcceptJob('${job.id}', '${String(job.title).replace(/'/g, "\\'")}', ${job.pay})" style="width: 100%; background: #6366F1; color: white; border: none; padding: 6px 8px; border-radius: 8px; font-weight: bold; font-size: 10px; cursor: pointer; margin-bottom: 4px;">
               ⚡ Nhận Ca Này Ngay
             </button>
             <div style="display: flex; gap: 4px;">
@@ -2140,10 +2242,13 @@
             </div>
           </div>
         `;
-        marker.bindPopup(popupContent);
 
-        marker.on('click', function() {
+        marker.addListener('click', () => {
           selectJobOnMapDirectly(job.id);
+          if (activeInfoWindow) {
+            activeInfoWindow.setContent(popupContent);
+            activeInfoWindow.open(map, marker);
+          }
         });
 
         jobMarkers.push(marker);
@@ -2163,11 +2268,16 @@
       if (jobsToRender.length === 0) {
         container.innerHTML = `
           <div class="p-6 text-center text-xs text-brand-textSecondary bg-brand-card rounded-2xl border border-brand-border space-y-2">
-            <span class="text-2xl block">🔍</span>
-            <p>Không có ca việc nào trong bán kính/bộ lọc hiện tại.</p>
-            <button onclick="setScanRadius('ALL')" class="py-1 px-3 bg-brand-primary text-white text-[10px] font-bold rounded-lg shadow">
-              Mở Rộng Bán Kính (Vùng Thưa Dân)
-            </button>
+            <span class="text-2xl block">📭</span>
+            <p>${jobData.length === 0 ? 'Hiện chưa có ca việc thực tế nào được đăng trên hệ thống.' : 'Không có ca việc nào trong bán kính/bộ lọc hiện tại.'}</p>
+            <div class="flex gap-2 justify-center">
+              <button onclick="loadRealJobsFromServer()" class="py-1 px-3 bg-brand-surface border border-brand-border text-brand-textPrimary text-[10px] font-bold rounded-lg">
+                🔄 Tải Lại
+              </button>
+              <button onclick="switchMobileTab(3)" class="py-1 px-3 bg-brand-primary text-white text-[10px] font-bold rounded-lg shadow">
+                ＋ Đăng Ca Mới
+              </button>
+            </div>
           </div>
         `;
         return;
@@ -2323,10 +2433,12 @@
         activeB.className = "bg-emerald-500 text-slate-950 text-[9px] font-black py-0.5 px-2.5 rounded-full shadow whitespace-nowrap";
       }
 
-      if (rad === 'ALL') {
-        radarCircle.setRadius(40000);
-      } else {
-        radarCircle.setRadius(parseFloat(rad) * 1000);
+      if (radarCircle) {
+        if (rad === 'ALL') {
+          radarCircle.setRadius(40000);
+        } else {
+          radarCircle.setRadius(parseFloat(rad) * 1000);
+        }
       }
 
       const filtered = applyScanFiltersAndRender({ fitBounds: true, preserveSelected: true });
@@ -2361,7 +2473,6 @@
       applyScanFiltersAndRender({ fitBounds: false, preserveSelected: true });
     }
 
-    // --- MÔ PHỎNG THỰC TẾ: TÌM VIỆC TRÊN BẢN ĐỒ KHÔNG DÙNG LIST ---
     function selectJobOnMapDirectly(jobId) {
       recomputeJobsFromOrigin();
       const job = jobData.find(j => j.id === jobId);
@@ -2369,19 +2480,24 @@
 
       updateDirectMatchCard(job);
 
-      // Vẽ đường chỉ đường polyline neon nối từ vị trí cá nhân hiện tại đến Job
-      if (activeRoutePolyline) map.removeLayer(activeRoutePolyline);
-      activeRoutePolyline = L.polyline([
-        [mobileState.currentCoords.lat, mobileState.currentCoords.lng],
-        [job.lat, job.lng]
-      ], {
-        color: '#6366F1',
-        weight: 4,
-        dashArray: '8, 8',
-        opacity: 0.85
-      }).addTo(map);
-
-      map.fitBounds(activeRoutePolyline.getBounds(), { padding: [40, 40] });
+      if (map && window.google?.maps) {
+        if (activeRoutePolyline) activeRoutePolyline.setMap(null);
+        const pathCoords = [
+          { lat: mobileState.currentCoords.lat, lng: mobileState.currentCoords.lng },
+          { lat: job.lat, lng: job.lng }
+        ];
+        activeRoutePolyline = new google.maps.Polyline({
+          path: pathCoords,
+          geodesic: true,
+          strokeColor: '#6366F1',
+          strokeOpacity: 0.9,
+          strokeWeight: 4,
+          map: map
+        });
+        const bounds = new google.maps.LatLngBounds();
+        pathCoords.forEach(pt => bounds.extend(pt));
+        map.fitBounds(bounds, 40);
+      }
       showToast(`📍 Định tuyến từ vị trí của bạn tới "${job.title}" (${job.dist})!`, "info");
     }
 
@@ -2404,7 +2520,9 @@
         toggleBtn.className = "text-[9px] bg-brand-primary text-white font-extrabold px-2 py-1 rounded-lg shadow transition whitespace-nowrap";
       }
 
-      setTimeout(() => map.invalidateSize(), 350);
+      if (map && window.google?.maps) {
+        setTimeout(() => google.maps.event.trigger(map, 'resize'), 350);
+      }
     }
 
     // --- REAL-TIME PERSONAL GPS ENGINE (ƯU TIÊN CAO ĐỊNH VỊ CÁ NHÂN THỰC TẾ) ---
@@ -2515,10 +2633,11 @@
       if (options.accuracyMeters !== undefined) mobileState.gps.accuracyMeters = options.accuracyMeters;
       mobileState.gps.lastUpdatedAt = Date.now();
 
-      if (userMarker) userMarker.setLatLng([lat, lng]);
-      if (radarCircle) radarCircle.setLatLng([lat, lng]);
-      if (gpsAccuracyCircle) {
-        gpsAccuracyCircle.setLatLng([lat, lng]);
+      const posObj = { lat, lng };
+      if (userMarker && window.google?.maps) userMarker.setPosition(posObj);
+      if (radarCircle && window.google?.maps) radarCircle.setCenter(posObj);
+      if (gpsAccuracyCircle && window.google?.maps) {
+        gpsAccuracyCircle.setCenter(posObj);
         gpsAccuracyCircle.setRadius(
           mobileState.gps.source === 'REAL_GPS' && mobileState.gps.accuracyMeters
             ? Math.min(mobileState.gps.accuracyMeters, 1000)
@@ -2526,8 +2645,9 @@
         );
       }
 
-      if (options.panTo !== false && map) {
-        map.setView([lat, lng], options.zoom || Math.max(map.getZoom(), 13));
+      if (options.panTo !== false && map && window.google?.maps) {
+        map.panTo(posObj);
+        if (options.zoom) map.setZoom(options.zoom);
       }
 
       applyScanFiltersAndRender({
@@ -2543,7 +2663,7 @@
     }
 
     function setManualPersonalPin(lat, lng) {
-      if (map) map.closePopup();
+      if (activeInfoWindow) activeInfoWindow.close();
       updateScanLocation(
         lat,
         lng,
@@ -2552,34 +2672,42 @@
       );
     }
 
-    // --- MAP CLICK HANDLER (THUÊ Ở ĐỊA ĐIỂM KHÁC HOẶC ĐẶT VỊ TRÍ CÁ NHÂN) ---
+    // --- GOOGLE MAPS CLICK HANDLER (THUÊ Ở ĐỊA ĐIỂM KHÁC HOẶC ĐẶT VỊ TRÍ CÁ NHÂN) ---
     function handleMapClick(latlng) {
+      if (!map || !window.google?.maps) return;
+      const pos = { lat: latlng.lat, lng: latlng.lng };
       if (mobileState.offsiteMode || mobileState.role === 'POSTER') {
-        if (offsiteMarker) map.removeLayer(offsiteMarker);
+        if (offsiteMarker) offsiteMarker.setMap(null);
 
-        const greenIcon = new L.Icon({
-          iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-          iconSize: [22, 34],
-          iconAnchor: [11, 34]
+        offsiteMarker = new google.maps.Marker({
+          position: pos,
+          map: map,
+          icon: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png',
+          title: 'Điểm cần tuyển người'
         });
 
-        offsiteMarker = L.marker([latlng.lat, latlng.lng], { icon: greenIcon }).addTo(map)
-          .bindPopup(`<b>🏢 Điểm cần tuyển người</b><br><span style='font-size:10px;'>Tọa độ: ${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}</span><br><button onclick="setOffsiteJobLocation(${latlng.lat}, ${latlng.lng})" style="margin-top:4px; background:#10B981; color:#080D1A; font-weight:800; border:none; padding:4px 8px; border-radius:6px; font-size:10px; cursor:pointer;">Xác nhận tuyển tại đây</button>`)
-          .openPopup();
-
-        showToast(`📍 Đã ghim điểm làm việc mới tại [${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}]!`, "info");
-      } else {
-        L.popup()
-          .setLatLng(latlng)
-          .setContent(`
-            <div style="font-family:sans-serif; font-size:10px; text-align:center;">
-              <div style="font-weight:700; margin-bottom:4px;">Tọa độ [${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}]</div>
-              <button onclick="setManualPersonalPin(${latlng.lat}, ${latlng.lng})" style="background:#6366F1; color:#fff; border:none; padding:5px 8px; border-radius:6px; font-weight:800; cursor:pointer; width:100%;">
-                📌 Đặt làm vị trí tôi & Quét quanh đây
-              </button>
+        if (activeInfoWindow) {
+          activeInfoWindow.setContent(`
+            <div style="font-family:sans-serif; font-size:10px; color:#F8FAFC;">
+              <b>🏢 Điểm cần tuyển người</b><br>
+              <span>Tọa độ: ${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}</span><br>
+              <button onclick="setOffsiteJobLocation(${latlng.lat}, ${latlng.lng})" style="margin-top:6px; background:#10B981; color:#080D1A; font-weight:800; border:none; padding:5px 8px; border-radius:6px; font-size:10px; cursor:pointer; width:100%;">Xác nhận tuyển tại đây</button>
             </div>
-          `)
-          .openOn(map);
+          `);
+          activeInfoWindow.open(map, offsiteMarker);
+        }
+        showToast(`📍 Đã ghim điểm làm việc mới tại [${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}]!`, "info");
+      } else if (activeInfoWindow) {
+        activeInfoWindow.setPosition(pos);
+        activeInfoWindow.setContent(`
+          <div style="font-family:sans-serif; font-size:10px; text-align:center; color:#F8FAFC;">
+            <div style="font-weight:700; margin-bottom:4px;">Tọa độ [${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}]</div>
+            <button onclick="setManualPersonalPin(${latlng.lat}, ${latlng.lng})" style="background:#6366F1; color:#fff; border:none; padding:5px 8px; border-radius:6px; font-weight:800; cursor:pointer; width:100%;">
+              📌 Đặt làm vị trí tôi &amp; Quét quanh đây
+            </button>
+          </div>
+        `);
+        activeInfoWindow.open(map);
       }
     }
 
@@ -2596,9 +2724,18 @@
       }
     }
 
-    function setOffsiteJobLocation(lat, lng) {
-      document.getElementById('mobilePostAddress').value = `Tọa độ vị trí: ${lat.toFixed(4)}, ${lng.toFixed(4)} (Chi nhánh / Kho khác)`;
-      showToast("✅ Đã cập nhật vị trí làm việc vào mục Đăng việc!", "success");
+    async function setOffsiteJobLocation(lat, lng) {
+      mobileState.selectedPostCoords = { lat, lng };
+      const addrInput = document.getElementById('mobilePostAddress');
+      if (addrInput) addrInput.value = `Tọa độ: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+      if (googleGeocoder) {
+        try {
+          const res = await googleGeocoder.geocode({ location: { lat, lng } });
+          const formatted = res.results?.[0]?.formatted_address;
+          if (formatted && addrInput) addrInput.value = formatted;
+        } catch {}
+      }
+      showToast("✅ Đã cập nhật địa chỉ Google Maps vào mục Đăng việc!", "success");
       switchMobileTab(3);
     }
 
@@ -2614,19 +2751,37 @@
       applyScanFiltersAndRender({ fitBounds: false, preserveSelected: true });
     }
 
-    function searchLocationOnMap() {
+    async function searchLocationOnMap() {
       const q = document.getElementById('inputMapSearch').value.trim();
       currentSearchQuery = q;
       const filtered = applyScanFiltersAndRender({ fitBounds: Boolean(q), preserveSelected: false });
       if (!q) {
-        if (map) map.setView([mobileState.currentCoords.lat, mobileState.currentCoords.lng], 13);
+        if (map && window.google?.maps) {
+          map.panTo({ lat: mobileState.currentCoords.lat, lng: mobileState.currentCoords.lng });
+          map.setZoom(13);
+        }
         return;
       }
       if (filtered.length > 0) {
         showToast(`📍 Tìm thấy ${filtered.length} ca khớp "${q}" (đã xếp từ gần bạn nhất)!`, "success");
-      } else {
-        showToast(`🔍 Không thấy ca nào khớp "${q}" quanh vị trí của bạn.`, "info");
+        return;
       }
+      if (googleGeocoder) {
+        try {
+          const res = await googleGeocoder.geocode({ address: q, region: 'VN' });
+          const hit = res.results?.[0];
+          if (hit) {
+            updateScanLocation(hit.geometry.location.lat(), hit.geometry.location.lng(), `📍 Google Maps: ${hit.formatted_address}`, {
+              source: 'MANUAL_PIN',
+              accuracyMeters: null,
+              panTo: true,
+              zoom: 14
+            });
+            return;
+          }
+        } catch {}
+      }
+      showToast(`🔍 Không thấy ca hoặc địa điểm khớp "${q}".`, "info");
     }
 
     function filterMapJobs(type) {
@@ -2645,6 +2800,9 @@
     }
 
     function openChatModal() {
+      const peer = (mobileState.activeJob && mobileState.activeJob.poster) || 'Người Thuê / Đối Tác';
+      const peerEl = document.getElementById('chatPeerName');
+      if (peerEl) peerEl.textContent = peer;
       document.getElementById('chatModal').classList.remove('hidden');
       loadChatHistory();
     }
@@ -2653,14 +2811,16 @@
     }
 
     async function loadChatHistory() {
+      const chatJobId = mobileState.activeJob ? mobileState.activeJob.id : mobileState.selectedJobId;
+      if (!chatJobId) return;
       try {
-        const res = await fetch('/api/chat?jobId=JOB-001');
+        const res = await fetch('/api/chat?jobId=' + encodeURIComponent(chatJobId));
         if (res.ok) {
           const data = await res.json();
           if (data && data.messages && data.messages.length > 0) {
             const list = document.getElementById('chatMessagesList');
-            // Keep first 2 welcome messages if empty
-            if (list && list.children.length <= 3) {
+            if (list) {
+              list.innerHTML = `<div class="text-center text-[9px] text-brand-textSecondary my-1">Hôm nay · Kênh nhắn tin bảo mật nội bộ MCE Marketplace</div>`;
               data.messages.forEach(m => {
                 appendChatMessage(m.text, m.sender, false);
               });
@@ -2685,14 +2845,18 @@
         chatBroadcast.postMessage({ sender: 'worker', text: text, timestamp: new Date().toISOString() });
       }
 
+      const chatJobId = mobileState.activeJob ? mobileState.activeJob.id : mobileState.selectedJobId;
+      if (!chatJobId) return;
+
       // REST API sync
       try {
         await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            jobId: mobileState.activeJob ? mobileState.activeJob.id : 'JOB-001',
-            sender: 'worker',
+            jobId: chatJobId,
+            sender: mobileState.role === 'POSTER' ? 'poster' : 'worker',
+            senderName: mobileState.userProfile.name || 'Thành viên MCE',
             text: text
           })
         });
@@ -2779,7 +2943,7 @@
         showToast("📞 Đã kết nối micro thực tế qua Web Audio VoIP!", "success");
       } catch (err) {
         console.warn("VoIP fallback to simulated soundwaves", err);
-        showToast("📞 Đã kết nối cuộc gọi thoại Internet miễn phí với Chủ Shop Tràng Thi!", "success");
+        showToast("📞 Đã kết nối cuộc gọi thoại Internet miễn phí với đối tác!", "success");
       }
 
       // Timer tick
@@ -2959,7 +3123,7 @@
       if (inputEmail) inputEmail.value = p.email || "";
       
       const inputIdNumber = document.getElementById('inputProfileIdNumber');
-      if (inputIdNumber) inputIdNumber.value = p.idNumber || "001098012345";
+      if (inputIdNumber) inputIdNumber.value = p.idNumber || "";
       
       const inputBank = document.getElementById('inputProfileBank');
       if (inputBank) inputBank.value = p.bank || "MBBank";
@@ -2991,7 +3155,7 @@
       }
       if (ekycBtn) ekycBtn.textContent = isVerified ? "Xem CCCD" : "Xác Thực";
       if (ekycStatus) {
-        ekycStatus.textContent = isVerified ? "✓ CSDL Quốc Gia Xác Thực" : "⚠️ Cần quét CCCD gắn chip";
+        ekycStatus.textContent = isVerified ? "✓ Đã xác thực CCCD" : "⚠️ Cần quét CCCD gắn chip";
         ekycStatus.className = isVerified ? "text-emerald-400 font-bold" : "text-amber-400 font-bold";
       }
     }
@@ -3534,37 +3698,45 @@
       document.getElementById('escrowPayAmountText').textContent = job.total.toLocaleString('vi-VN') + " VNĐ";
       const code = 'MCE ESCROW ' + Date.now().toString().slice(-6);
       document.getElementById('escrowTransferContent').textContent = code;
-      
-      const qrData = encodeURIComponent(`00020101021238540010A00000072701240006970422011009812345675303704540${job.total}5802VN62180814${code}6304`);
-      document.getElementById('escrowQrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${qrData}`;
+      document.getElementById('escrowQrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(code + ' ' + job.total)}`;
       document.getElementById('escrowPaymentModal').classList.remove('hidden');
     }
     function closeEscrowPaymentModal() {
       document.getElementById('escrowPaymentModal').classList.add('hidden');
     }
-    function confirmEscrowTransfer() {
-      closeEscrowPaymentModal();
-      const title = pendingEscrowJob ? pendingEscrowJob.title : "Ca làm việc mới";
-      const pay = pendingEscrowJob ? pendingEscrowJob.total : 255000;
-      
-      // Add new job to map
-      const newJob = {
-        id: 'JOB-' + Date.now().toString().slice(-3),
-        title: title,
-        pay: pay,
-        lat: mobileState.currentCoords.lat + (Math.random() * 0.004 - 0.002),
-        lng: mobileState.currentCoords.lng + (Math.random() * 0.004 - 0.002),
-        dist: '0 m',
-        distanceKm: 0,
-        type: 'PACK',
-        poster: mobileState.userProfile.name
-      };
-      jobData.unshift(newJob);
-      mobileState.selectedJobId = newJob.id;
-      applyScanFiltersAndRender({ fitBounds: false, preserveSelected: true });
-      
-      showToast(`⚡ Ký quỹ thành công ${pay.toLocaleString()}đ! Ca "${title}" đã được ghim lên bản đồ và gửi thông báo tới thợ quanh vị trí của bạn.`, "success");
-      switchMobileTab(1);
+    async function confirmEscrowTransfer() {
+      if (!pendingEscrowJob) return;
+      const { title, hours, rate, total, address, lat, lng } = pendingEscrowJob;
+      try {
+        const res = await fetch('/api/jobs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title,
+            hours,
+            hourlyRate: rate,
+            totalEstimatedVnd: total,
+            addressText: address,
+            lat,
+            lng,
+            posterName: mobileState.userProfile.name || 'Người thuê MCE',
+            posterPhone: mobileState.userProfile.phone || ''
+          })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success || !data.job) {
+          showToast(`❌ ${data.error || 'Không thể đăng ca lên máy chủ.'}`, 'error');
+          return;
+        }
+        closeEscrowPaymentModal();
+        await loadRealJobsFromServer();
+        mobileState.selectedJobId = data.job.id;
+        applyScanFiltersAndRender({ fitBounds: true, preserveSelected: true });
+        showToast(`⚡ Đã lưu & ghim ca "${title}" lên Google Maps!`, "success");
+        switchMobileTab(1);
+      } catch (err) {
+        showToast('❌ Không kết nối được máy chủ để đăng ca việc.', 'error');
+      }
     }
 
     let deferredPrompt = null;
@@ -4059,7 +4231,11 @@
         return;
       }
 
-      const jobId = mobileState.activeJob ? mobileState.activeJob.id : 'JOB-HANOI-001';
+      const jobId = mobileState.activeJob ? mobileState.activeJob.id : null;
+      if (!jobId) {
+        showToast('❌ Chưa có ca làm việc đang nhận để check-out.', 'error');
+        return;
+      }
       let uploadedProofUrl = '';
 
       try {
@@ -4379,11 +4555,18 @@
     }
 
     function mobileCreateJobAndQR() {
-      const title = document.getElementById('mobilePostTitle').value.trim() || "Ca làm việc mới";
-      const hours = parseInt(document.getElementById('mobilePostHours').value) || 3;
-      const rate = parseInt(document.getElementById('mobilePostRate').value) || 85000;
+      const title = document.getElementById('mobilePostTitle').value.trim();
+      const hours = parseInt(document.getElementById('mobilePostHours').value, 10) || 0;
+      const rate = parseInt(document.getElementById('mobilePostRate').value, 10) || 0;
+      const address = document.getElementById('mobilePostAddress').value.trim();
+      const coords = mobileState.selectedPostCoords || mobileState.currentCoords;
+
+      if (title.length < 3 || hours <= 0 || rate <= 0 || !address) {
+        showToast('⚠️ Vui lòng nhập đầy đủ tên công việc, số giờ, mức lương và địa điểm trên Google Maps!', 'error');
+        return;
+      }
       const total = hours * rate;
-      openEscrowPaymentModal({ title, total });
+      openEscrowPaymentModal({ title, hours, rate, total, address, lat: coords.lat, lng: coords.lng });
     }
 
     // --- TOAST NOTIFICATION ---

@@ -31,13 +31,19 @@ export function createApp() {
   app.use(express.json({ limit: '1mb', verify: (req, _res, buffer) => { (req as Request & { rawBody?: Buffer }).rawBody = Buffer.from(buffer); } }));
   app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
-  // Serve the existing marketplace client and the new admin console.
+  // Serve the official release marketplace web client, mobile PWA shell, and admin console.
   const projectRoot = path.resolve(__dirname, '..');
-  app.get('/', (_req, res) => res.sendFile(path.join(projectRoot, 'index.html')));
+  app.get('/', (_req, res) => res.sendFile(path.join(projectRoot, 'public', 'marketplace.html')));
   app.get('/admin', (_req, res) => res.sendFile(path.join(projectRoot, 'public', 'admin.html')));
   app.get('/admin/', (_req, res) => res.sendFile(path.join(projectRoot, 'public', 'admin.html')));
   app.get('/marketplace', (_req, res) => res.sendFile(path.join(projectRoot, 'public', 'marketplace.html')));
   app.get('/marketplace/', (_req, res) => res.sendFile(path.join(projectRoot, 'public', 'marketplace.html')));
+  app.get('/mobile', (_req, res) => res.sendFile(path.join(projectRoot, 'mobile.html')));
+  app.get('/mobile.html', (_req, res) => res.sendFile(path.join(projectRoot, 'mobile.html')));
+  app.get('/auth', (_req, res) => res.sendFile(path.join(projectRoot, 'auth.html')));
+  app.get('/auth.html', (_req, res) => res.sendFile(path.join(projectRoot, 'auth.html')));
+  app.get('/manifest.json', (_req, res) => res.sendFile(path.join(projectRoot, 'manifest.json')));
+  app.get('/sw.js', (_req, res) => res.sendFile(path.join(projectRoot, 'sw.js')));
   app.get('/admin/ops', (_req, res) => res.sendFile(path.join(projectRoot, 'public', 'admin-ops.html')));
 
   // The native Expo application is a separate client; APIs remain under the configured prefix.

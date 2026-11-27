@@ -39,6 +39,16 @@ apiRouter.get('/health/ready', async (_req, res) => {
   }
 });
 
+// Public client runtime configuration (non-secret values only).
+apiRouter.get('/config/public', (_req, res) => {
+  res.json({
+    success: true,
+    googleMapsApiKey: ENV.GOOGLE_MAPS_API_KEY,
+    geofenceRadiusMeters: ENV.GEOFENCE_RADIUS_METERS,
+    maxGpsAccuracyMeters: ENV.GPS_MAX_ALLOWED_ACCURACY_METERS
+  });
+});
+
 // Gắn kết các sub-routers
 apiRouter.use(jobRouter);
 apiRouter.use(escrowRouter);

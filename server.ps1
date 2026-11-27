@@ -19,104 +19,11 @@ function Get-Db {
         }
     }
     $initialDb = @{
-        users = @(
-            @{
-                id = "worker-001"
-                name = "Nguyễn Văn An"
-                phone = "0981234567"
-                email = "nguyenvanan.mce@gmail.com"
-                idNumber = "001098012345"
-                role = "WORKER"
-                karmaScore = 4.9
-                completionRate = 0.98
-                walletBalance = 390000
-                bank = "MBBank"
-                account = "0981234567"
-                skills = @("dong_goi", "can_than", "xe_may")
-                isVerified = $true
-            },
-            @{
-                id = "poster-001"
-                name = "Hoàng Mai (Chủ Shop)"
-                phone = "0912888999"
-                email = "hoangmai.shop@gmail.com"
-                idNumber = "001188099888"
-                role = "POSTER"
-                karmaScore = 5.0
-                completionRate = 1.0
-                walletBalance = 2500000
-                bank = "Techcombank"
-                account = "1903888999"
-                isVerified = $true
-            }
-        )
-        jobs = @(
-            @{
-                id = "JOB-HANOI-001"
-                title = "Phụ đóng gói 300 kiện hàng shopee"
-                time = "14:00 - 17:00 (3 tiếng)"
-                hourlyRate = 80000
-                hours = 3
-                location = @{ lat = 21.028511; lng = 105.854444 }
-                address = "Số 12 Tràng Thi, Hoàn Kiếm, Hà Nội"
-                status = "OPEN"
-                posterId = "poster-001"
-                assignedWorkerId = $null
-                assignedWorkerName = $null
-            }
-        )
-        escrows = @(
-            @{
-                jobId = "JOB-HANOI-001"
-                status = "DRAFT"
-                grossAmount = 240000
-                platformFee = 0
-                workerNet = 240000
-                updatedAt = (Get-Date).ToString("o")
-            }
-        )
-        transactions = @(
-            @{
-                id = "tx-init-001"
-                type = "PAYOUT"
-                jobId = "JOB-PREV-01"
-                title = "Hoàn thành ca Trông thú cưng"
-                amount = 150000
-                fee = 0
-                timestamp = (Get-Date).AddHours(-2).ToString("yyyy-MM-dd HH:mm")
-                status = "SUCCESS"
-            },
-            @{
-                id = "tx-init-002"
-                type = "PAYOUT"
-                jobId = "JOB-PREV-02"
-                title = "Hoàn thành ca Đóng gói Shopee"
-                amount = 240000
-                fee = 0
-                timestamp = (Get-Date).AddDays(-1).ToString("yyyy-MM-dd HH:mm")
-                status = "SUCCESS"
-            }
-        )
-        messages = @(
-            @{
-                id = "msg-001"
-                jobId = "JOB-HANOI-001"
-                sender = "poster"
-                senderName = "Chủ Shop Tràng Thi"
-                text = "Chào bạn! Bên mình cần đóng gói 300 kiện hàng Shopee xuất kho trước 17h nhé. Đến số 12 Tràng Thi thì nhắn mình ra mở cửa."
-                time = "13:45"
-                timestamp = (Get-Date).AddMinutes(-30).ToString("o")
-            },
-            @{
-                id = "msg-002"
-                jobId = "JOB-HANOI-001"
-                sender = "worker"
-                senderName = "Nguyễn Văn An"
-                text = "Dạ em nhận được rồi ạ! Em đang chuẩn bị chạy qua, khoảng 15 phút nữa là em có mặt tại shop anh nhé."
-                time = "13:46"
-                timestamp = (Get-Date).AddMinutes(-29).ToString("o")
-            }
-        )
+        users = @()
+        jobs = @()
+        escrows = @()
+        transactions = @()
+        messages = @()
         otps = @{}
     }
     $json = $initialDb | ConvertTo-Json -Depth 6
@@ -263,14 +170,16 @@ while ($listener.IsListening) {
         }
 
         if ($urlPath -eq "/" -or [string]::IsNullOrEmpty($urlPath)) {
-            $urlPath = "/index.html"
+            $urlPath = "/public/marketplace.html"
         }
+        if ($urlPath -eq "/marketplace" -or $urlPath -eq "/marketplace/") { $urlPath = "/public/marketplace.html" }
+        if ($urlPath -eq "/mobile" -or $urlPath -eq "/mobile/") { $urlPath = "/mobile.html" }
         if ($urlPath -eq "/admin" -or $urlPath -eq "/admin/") { $urlPath = "/public/admin.html" }
         if ($urlPath -eq "/admin/ops" -or $urlPath -eq "/admin/ops/") { $urlPath = "/public/admin-ops.html" }
 
         # --- REST API ENDPOINTS ---
 
-        # 1. Health
+        # 1. Health & Public Config
         if ($urlPath -eq "/api/health") {
             $db = Get-Db
             Send-Json $response @{
@@ -279,12 +188,24 @@ while ($listener.IsListening) {
                 version = "2.0.0"
                 uptimeSeconds = 3600
                 records = @{
-                    users = $db.users.Count
-                    jobs = $db.jobs.Count
-                    escrows = $db.escrows.Count
-                    transactions = $db.transactions.Count
-                    messages = $db.messages.Count
+                    users = @($db.users).Count
+                    jobs = @($db.jobs).Count
+                    escrows = @($db.escrows).Count
+                    transactions = @($db.transactions).Count
+                    messages = @($db.messages).Count
                 }
+            }
+            continue
+        }
+
+        if ($urlPath -eq "/api/config/public" -and $httpMethod -eq "GET") {
+            $gmapsKey = [Environment]::GetEnvironmentVariable("GOOGLE_MAPS_API_KEY")
+            if (-not $gmapsKey) { $gmapsKey = "" }
+            Send-Json $response @{
+                success = $true
+                googleMapsApiKey = $gmapsKey
+                geofenceRadiusMeters = 150
+                maxGpsAccuracyMeters = 50
             }
             continue
         }
@@ -507,10 +428,65 @@ while ($listener.IsListening) {
             continue
         }
 
-        # 6. Jobs: List & Detail
+        # 6. Jobs: List & Create
         if ($urlPath -eq "/api/jobs" -and $httpMethod -eq "GET") {
             $db = Get-Db
-            Send-Json $response @{ success = $true; jobs = $db.jobs }
+            Send-Json $response @{ success = $true; jobs = @($db.jobs) }
+            continue
+        }
+
+        if ($urlPath -eq "/api/jobs" -and $httpMethod -eq "POST") {
+            $body = Read-RequestBody $request
+            $title = if ($body.title) { $body.title.ToString().Trim() } else { "" }
+            $address = if ($body.addressText) { $body.addressText.ToString().Trim() } elseif ($body.address) { $body.address.ToString().Trim() } else { "" }
+            $hourlyRate = if ($body.hourlyRate) { [int]$body.hourlyRate } else { 0 }
+            $hours = if ($body.hours) { [int]$body.hours } else { 1 }
+            $lat = if ($null -ne $body.lat) { [double]$body.lat } else { $null }
+            $lng = if ($null -ne $body.lng) { [double]$body.lng } else { $null }
+
+            if ($title.Length -lt 3 -or $hourlyRate -le 0 -or $null -eq $lat -or $null -eq $lng) {
+                Send-Json $response @{ success = $false; error = "Thiếu thông tin ca việc hoặc tọa độ Google Maps hợp lệ." } 400
+                continue
+            }
+
+            $db = Get-Db
+            $newJobId = "JOB-" + [System.DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+            $totalEstimated = if ($body.totalEstimatedVnd) { [int]$body.totalEstimatedVnd } else { $hourlyRate * $hours }
+            $newJob = @{
+                id = $newJobId
+                title = $title
+                description = if ($body.description) { $body.description.ToString() } else { $title }
+                category = if ($body.category) { $body.category.ToString() } else { "PACK" }
+                hourlyRate = $hourlyRate
+                hours = $hours
+                totalEstimatedVnd = $totalEstimated
+                lat = $lat
+                lng = $lng
+                location = @{ lat = $lat; lng = $lng }
+                addressText = $address
+                address = $address
+                posterName = if ($body.posterName) { $body.posterName.ToString() } else { "Người thuê MCE" }
+                posterPhone = Normalize-PhoneNumber $body.posterPhone
+                status = "OPEN"
+                createdAt = (Get-Date).ToString("o")
+            }
+            $jobList = [System.Collections.ArrayList]@($db.jobs)
+            $jobList.Insert(0, $newJob)
+            $db.jobs = $jobList
+
+            $escList = [System.Collections.ArrayList]@($db.escrows)
+            $escList.Add(@{
+                jobId = $newJobId
+                status = "LOCKED"
+                grossAmount = $totalEstimated
+                platformFee = 0
+                workerNet = $totalEstimated
+                updatedAt = (Get-Date).ToString("o")
+            }) | Out-Null
+            $db.escrows = $escList
+
+            Save-Db $db
+            Send-Json $response @{ success = $true; job = $newJob } 201
             continue
         }
 
@@ -518,8 +494,12 @@ while ($listener.IsListening) {
         if ($urlPath -eq "/api/webhook/payment" -and $httpMethod -eq "POST") {
             $body = Read-RequestBody $request
             $db = Get-Db
-            $jobId = if ($body.jobId) { $body.jobId } else { "JOB-HANOI-001" }
-            $amount = if ($body.amount) { [int]$body.amount } else { 240000 }
+            $jobId = if ($body.jobId) { $body.jobId.ToString().Trim() } else { "" }
+            $amount = if ($body.amount) { [int]$body.amount } else { 0 }
+            if (-not $jobId -or $amount -le 0) {
+                Send-Json $response @{ success = $false; error = "Thiếu jobId hoặc số tiền ký quỹ hợp lệ." } 400
+                continue
+            }
             $txId = if ($body.transactionId) { $body.transactionId } else { "tx-bank-" + [System.DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() }
 
             # Find and lock escrow
@@ -571,7 +551,7 @@ while ($listener.IsListening) {
         # 8. Escrow Status
         if ($urlPath -eq "/api/escrow/status" -and $httpMethod -eq "GET") {
             $jobId = $request.QueryString["jobId"]
-            if (-not $jobId) { $jobId = "JOB-HANOI-001" }
+            if (-not $jobId) { Send-Json $response @{ success = $false; error = "Thiếu jobId." } 400; continue }
             $db = Get-Db
             $escrow = $db.escrows | Where-Object { $_.jobId -eq $jobId } | Select-Object -First 1
             Send-Json $response @{ success = $true; escrow = $escrow }
@@ -581,8 +561,9 @@ while ($listener.IsListening) {
         # 9. Escrow Check-in (Strict 3-Tier Geofence + Accuracy <= 50m + Radius <= 150m)
         if ($urlPath -eq "/api/escrow/check-in" -and $httpMethod -eq "POST") {
             $body = Read-RequestBody $request
-            $jobId = if ($body.jobId) { $body.jobId } else { "JOB-HANOI-001" }
+            $jobId = if ($body.jobId) { $body.jobId.ToString().Trim() } else { "" }
             $phone = Normalize-PhoneNumber $body.workerPhone
+            if (-not $jobId) { Send-Json $response @{ success = $false; error = "Thiếu mã ca việc (jobId)." } 400; continue }
 
             if ($null -eq $body.lat -or $null -eq $body.lng -or $null -eq $body.accuracyMeters) {
                 Send-Json $response @{
@@ -617,8 +598,12 @@ while ($listener.IsListening) {
             }
 
             $jobRecord = $db.jobs | Where-Object { $_.id -eq $jobId } | Select-Object -First 1
-            $targetLat = if ($jobRecord -and $jobRecord.location) { [double]$jobRecord.location.lat } elseif ($null -ne $body.jobLat) { [double]$body.jobLat } else { 21.028511 }
-            $targetLng = if ($jobRecord -and $jobRecord.location) { [double]$jobRecord.location.lng } elseif ($null -ne $body.jobLng) { [double]$body.jobLng } else { 105.854444 }
+            if (-not $jobRecord -and ($null -eq $body.jobLat -or $null -eq $body.jobLng)) {
+                Send-Json $response @{ success = $false; error = "Không tìm thấy tọa độ ca việc để đối chiếu Geofence." } 404
+                continue
+            }
+            $targetLat = if ($jobRecord -and $jobRecord.location) { [double]$jobRecord.location.lat } else { [double]$body.jobLat }
+            $targetLng = if ($jobRecord -and $jobRecord.location) { [double]$jobRecord.location.lng } else { [double]$body.jobLng }
 
             $distMeters = Get-HaversineMeters $lat $lng $targetLat $targetLng
             if ($distMeters -gt 150) {
@@ -635,12 +620,13 @@ while ($listener.IsListening) {
                 $escrow.status = "IN_PROGRESS"
                 $escrow.updatedAt = (Get-Date).ToString("o")
             } else {
+                $gross = if ($jobRecord -and $jobRecord.totalEstimatedVnd) { [int]$jobRecord.totalEstimatedVnd } else { 0 }
                 $escrow = @{
                     jobId = $jobId
                     status = "IN_PROGRESS"
-                    grossAmount = 240000
+                    grossAmount = $gross
                     platformFee = 0
-                    workerNet = 240000
+                    workerNet = $gross
                     updatedAt = (Get-Date).ToString("o")
                 }
                 $escList = [System.Collections.ArrayList]@($db.escrows)
@@ -661,8 +647,9 @@ while ($listener.IsListening) {
         # 10. Escrow Check-out (Requires IN_PROGRESS + real photo proof)
         if ($urlPath -eq "/api/escrow/check-out" -and $httpMethod -eq "POST") {
             $body = Read-RequestBody $request
-            $jobId = if ($body.jobId) { $body.jobId } else { "JOB-HANOI-001" }
+            $jobId = if ($body.jobId) { $body.jobId.ToString().Trim() } else { "" }
             $photoUrl = if ($body.photoUrl) { $body.photoUrl.ToString().Trim() } else { "" }
+            if (-not $jobId) { Send-Json $response @{ success = $false; error = "Thiếu mã ca việc (jobId)." } 400; continue }
 
             if (-not $photoUrl) {
                 Send-Json $response @{ success = $false; error = "Bắt buộc phải có ảnh nghiệm thu thực tế trước khi check-out." } 400
@@ -686,8 +673,9 @@ while ($listener.IsListening) {
         # 11. Escrow Release (Requires PENDING_REVIEW)
         if ($urlPath -eq "/api/escrow/release" -and $httpMethod -eq "POST") {
             $body = Read-RequestBody $request
-            $jobId = if ($body.jobId) { $body.jobId } else { "JOB-HANOI-001" }
+            $jobId = if ($body.jobId) { $body.jobId.ToString().Trim() } else { "" }
             $phone = Normalize-PhoneNumber $body.workerPhone
+            if (-not $jobId) { Send-Json $response @{ success = $false; error = "Thiếu mã ca việc (jobId)." } 400; continue }
             $db = Get-Db
             $escrow = $db.escrows | Where-Object { $_.jobId -eq $jobId } | Select-Object -First 1
             if (-not $escrow -or $escrow.status -ne "PENDING_REVIEW") {
@@ -700,7 +688,6 @@ while ($listener.IsListening) {
 
             # Update worker wallet
             $worker = if ($phone) { $db.users | Where-Object { $_.phone -eq $phone } | Select-Object -First 1 } else { $null }
-            if (-not $worker) { $worker = $db.users | Where-Object { $_.id -eq "worker-001" } | Select-Object -First 1 }
             if ($worker) {
                 $worker.walletBalance = [int]$worker.walletBalance + $payout
             }
@@ -734,7 +721,8 @@ while ($listener.IsListening) {
         # 12. Escrow Dispute
         if ($urlPath -eq "/api/escrow/dispute" -and $httpMethod -eq "POST") {
             $body = Read-RequestBody $request
-            $jobId = if ($body.jobId) { $body.jobId } else { "JOB-HANOI-001" }
+            $jobId = if ($body.jobId) { $body.jobId.ToString().Trim() } else { "" }
+            if (-not $jobId) { Send-Json $response @{ success = $false; error = "Thiếu jobId." } 400; continue }
             $db = Get-Db
             $escrow = $db.escrows | Where-Object { $_.jobId -eq $jobId } | Select-Object -First 1
             if ($escrow) {
@@ -748,7 +736,8 @@ while ($listener.IsListening) {
         # 13. Escrow Refund
         if ($urlPath -eq "/api/escrow/refund" -and $httpMethod -eq "POST") {
             $body = Read-RequestBody $request
-            $jobId = if ($body.jobId) { $body.jobId } else { "JOB-HANOI-001" }
+            $jobId = if ($body.jobId) { $body.jobId.ToString().Trim() } else { "" }
+            if (-not $jobId) { Send-Json $response @{ success = $false; error = "Thiếu jobId." } 400; continue }
             $db = Get-Db
             $escrow = $db.escrows | Where-Object { $_.jobId -eq $jobId } | Select-Object -First 1
             if ($escrow) {
@@ -762,16 +751,17 @@ while ($listener.IsListening) {
         # 14. Real-time In-App Chat: GET & POST
         if ($urlPath -eq "/api/chat" -and $httpMethod -eq "GET") {
             $jobId = $request.QueryString["jobId"]
-            if (-not $jobId) { $jobId = "JOB-HANOI-001" }
+            if (-not $jobId) { Send-Json $response @{ success = $true; messages = @() }; continue }
             $db = Get-Db
-            $msgs = $db.messages | Where-Object { $_.jobId -eq $jobId }
+            $msgs = @($db.messages | Where-Object { $_.jobId -eq $jobId })
             Send-Json $response @{ success = $true; messages = $msgs }
             continue
         }
 
         if ($urlPath -eq "/api/chat" -and $httpMethod -eq "POST") {
             $body = Read-RequestBody $request
-            $jobId = if ($body.jobId) { $body.jobId } else { "JOB-HANOI-001" }
+            $jobId = if ($body.jobId) { $body.jobId.ToString().Trim() } else { "" }
+            if (-not $jobId) { Send-Json $response @{ success = $false; error = "Thiếu jobId cho cuộc trò chuyện." } 400; continue }
             $db = Get-Db
             $newMsg = @{
                 id = "msg-" + [System.DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
