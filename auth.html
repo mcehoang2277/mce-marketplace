@@ -133,7 +133,7 @@
           </label>
           <div class="flex gap-2">
             <span class="flex items-center px-3 border border-brand-border rounded-xl bg-brand-surface text-xs font-semibold text-brand-textSecondary">🇻🇳 +84</span>
-            <input id="loginPhone" type="tel" placeholder="0981 234 567" value="0981234567" required class="flex-1 px-3 py-2.5 bg-brand-surface border border-brand-border rounded-xl text-sm font-semibold text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:border-brand-primary focus:outline-none transition">
+            <input id="loginPhone" type="tel" placeholder="0981 234 567" required class="flex-1 px-3 py-2.5 bg-brand-surface border border-brand-border rounded-xl text-sm font-semibold text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:border-brand-primary focus:outline-none transition">
           </div>
         </div>
 
@@ -142,7 +142,7 @@
             <label class="text-xs font-bold text-brand-textSecondary uppercase tracking-wider">Mật khẩu hoặc Mã OTP</label>
             <button type="button" onclick="sendLoginOtp()" class="text-[11px] font-semibold text-brand-primary hover:underline">Gửi mã OTP qua SMS</button>
           </div>
-          <input id="loginPassword" type="password" placeholder="••••••••" value="123456" required class="w-full px-3 py-2.5 bg-brand-surface border border-brand-border rounded-xl text-sm font-medium text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none transition">
+          <input id="loginPassword" type="password" placeholder="••••••••" required class="w-full px-3 py-2.5 bg-brand-surface border border-brand-border rounded-xl text-sm font-medium text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none transition">
         </div>
 
         <div class="flex items-center justify-between text-xs text-brand-textSecondary">
@@ -246,7 +246,7 @@
             </div>
             <div class="flex gap-2">
               <span class="flex items-center px-3 border border-brand-border rounded-xl bg-brand-surface text-xs font-semibold text-brand-textSecondary">🇻🇳 +84</span>
-              <input id="regPhone" type="tel" placeholder="0981 234 567" value="0981234567" required class="flex-1 px-3 py-2.5 bg-brand-surface border border-brand-border rounded-xl text-sm font-semibold text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none">
+              <input id="regPhone" type="tel" placeholder="0981 234 567" required class="flex-1 px-3 py-2.5 bg-brand-surface border border-brand-border rounded-xl text-sm font-semibold text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none">
               <button type="button" id="btnSendRegOtp" onclick="sendRegOtp()" class="px-3.5 py-2.5 bg-brand-primary hover:bg-brand-secondary text-white text-xs font-bold rounded-xl transition whitespace-nowrap">Gửi OTP</button>
             </div>
             <div id="otpNoticeBanner" class="mt-2 p-2 bg-emerald-500/15 border border-emerald-500/30 rounded-xl text-xs text-emerald-300 hidden flex items-center justify-between">
@@ -503,7 +503,7 @@
       }
     }
 
-    let activeGeneratedOtp = "889966";
+    let activeGeneratedOtp = null;
     let otpCountdownInterval = null;
     let cameraMediaStream = null;
 
@@ -546,8 +546,8 @@
         }
         let enteredOtp = document.getElementById('regOtp').value.trim();
         if (!enteredOtp) {
-          enteredOtp = activeGeneratedOtp || "123456";
-          document.getElementById('regOtp').value = enteredOtp;
+          alert("Xác minh SMS OTP thật chưa được tích hợp. Không thể tiếp tục đăng ký.");
+          return;
         }
       }
 
@@ -669,44 +669,8 @@
     }
 
     async function finishRegistration() {
-      const name = document.getElementById('regName').value.trim() || "Nguyễn Văn An";
-      const phone = document.getElementById('regPhone').value.trim() || "0981234567";
-      const email = document.getElementById('regEmail').value.trim() || (phone + "@gmail.com");
-      const roleRadio = document.querySelector('input[name="accountRole"]:checked');
-      const role = roleRadio ? roleRadio.value : "WORKER";
-      const bank = document.getElementById('regBank') ? document.getElementById('regBank').value : "MBBank";
-      const account = document.getElementById('regAccount') ? document.getElementById('regAccount').value : phone;
-
-      const userData = {
-        id: "user-" + Date.now(),
-        name: name,
-        phone: phone,
-        email: email,
-        idNumber: "001098012345",
-        role: role,
-        karmaScore: 5.0,
-        walletBalance: 0,
-        bank: bank,
-        account: account,
-        isVerified: true
-      };
-
-      try {
-        await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(userData)
-        });
-      } catch (err) {
-        console.warn("Backend register sync offline, saving locally", err);
-      }
-
-      localStorage.setItem('mce_current_user', JSON.stringify(userData));
-
-      document.getElementById('successUserName').textContent = name;
-      document.getElementById('successUserPhone').textContent = phone;
-      document.getElementById('successUserEmail').textContent = email;
-      document.getElementById('successModal').classList.remove('hidden');
+      alert("Đăng ký đang tạm khóa cho đến khi tích hợp và kiểm thử SMS OTP, eKYC và xác minh tài khoản thật.");
+      return;
     }
 
     function redirectToDashboard() {
