@@ -9,3 +9,7 @@ __pycache__/
 .expo/
 *.jks
 backups/
+
+# Local/demo runtime data must never be committed
+data/database.json
+mce_local.db
