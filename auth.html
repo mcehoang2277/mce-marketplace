@@ -159,37 +159,6 @@
         </button>
       </form>
 
-      <!-- ĐĂNG NHẬP NHANH BẢN DEMO (QUICK 1-CLICK LOGIN) -->
-      <div class="pt-4 border-t border-brand-border/60">
-        <div class="text-[10px] uppercase font-bold text-brand-textSecondary mb-2 text-center">Hoặc chọn nhanh hồ sơ thử nghiệm:</div>
-        
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <button type="button" onclick="quickLogin('worker')" class="p-2.5 rounded-xl border border-brand-border hover:border-brand-success bg-brand-surface text-left transition flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <span class="text-lg">🛵</span>
-              <div>
-                <div class="text-xs font-bold text-brand-textPrimary">Nguyễn Văn An</div>
-                <div class="text-[10px] text-brand-success font-semibold">Worker · 4.9⭐ · 0% Phí</div>
-              </div>
-            </div>
-            <span class="text-xs text-brand-success">&rarr;</span>
-          </button>
-
-          <button type="button" onclick="quickLogin('poster')" class="p-2.5 rounded-xl border border-brand-border hover:border-brand-primary bg-brand-surface text-left transition flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <span class="text-lg">🏢</span>
-              <div>
-                <div class="text-xs font-bold text-brand-textPrimary">Shop Tràng Thi</div>
-                <div class="text-[10px] text-indigo-400 font-semibold">Poster · Doanh nghiệp</div>
-              </div>
-            </div>
-            <span class="text-xs text-brand-primary">&rarr;</span>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ============================================================== -->
     <!-- GIAO DIỆN 2: ĐĂNG KÝ MỚI & eKYC (REGISTER VIEW) -->
     <!-- ============================================================== -->
     <div id="sectionRegister" class="space-y-5 hidden">
@@ -506,53 +475,14 @@
       document.getElementById('regPhone').focus();
     }
 
-    // --- QUICK LOGIN PROFILES ---
-    function quickLogin(role) {
-      let userData;
-      if (role === 'worker') {
-        userData = {
-          id: "worker-001",
-          name: "Nguyễn Văn An",
-          phone: "0981234567",
-          email: "nguyenvanan.mce@gmail.com",
-          role: "WORKER",
-          karma: 4.9,
-          wallet: 220800,
-          verified: true
-        };
-      } else {
-        userData = {
-          id: "poster-001",
-          name: "Chủ Shop Tràng Thi",
-          phone: "0912345678",
-          email: "trangthi.shop@gmail.com",
-          role: "POSTER",
-          karma: 5.0,
-          wallet: 1500000,
-          verified: true
-        };
-      }
-
-      localStorage.setItem('mce_current_user', JSON.stringify(userData));
-      alert(`✅ Đăng nhập thành công với vai trò ${userData.role}: ${userData.name}!`);
-      window.location.href = "./mobile.html";
-    }
-
     async function handleLoginSubmit(e) {
       e.preventDefault();
-      const phone = document.getElementById('loginPhone').value;
-      const password = document.getElementById('loginPassword').value || "123456";
-
-      let userData = {
-        id: "user-" + Date.now(),
-        name: "Người Dùng " + phone.slice(-4),
-        phone: phone,
-        email: "user" + phone.slice(-4) + "@gmail.com",
-        role: "WORKER",
-        karma: 4.8,
-        wallet: 0,
-        verified: true
-      };
+      const phone = document.getElementById('loginPhone').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      if (!phone || !password) {
+        alert("Vui lòng nhập số điện thoại và mật khẩu.");
+        return;
+      }
 
       try {
         const res = await fetch('/api/auth/login', {
@@ -560,22 +490,16 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ phone, password })
         });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success && data.user) {
-            userData = data.user;
-            if (data.token) {
-              localStorage.setItem('mce_auth_token', data.token);
-            }
-          }
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success || !data.user || !data.token) {
+          throw new Error(data.message || data.error || "Đăng nhập thất bại. Vui lòng kiểm tra thông tin hoặc thử lại sau.");
         }
+        localStorage.setItem('mce_auth_token', data.token);
+        localStorage.setItem('mce_current_user', JSON.stringify(data.user));
+        window.location.href = "./mobile.html";
       } catch (err) {
-        console.warn("Backend login offline, falling back to local simulation", err);
+        alert(err instanceof Error ? err.message : "Không thể kết nối dịch vụ xác thực.");
       }
-
-      localStorage.setItem('mce_current_user', JSON.stringify(userData));
-      alert(`✅ Đăng nhập thành công: ${userData.name}!`);
-      window.location.href = "./mobile.html";
     }
 
     let activeGeneratedOtp = "889966";
