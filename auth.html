@@ -133,7 +133,7 @@
           </label>
           <div class="flex gap-2">
             <span class="flex items-center px-3 border border-brand-border rounded-xl bg-brand-surface text-xs font-semibold text-brand-textSecondary">🇻🇳 +84</span>
-            <input id="loginPhone" type="tel" placeholder="0981 234 567" value="0981234567" required class="flex-1 px-3 py-2.5 bg-brand-surface border border-brand-border rounded-xl text-sm font-semibold text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:border-brand-primary focus:outline-none transition">
+            <input id="loginPhone" type="tel" placeholder="0981 234 567" required class="flex-1 px-3 py-2.5 bg-brand-surface border border-brand-border rounded-xl text-sm font-semibold text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:border-brand-primary focus:outline-none transition">
           </div>
         </div>
 
@@ -142,7 +142,7 @@
             <label class="text-xs font-bold text-brand-textSecondary uppercase tracking-wider">Mật khẩu hoặc Mã OTP</label>
             <button type="button" onclick="sendLoginOtp()" class="text-[11px] font-semibold text-brand-primary hover:underline">Gửi mã OTP qua SMS</button>
           </div>
-          <input id="loginPassword" type="password" placeholder="••••••••" value="123456" required class="w-full px-3 py-2.5 bg-brand-surface border border-brand-border rounded-xl text-sm font-medium text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none transition">
+          <input id="loginPassword" type="password" placeholder="••••••••" required class="w-full px-3 py-2.5 bg-brand-surface border border-brand-border rounded-xl text-sm font-medium text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none transition">
         </div>
 
         <div class="flex items-center justify-between text-xs text-brand-textSecondary">
@@ -158,38 +158,8 @@
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
         </button>
       </form>
-
-      <!-- ĐĂNG NHẬP NHANH BẢN DEMO (QUICK 1-CLICK LOGIN) -->
-      <div class="pt-4 border-t border-brand-border/60">
-        <div class="text-[10px] uppercase font-bold text-brand-textSecondary mb-2 text-center">Hoặc chọn nhanh hồ sơ thử nghiệm:</div>
-        
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <button type="button" onclick="quickLogin('worker')" class="p-2.5 rounded-xl border border-brand-border hover:border-brand-success bg-brand-surface text-left transition flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <span class="text-lg">🛵</span>
-              <div>
-                <div class="text-xs font-bold text-brand-textPrimary">Nguyễn Văn An</div>
-                <div class="text-[10px] text-brand-success font-semibold">Worker · 4.9⭐ · 0% Phí</div>
-              </div>
-            </div>
-            <span class="text-xs text-brand-success">&rarr;</span>
-          </button>
-
-          <button type="button" onclick="quickLogin('poster')" class="p-2.5 rounded-xl border border-brand-border hover:border-brand-primary bg-brand-surface text-left transition flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <span class="text-lg">🏢</span>
-              <div>
-                <div class="text-xs font-bold text-brand-textPrimary">Shop Tràng Thi</div>
-                <div class="text-[10px] text-indigo-400 font-semibold">Poster · Doanh nghiệp</div>
-              </div>
-            </div>
-            <span class="text-xs text-brand-primary">&rarr;</span>
-          </button>
-        </div>
       </div>
-    </div>
 
-    <!-- ============================================================== -->
     <!-- GIAO DIỆN 2: ĐĂNG KÝ MỚI & eKYC (REGISTER VIEW) -->
     <!-- ============================================================== -->
     <div id="sectionRegister" class="space-y-5 hidden">
@@ -276,7 +246,7 @@
             </div>
             <div class="flex gap-2">
               <span class="flex items-center px-3 border border-brand-border rounded-xl bg-brand-surface text-xs font-semibold text-brand-textSecondary">🇻🇳 +84</span>
-              <input id="regPhone" type="tel" placeholder="0981 234 567" value="0981234567" required class="flex-1 px-3 py-2.5 bg-brand-surface border border-brand-border rounded-xl text-sm font-semibold text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none">
+              <input id="regPhone" type="tel" placeholder="0981 234 567" required class="flex-1 px-3 py-2.5 bg-brand-surface border border-brand-border rounded-xl text-sm font-semibold text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none">
               <button type="button" id="btnSendRegOtp" onclick="sendRegOtp()" class="px-3.5 py-2.5 bg-brand-primary hover:bg-brand-secondary text-white text-xs font-bold rounded-xl transition whitespace-nowrap">Gửi OTP</button>
             </div>
             <div id="otpNoticeBanner" class="mt-2 p-2 bg-emerald-500/15 border border-emerald-500/30 rounded-xl text-xs text-emerald-300 hidden flex items-center justify-between">
@@ -289,7 +259,7 @@
             <label class="block text-xs font-bold text-brand-textSecondary uppercase tracking-wider mb-1">
               Email / Gmail liên hệ <span class="text-brand-textSecondary text-[10px] lowercase">(không bắt buộc)</span>
             </label>
-            <input id="regEmail" type="email" placeholder="example@gmail.com" value="nguyenvanan.mce@gmail.com" class="w-full px-3 py-2.5 bg-brand-surface border border-brand-border rounded-xl text-sm font-medium text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none">
+            <input id="regEmail" type="email" placeholder="example@gmail.com" value="" class="w-full px-3 py-2.5 bg-brand-surface border border-brand-border rounded-xl text-sm font-medium text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none">
           </div>
 
           <div class="p-3 bg-brand-surface rounded-xl border border-brand-border flex items-center justify-between">
@@ -307,78 +277,20 @@
         </div>
       </div>
 
-      <!-- BƯỚC 2: eKYC CCCD & SELFIE (CLEAN INTERFACE) -->
+      <!-- BƯỚC 2: eKYC is intentionally unavailable until a verified provider is integrated -->
       <div id="stepContainer2" class="bg-brand-card p-6 sm:p-7 rounded-3xl border border-brand-border space-y-5 hidden">
         <div>
           <h2 class="text-lg font-bold text-brand-textPrimary">Xác thực danh tính eKYC</h2>
-          <p class="text-xs text-brand-textSecondary mt-0.5">Bảo đảm tính xác thực hai chiều giữa người thuê và người làm.</p>
+          <p class="text-xs text-brand-textSecondary mt-0.5">Bảo vệ tài khoản bằng quy trình xác minh danh tính được kiểm chứng.</p>
         </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <!-- Chụp CCCD -->
-          <div class="border border-brand-border rounded-2xl p-4 text-center bg-brand-surface flex flex-col justify-between">
-            <div>
-              <span class="text-xl">💳</span>
-              <strong class="text-xs font-bold text-brand-textPrimary block mt-1">CCCD Gắn Chip (Mặt trước)</strong>
-              <p class="text-[10px] text-brand-textSecondary mt-0.5">Trích xuất số CCCD & họ tên</p>
-            </div>
-            
-            <input type="file" id="cccdFileInput" accept="image/*" class="hidden" onchange="handleCccdFileUpload(event)">
-            <div id="cccdPreviewContainer" class="my-2 p-2.5 bg-brand-card rounded-xl border border-brand-border hidden text-left text-xs font-mono space-y-1">
-              <img id="cccdPreviewImg" src="" class="w-full h-24 object-cover rounded-lg mb-1 hidden" alt="CCCD Preview">
-              <div class="text-[10px] text-brand-primary font-bold" id="ocrIdText">CCCD: 001098012345</div>
-              <div class="text-[10px] text-brand-textPrimary" id="ocrNameText">Họ tên: NGUYỄN VĂN AN</div>
-              <div class="text-[9px] text-brand-success font-bold">✓ CSDL Quốc Gia Xác Thực</div>
-            </div>
-
-            <div class="flex gap-1.5 mt-2">
-              <button type="button" onclick="document.getElementById('cccdFileInput').click()" class="flex-1 py-2 px-2 bg-brand-card hover:bg-brand-border border border-brand-border text-brand-textPrimary rounded-xl text-xs font-semibold transition">
-                📁 Chọn Ảnh Thật
-              </button>
-              <button type="button" onclick="executeOcrScan()" class="py-2 px-3 bg-brand-primary hover:bg-brand-secondary text-white rounded-xl text-xs font-bold transition">
-                🔍 Quét OCR
-              </button>
-            </div>
-          </div>
-
-          <!-- Chụp Liveness Selfie -->
-          <div class="border border-brand-border rounded-2xl p-4 text-center bg-brand-surface flex flex-col justify-between">
-            <div>
-              <span class="text-xl">👤</span>
-              <strong class="text-xs font-bold text-brand-textPrimary block mt-1">Chân Dung Sinh Trắc Học</strong>
-              <p class="text-[10px] text-brand-textSecondary mt-0.5">Chống giả mạo Deepfake</p>
-            </div>
-            
-            <div class="my-2 relative rounded-xl overflow-hidden bg-brand-card border border-brand-border flex items-center justify-center min-h-[96px]">
-              <video id="selfieVideo" autoplay playsinline class="w-full h-28 object-cover hidden"></video>
-              <canvas id="selfieCanvas" class="w-full h-28 object-cover hidden"></canvas>
-              <div id="selfiePlaceholder" class="text-[11px] text-brand-textSecondary p-2">
-                Chạm để bật camera khuôn mặt
-              </div>
-            </div>
-
-            <div id="selfiePreviewContainer" class="my-1 p-1.5 bg-brand-card rounded-lg border border-brand-success/40 hidden text-left text-xs">
-              <span class="text-[10px] text-brand-success font-bold block" id="selfieMatchText">✓ Khớp sinh trắc học 99.4% (Live)</span>
-            </div>
-
-            <input type="file" id="selfieFileInput" accept="image/*" class="hidden" onchange="handleSelfieFileUpload(event)">
-            <div class="flex gap-1.5 mt-2">
-              <button type="button" id="btnToggleCamera" onclick="startSelfieCamera()" class="flex-1 py-2 px-2 bg-brand-card hover:bg-brand-border border border-brand-border text-brand-textPrimary rounded-xl text-xs font-semibold transition">
-                📹 Bật Camera
-              </button>
-              <button type="button" onclick="captureSelfieFrame()" id="btnCaptureSelfie" class="py-2 px-3 bg-brand-success hover:bg-emerald-600 text-slate-950 rounded-xl text-xs font-black transition hidden">
-                📸 Chụp
-              </button>
-              <button type="button" onclick="document.getElementById('selfieFileInput').click()" class="py-2 px-2 bg-brand-surface hover:bg-brand-border border border-brand-border text-brand-textSecondary rounded-xl text-xs transition" title="Tải ảnh chân dung từ máy">
-                📁 File
-              </button>
-            </div>
-          </div>
+        <div class="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 space-y-2">
+          <p class="text-sm font-bold text-brand-textPrimary">Tạm thời chưa khả dụng</p>
+          <p class="text-xs text-brand-textSecondary">MCE chưa kết nối nhà cung cấp eKYC/đối soát dữ liệu căn cước. Tải ảnh hoặc bật camera tại đây không đồng nghĩa với xác minh danh tính. Chúng tôi không lưu hay hiển thị kết quả OCR, điểm khớp khuôn mặt hoặc trạng thái xác minh giả lập.</p>
+          <p class="text-xs text-brand-textSecondary">Vui lòng quay lại sau khi quy trình xác minh chính thức được tích hợp và kiểm thử.</p>
         </div>
-
         <div class="flex gap-3 pt-2">
           <button type="button" onclick="goToStep(1)" class="py-2.5 px-4 border border-brand-border hover:bg-brand-surface text-brand-textSecondary font-semibold rounded-xl text-xs transition">&larr; Quay lại</button>
-          <button type="button" onclick="goToStep(3)" class="flex-1 py-2.5 px-4 bg-brand-primary hover:bg-brand-secondary text-white font-bold rounded-xl text-xs shadow transition">Tiếp tục bước cuối &rarr;</button>
+          <button type="button" disabled class="flex-1 py-2.5 px-4 bg-brand-border text-brand-textSecondary font-bold rounded-xl text-xs opacity-60 cursor-not-allowed">eKYC chưa khả dụng</button>
         </div>
       </div>
 
@@ -386,7 +298,7 @@
       <div id="stepContainer3" class="bg-brand-card p-6 sm:p-7 rounded-3xl border border-brand-border space-y-5 hidden">
         <div>
           <h2 class="text-lg font-bold text-brand-textPrimary">Thiết lập tài khoản nhận tiền</h2>
-          <p class="text-xs text-brand-textSecondary mt-0.5">Nhận 100% thù lao tự động qua VietQR 24/7 (0% phí sàn 90 ngày).</p>
+          <p class="text-xs text-brand-textSecondary mt-0.5">Phí nền tảng hiện tại: 0%. Tính năng nhận tiền sẽ chỉ hoạt động sau khi hoàn tất xác minh và tích hợp đối tác thanh toán.</p>
         </div>
 
         <div class="space-y-4">
@@ -416,62 +328,15 @@
             </div>
           </div>
 
-          <!-- Ngân hàng VietQR -->
-          <div class="p-3.5 bg-brand-surface rounded-2xl border border-brand-border space-y-2.5">
-            <span class="text-xs font-bold text-brand-success uppercase tracking-wider block">Tài khoản nhận tiền tự động (VietQR):</span>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-              <div>
-                <label class="block text-[10px] font-semibold text-brand-textSecondary mb-1">Ngân hàng</label>
-                <select id="regBankName" class="w-full px-3 py-2 border border-brand-border rounded-xl bg-brand-card text-brand-textPrimary font-medium">
-                  <option value="MBBank">MBBank (Quân Đội)</option>
-                  <option value="Vietcombank">Vietcombank</option>
-                  <option value="Techcombank">Techcombank</option>
-                  <option value="BIDV">BIDV</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-[10px] font-semibold text-brand-textSecondary mb-1">Số tài khoản</label>
-                <input id="regBankAccount" type="text" value="0981234567" class="w-full px-3 py-2 border border-brand-border rounded-xl bg-brand-card font-bold text-brand-textPrimary">
-              </div>
-            </div>
+          <div class="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 space-y-2">
+            <p class="text-sm font-bold text-brand-textPrimary">Thiết lập tài khoản ngân hàng tạm khóa</p>
+            <p class="text-xs text-brand-textSecondary">MCE chưa tích hợp xác minh chủ tài khoản và đối tác chi trả. Không nhập thông tin ngân hàng vào biểu mẫu thử nghiệm. Tính năng này sẽ được mở sau khi hoàn tất kiểm thử an toàn.</p>
           </div>
 
-          <button type="button" onclick="finishRegistration()" class="w-full py-3.5 bg-brand-success hover:bg-emerald-600 text-slate-950 font-black rounded-xl text-sm shadow transition">
-            🎉 Hoàn Tất Đăng Ký & Đăng Nhập Ngay
+          <button type="button" disabled class="w-full py-3.5 bg-brand-border text-brand-textSecondary font-bold rounded-xl text-sm opacity-60 cursor-not-allowed">
+            Đăng ký tạm thời chưa khả dụng
           </button>
         </div>
-      </div>
-    </div>
-
-    <!-- MODAL THÀNH CÔNG -->
-    <div id="successModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-      <div class="bg-brand-card rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl border border-brand-border animate-in zoom-in-95 duration-200">
-        <div class="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-2xl mx-auto mb-3">✓</div>
-        <h3 class="text-base font-black text-brand-textPrimary">Kích Hoạt Tài Khoản Thành Công!</h3>
-        <p class="text-xs text-brand-textSecondary mt-1">Đã cấp chứng nhận định danh MCE Passport ID cho bạn.</p>
-
-        <div class="mt-4 p-3.5 rounded-2xl bg-brand-surface border border-brand-border text-left space-y-1.5 text-xs">
-          <div class="flex justify-between items-center">
-            <span class="text-brand-textSecondary">Chủ tài khoản:</span>
-            <span class="font-bold text-brand-textPrimary" id="successUserName">NGUYỄN VĂN AN</span>
-          </div>
-          <div class="flex justify-between items-center">
-            <span class="text-brand-textSecondary">SĐT liên hệ:</span>
-            <span class="font-bold text-brand-primary" id="successUserPhone">0981234567</span>
-          </div>
-          <div class="flex justify-between items-center">
-            <span class="text-brand-textSecondary">Email/Gmail:</span>
-            <span class="font-bold text-brand-textPrimary" id="successUserEmail">nguyenvanan.mce@gmail.com</span>
-          </div>
-          <div class="flex justify-between items-center pt-1 border-t border-brand-border">
-            <span class="text-brand-textSecondary">Chính sách:</span>
-            <span class="font-bold text-emerald-400">0% Phí Sàn (90 Ngày)</span>
-          </div>
-        </div>
-
-        <button onclick="redirectToDashboard()" class="mt-5 w-full py-3 bg-brand-primary hover:bg-brand-secondary text-white font-bold rounded-xl text-xs transition shadow">
-          Vào Sàn Giao Dịch Ngay &rarr;
-        </button>
       </div>
     </div>
 
@@ -506,53 +371,14 @@
       document.getElementById('regPhone').focus();
     }
 
-    // --- QUICK LOGIN PROFILES ---
-    function quickLogin(role) {
-      let userData;
-      if (role === 'worker') {
-        userData = {
-          id: "worker-001",
-          name: "Nguyễn Văn An",
-          phone: "0981234567",
-          email: "nguyenvanan.mce@gmail.com",
-          role: "WORKER",
-          karma: 4.9,
-          wallet: 220800,
-          verified: true
-        };
-      } else {
-        userData = {
-          id: "poster-001",
-          name: "Chủ Shop Tràng Thi",
-          phone: "0912345678",
-          email: "trangthi.shop@gmail.com",
-          role: "POSTER",
-          karma: 5.0,
-          wallet: 1500000,
-          verified: true
-        };
-      }
-
-      localStorage.setItem('mce_current_user', JSON.stringify(userData));
-      alert(`✅ Đăng nhập thành công với vai trò ${userData.role}: ${userData.name}!`);
-      window.location.href = "./mobile.html";
-    }
-
     async function handleLoginSubmit(e) {
       e.preventDefault();
-      const phone = document.getElementById('loginPhone').value;
-      const password = document.getElementById('loginPassword').value || "123456";
-
-      let userData = {
-        id: "user-" + Date.now(),
-        name: "Người Dùng " + phone.slice(-4),
-        phone: phone,
-        email: "user" + phone.slice(-4) + "@gmail.com",
-        role: "WORKER",
-        karma: 4.8,
-        wallet: 0,
-        verified: true
-      };
+      const phone = document.getElementById('loginPhone').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      if (!phone || !password) {
+        alert("Vui lòng nhập số điện thoại và mật khẩu.");
+        return;
+      }
 
       try {
         const res = await fetch('/api/auth/login', {
@@ -560,106 +386,28 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ phone, password })
         });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success && data.user) {
-            userData = data.user;
-            if (data.token) {
-              localStorage.setItem('mce_auth_token', data.token);
-            }
-          }
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success || !data.user || !data.token) {
+          throw new Error(data.message || data.error || "Đăng nhập thất bại. Vui lòng kiểm tra thông tin hoặc thử lại sau.");
         }
+        localStorage.setItem('mce_auth_token', data.token);
+        localStorage.setItem('mce_current_user', JSON.stringify(data.user));
+        window.location.href = "./mobile.html";
       } catch (err) {
-        console.warn("Backend login offline, falling back to local simulation", err);
+        alert(err instanceof Error ? err.message : "Không thể kết nối dịch vụ xác thực.");
       }
-
-      localStorage.setItem('mce_current_user', JSON.stringify(userData));
-      alert(`✅ Đăng nhập thành công: ${userData.name}!`);
-      window.location.href = "./mobile.html";
     }
 
-    let activeGeneratedOtp = "889966";
-    let otpCountdownInterval = null;
-    let cameraMediaStream = null;
-
-    async function sendRegOtp() {
-      const phone = document.getElementById('regPhone').value.trim();
-      if (!phone || phone.length < 9) {
-        alert("⚠️ Vui lòng nhập Số điện thoại hợp lệ trước khi lấy mã OTP!");
-        document.getElementById('regPhone').focus();
-        return;
-      }
-
-      const btn = document.getElementById('btnSendRegOtp');
-      btn.disabled = true;
-      let seconds = 120;
-      btn.textContent = `Đợi ${seconds}s`;
-
-      if (otpCountdownInterval) clearInterval(otpCountdownInterval);
-      otpCountdownInterval = setInterval(() => {
-        seconds--;
-        if (seconds <= 0) {
-          clearInterval(otpCountdownInterval);
-          btn.disabled = false;
-          btn.textContent = "Gửi Lại OTP";
-          document.getElementById('otpTimerText').textContent = "Mã OTP đã hết hạn. Vui lòng bấm gửi lại!";
-        } else {
-          btn.textContent = `Đợi ${seconds}s`;
-          document.getElementById('otpTimerText').textContent = `Mã OTP có hiệu lực trong ${seconds} giây`;
-        }
-      }, 1000);
-
-      try {
-        const res = await fetch('/api/auth/otp/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phone })
-        });
-        if (res.ok) {
-          const data = await res.json();
-          activeGeneratedOtp = data.otp || "889966";
-        } else {
-          activeGeneratedOtp = Math.floor(100000 + Math.random() * 900000).toString();
-        }
-      } catch (e) {
-        activeGeneratedOtp = Math.floor(100000 + Math.random() * 900000).toString();
-      }
-
-      const banner = document.getElementById('otpNoticeBanner');
-      const text = document.getElementById('otpNoticeText');
-      if (banner && text) {
-        banner.classList.remove('hidden');
-        text.innerHTML = `📲 <strong>Mã xác thực SMS OTP thật:</strong> <span class="font-mono font-black text-amber-300 text-sm tracking-wider">${activeGeneratedOtp}</span>`;
-      }
+        async function sendRegOtp() {
+      alert("Đăng ký đang tạm khóa: hệ thống chưa tích hợp nhà cung cấp SMS OTP thật.");
     }
 
     function autoFillOtp() {
-      if (activeGeneratedOtp) {
-        document.getElementById('regOtp').value = activeGeneratedOtp;
-      }
+      alert("Không hỗ trợ tự điền mã OTP thử nghiệm.");
     }
 
     async function sendLoginOtp() {
-      const phone = document.getElementById('loginPhone').value.trim();
-      if (!phone) {
-        alert("⚠️ Vui lòng nhập số điện thoại đăng nhập!");
-        return;
-      }
-      try {
-        const res = await fetch('/api/auth/otp/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phone })
-        });
-        if (res.ok) {
-          const data = await res.json();
-          alert(`📲 SMS OTP xác thực đăng nhập: ${data.otp} (Có hiệu lực 120s)`);
-          document.getElementById('loginPassword').value = data.otp;
-          return;
-        }
-      } catch (e) {}
-      alert(`📲 SMS OTP xác thực: 889966`);
-      document.getElementById('loginPassword').value = "889966";
+      alert("Đăng nhập bằng OTP chưa khả dụng. Vui lòng dùng mật khẩu đã đăng ký.");
     }
 
     // --- REGISTRATION STEPS ---
@@ -689,8 +437,8 @@
         }
         let enteredOtp = document.getElementById('regOtp').value.trim();
         if (!enteredOtp) {
-          enteredOtp = activeGeneratedOtp || "123456";
-          document.getElementById('regOtp').value = enteredOtp;
+          alert("Xác minh SMS OTP thật chưa được tích hợp. Không thể tiếp tục đăng ký.");
+          return;
         }
       }
 
@@ -711,145 +459,32 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // --- REAL CCCD FILE & OCR PARSING ---
-    function handleCccdFileUpload(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const img = document.getElementById('cccdPreviewImg');
-        img.src = e.target.result;
-        img.classList.remove('hidden');
-        executeOcrScan(file.name);
-      };
-      reader.readAsDataURL(file);
+    // eKYC is intentionally fail-closed until a verified identity provider is integrated.
+    function handleCccdFileUpload() {
+      alert("eKYC chưa khả dụng. MCE chưa tích hợp nhà cung cấp xác minh danh tính thật.");
     }
 
-    function executeOcrScan(fileName) {
-      const preview = document.getElementById('cccdPreviewContainer');
-      preview.classList.remove('hidden');
-      const name = document.getElementById('regName').value || "NGUYỄN VĂN AN";
-      document.getElementById('ocrNameText').textContent = `Họ tên: ${name.toUpperCase()}`;
-      document.getElementById('ocrIdText').textContent = `CCCD: 001098012345`;
-      alert("🔍 OCR AI đã quét và trích xuất thành công dữ liệu từ thẻ CCCD gắn chip!");
+    function executeOcrScan() {
+      alert("Không có chức năng OCR giả lập. eKYC chỉ được bật sau khi tích hợp và kiểm thử nhà cung cấp chính thức.");
     }
 
-    // --- REAL CAMERA SELFIE & LIVENESS CAPTURE ---
     async function startSelfieCamera() {
-      const video = document.getElementById('selfieVideo');
-      const placeholder = document.getElementById('selfiePlaceholder');
-      const btnCapture = document.getElementById('btnCaptureSelfie');
-      const btnToggle = document.getElementById('btnToggleCamera');
-
-      try {
-        cameraMediaStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
-        });
-        video.srcObject = cameraMediaStream;
-        video.classList.remove('hidden');
-        placeholder.classList.add('hidden');
-        btnCapture.classList.remove('hidden');
-        btnToggle.textContent = "⏹️ Dừng Camera";
-        btnToggle.onclick = stopSelfieCamera;
-      } catch (err) {
-        alert("ℹ️ Camera không khả dụng hoặc bị từ chối quyền truy cập. Bạn có thể bấm '📁 File' để chọn ảnh từ máy!");
-        document.getElementById('selfieFileInput').click();
-      }
+      alert("Xác minh khuôn mặt/liveness chưa khả dụng. Camera chưa được dùng để xác minh danh tính.");
     }
 
-    function stopSelfieCamera() {
-      if (cameraMediaStream) {
-        cameraMediaStream.getTracks().forEach(t => t.stop());
-        cameraMediaStream = null;
-      }
-      const video = document.getElementById('selfieVideo');
-      const btnCapture = document.getElementById('btnCaptureSelfie');
-      const btnToggle = document.getElementById('btnToggleCamera');
-      video.classList.add('hidden');
-      btnCapture.classList.add('hidden');
-      btnToggle.textContent = "📹 Bật Camera";
-      btnToggle.onclick = startSelfieCamera;
-    }
+    function stopSelfieCamera() {}
 
     function captureSelfieFrame() {
-      const video = document.getElementById('selfieVideo');
-      const canvas = document.getElementById('selfieCanvas');
-      const previewContainer = document.getElementById('selfiePreviewContainer');
-
-      canvas.width = video.videoWidth || 320;
-      canvas.height = video.videoHeight || 240;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      stopSelfieCamera();
-      canvas.classList.remove('hidden');
-      previewContainer.classList.remove('hidden');
-      document.getElementById('selfieMatchText').textContent = "✓ Xác thực sinh trắc học sống thành công (Khớp 99.4%)!";
-      alert("📸 Đã chụp ảnh khuôn mặt thành công và vượt qua kiểm định Liveness Detection!");
+      alert("Chụp ảnh không phải là xác minh liveness. Tính năng này đang tạm khóa.");
     }
 
-    function handleSelfieFileUpload(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const canvas = document.getElementById('selfieCanvas');
-        const img = new Image();
-        img.onload = function() {
-          canvas.width = 320;
-          canvas.height = 240;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, 320, 240);
-          canvas.classList.remove('hidden');
-          document.getElementById('selfiePlaceholder').classList.add('hidden');
-          document.getElementById('selfiePreviewContainer').classList.remove('hidden');
-          document.getElementById('selfieMatchText').textContent = "✓ Đã nhận diện khuôn mặt khớp 99.1% từ ảnh tải lên!";
-        };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
+    function handleSelfieFileUpload() {
+      alert("Tải ảnh lên không phải là xác minh danh tính. eKYC đang tạm khóa.");
     }
 
     async function finishRegistration() {
-      const name = document.getElementById('regName').value.trim() || "Nguyễn Văn An";
-      const phone = document.getElementById('regPhone').value.trim() || "0981234567";
-      const email = document.getElementById('regEmail').value.trim() || (phone + "@gmail.com");
-      const roleRadio = document.querySelector('input[name="accountRole"]:checked');
-      const role = roleRadio ? roleRadio.value : "WORKER";
-      const bank = document.getElementById('regBank') ? document.getElementById('regBank').value : "MBBank";
-      const account = document.getElementById('regAccount') ? document.getElementById('regAccount').value : phone;
-
-      const userData = {
-        id: "user-" + Date.now(),
-        name: name,
-        phone: phone,
-        email: email,
-        idNumber: "001098012345",
-        role: role,
-        karmaScore: 5.0,
-        walletBalance: 0,
-        bank: bank,
-        account: account,
-        isVerified: true
-      };
-
-      try {
-        await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(userData)
-        });
-      } catch (err) {
-        console.warn("Backend register sync offline, saving locally", err);
-      }
-
-      localStorage.setItem('mce_current_user', JSON.stringify(userData));
-
-      document.getElementById('successUserName').textContent = name;
-      document.getElementById('successUserPhone').textContent = phone;
-      document.getElementById('successUserEmail').textContent = email;
-      document.getElementById('successModal').classList.remove('hidden');
+      alert("Đăng ký đang tạm khóa cho đến khi tích hợp và kiểm thử SMS OTP, eKYC và xác minh tài khoản thật.");
+      return;
     }
 
     function redirectToDashboard() {

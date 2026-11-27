@@ -4,7 +4,6 @@ import { z } from 'zod';
 import { prisma } from '../core/database/prisma';
 import { requireAuth, requireRole } from '../core/auth.middleware';
 import { AppError } from '../core/errors/app-error';
-import { repository } from '../repositories/in-memory.repository';
 import { MatchingService } from '../modules/matching/matching.service';
 import { ApplicationService } from '../modules/matching/application.service';
 import { GeoUtils } from '../core/utils/geo.utils';
@@ -313,46 +312,6 @@ jobRouter.post('/jobs/:jobId/reviews', requireAuth, async (req: Request, res: Re
     next(error);
   }
 });
-
-// Legacy demo endpoints are available only in development. Never expose fixture identities
-// or in-memory candidate records from a production API.
-jobRouter.get('/candidates', requireAuth, async (_req: Request, res: Response) => {
-  if (ENV.NODE_ENV === 'production') {
-    return res.status(404).json({ success: false, message: 'Endpoint không khả dụng.' });
-  }
-  const candidates = await repository.findAll();
-  res.json({
-    success: true,
-    demo: true,
-    total: candidates.length,
-    candidates: candidates.map((c) => ({
-      id: c.id,
-      name: c.fullName,
-      phone: c.phone,
-      location: c.location,
-      skills: c.skills,
-      karmaScore: c.karmaScore,
-      desiredRateVnd: c.desiredMinHourlyRateVnd
-    }))
-  });
-});
-
-jobRouter.get('/jobs/match', async (_req: Request, res: Response) => {
-  if (ENV.NODE_ENV === 'production') {
-    return res.status(404).json({ success: false, message: 'Endpoint không khả dụng.' });
-  }
-  const candidates = await repository.findAll();
-  const sampleJob = repository.getSampleJob();
-  const matches = MatchingService.rankCandidates(candidates, sampleJob);
-  res.json({
-    success: true,
-    demo: true,
-    jobId: sampleJob.id,
-    jobTitle: sampleJob.title,
-    matches
-  });
-});
-
 jobRouter.get('/jobs/benchmark', (req: Request, res: Response) => {
   const rate = parseInt(req.query.rate as string, 10) || 80000;
   const benchmark = MatchingService.calculatePriceBenchmark(rate);

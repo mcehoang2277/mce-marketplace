@@ -16,6 +16,7 @@ backups/
 !.env.docker.example
 data/database.json
 data/*.db
+mce_local.db
 *.sqlite
 *.sqlite3
 proofs/

@@ -198,6 +198,52 @@ function Read-RequestBody($request) {
     }
 }
 
+function Normalize-PhoneNumber($raw) {
+    if (-not $raw) { return "" }
+    $digits = ($raw -replace '[^0-9]', '')
+    if ($digits.StartsWith("84") -and $digits.Length -eq 11) {
+        return "0" + $digits.Substring(2)
+    }
+    return $digits
+}
+
+function Get-HaversineMeters([double]$lat1, [double]$lon1, [double]$lat2, [double]$lon2) {
+    $R = 6371000.0
+    $dLat = ($lat2 - $lat1) * [Math]::PI / 180.0
+    $dLon = ($lon2 - $lon1) * [Math]::PI / 180.0
+    $a = [Math]::Pow([Math]::Sin($dLat / 2.0), 2) +
+         [Math]::Cos($lat1 * [Math]::PI / 180.0) * [Math]::Cos($lat2 * [Math]::PI / 180.0) *
+         [Math]::Pow([Math]::Sin($dLon / 2.0), 2)
+    $c = 2.0 * [Math]::Atan2([Math]::Sqrt($a), [Math]::Sqrt(1.0 - $a))
+    return [Math]::Round($R * $c)
+}
+
+function Test-OtpCode($phone, $code, [switch]$Consume) {
+    if (-not $script:ActiveOtps -or -not $phone -or -not $code) {
+        return @{ valid = $false; reason = "Chưa có mã OTP được cấp hoặc thiếu mã xác nhận." }
+    }
+    $entry = $script:ActiveOtps[$phone]
+    if (-not $entry) {
+        return @{ valid = $false; reason = "Vui lòng bấm gửi mã OTP trước khi xác thực." }
+    }
+    if ((Get-Date) -gt $entry.expiresAt) {
+        $script:ActiveOtps.Remove($phone)
+        return @{ valid = $false; reason = "Mã OTP đã hết hạn (120 giây). Vui lòng gửi mã mới." }
+    }
+    if ($entry.attempts -ge 5) {
+        $script:ActiveOtps.Remove($phone)
+        return @{ valid = $false; reason = "Đã nhập sai quá 5 lần. Vui lòng yêu cầu mã OTP mới." }
+    }
+    if ($entry.code -ne $code) {
+        $entry.attempts = [int]$entry.attempts + 1
+        return @{ valid = $false; reason = "Mã OTP không chính xác (còn $(5 - $entry.attempts) lần thử)." }
+    }
+    if ($Consume) {
+        $script:ActiveOtps.Remove($phone)
+    }
+    return @{ valid = $true }
+}
+
 while ($listener.IsListening) {
     try {
         $context = $listener.GetContext()
@@ -243,58 +289,92 @@ while ($listener.IsListening) {
             continue
         }
 
-        # 2. Auth: OTP Send
+        # 2. Auth: OTP Send (No fixed demo code; random 6-digit with 120s TTL)
         if ($urlPath -eq "/api/auth/otp/send" -and $httpMethod -eq "POST") {
             $body = Read-RequestBody $request
-            $phone = if ($body -and $body.phone) { $body.phone } else { "0981234567" }
+            $phone = Normalize-PhoneNumber $body.phone
+            if (-not $phone -or $phone.Length -lt 9 -or $phone.Length -gt 11) {
+                Send-Json $response @{ success = $false; error = "Số điện thoại không hợp lệ (cần 9-11 chữ số)." } 400
+                continue
+            }
             $rng = New-Object System.Random
             $otpCode = $rng.Next(100000, 999999).ToString()
             if (-not $script:ActiveOtps) { $script:ActiveOtps = @{} }
             $script:ActiveOtps[$phone] = @{
                 code = $otpCode
                 expiresAt = (Get-Date).AddSeconds(120)
+                attempts = 0
+                verified = $false
             }
+            Write-Host "[SMS-SANDBOX] OTP cho $phone la: $otpCode (het han sau 120s)"
             Send-Json $response @{
                 success = $true
                 phone = $phone
                 otp = $otpCode
                 expiresIn = 120
-                message = "Mã OTP xác thực đã được gửi thành công đến $phone!"
+                message = "Mã OTP đã được gửi đến $phone (hiệu lực 120 giây)."
             }
             continue
         }
 
-        # 3. Auth: OTP Verify
+        # 3. Auth: OTP Verify (Strict check — no hardcoded bypass)
         if ($urlPath -eq "/api/auth/otp/verify" -and $httpMethod -eq "POST") {
             $body = Read-RequestBody $request
-            $phone = if ($body -and $body.phone) { $body.phone } else { "0981234567" }
-            $code = if ($body -and $body.code) { $body.code } else { "" }
-            $stored = if ($script:ActiveOtps) { $script:ActiveOtps[$phone] } else { $null }
-            if ($code -eq "123456" -or ($stored -and $stored.code -eq $code)) {
+            $phone = Normalize-PhoneNumber $body.phone
+            $code = if ($body -and $body.code) { ($body.code.ToString()).Trim() } else { "" }
+            $check = Test-OtpCode $phone $code
+            if ($check.valid) {
+                $script:ActiveOtps[$phone].verified = $true
                 Send-Json $response @{ success = $true; message = "Xác thực OTP thành công!" }
             } else {
-                Send-Json $response @{ success = $false; error = "Mã OTP không chính xác hoặc đã hết hạn!" } 400
+                Send-Json $response @{ success = $false; error = $check.reason } 400
             }
             continue
         }
 
-        # 4. Auth: Register
+        # 4. Auth: Register (Requires valid OTP & starts unverified until eKYC)
         if ($urlPath -eq "/api/auth/register" -and $httpMethod -eq "POST") {
             $body = Read-RequestBody $request
+            $phone = Normalize-PhoneNumber $body.phone
+            $name = if ($body.name) { $body.name.ToString().Trim() } else { "" }
+            $otp = if ($body.otp) { $body.otp.ToString().Trim() } else { "" }
+
+            if (-not $phone -or $phone.Length -lt 9 -or $phone.Length -gt 11) {
+                Send-Json $response @{ success = $false; error = "Số điện thoại không hợp lệ." } 400
+                continue
+            }
+            if ($name.Length -lt 2) {
+                Send-Json $response @{ success = $false; error = "Họ và tên phải có ít nhất 2 ký tự." } 400
+                continue
+            }
+
+            $otpCheck = Test-OtpCode $phone $otp -Consume
+            if (-not $otpCheck.valid) {
+                Send-Json $response @{ success = $false; error = $otpCheck.reason } 401
+                continue
+            }
+
             $db = Get-Db
+            $existing = $db.users | Where-Object { $_.phone -eq $phone } | Select-Object -First 1
+            if ($existing) {
+                Send-Json $response @{ success = $false; error = "Số điện thoại $phone đã được đăng ký. Vui lòng chuyển sang Đăng Nhập." } 409
+                continue
+            }
+
             $newUser = @{
                 id = "user-" + [System.DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
-                name = if ($body.name) { $body.name } else { "Người Dùng Mới" }
-                phone = $body.phone
-                email = $body.email
-                idNumber = $body.idNumber
-                role = if ($body.role) { $body.role } else { "WORKER" }
+                name = $name
+                phone = $phone
+                email = if ($body.email) { $body.email } else { "$phone@mce.vn" }
+                idNumber = $null
+                role = if ($body.role -in @("WORKER", "POSTER", "BOTH")) { $body.role } else { "WORKER" }
                 karmaScore = 5.0
                 completionRate = 1.0
                 walletBalance = 0
                 bank = if ($body.bank) { $body.bank } else { "MBBank" }
-                account = if ($body.account) { $body.account } else { $body.phone }
-                isVerified = $true
+                account = if ($body.account) { $body.account } else { $phone }
+                isVerified = $false
+                phoneVerified = $true
             }
             $userList = [System.Collections.ArrayList]@($db.users)
             $userList.Add($newUser) | Out-Null
@@ -304,7 +384,7 @@ while ($listener.IsListening) {
             continue
         }
 
-        # 5. Auth: Login
+        # 5. Auth: Login (Admin env-provisioned password OR strict OTP verification)
         if ($urlPath -eq "/api/auth/login" -and $httpMethod -eq "POST") {
             $body = Read-RequestBody $request
             $db = Get-Db
@@ -319,20 +399,25 @@ while ($listener.IsListening) {
                     continue
                 }
             }
-            $user = $db.users | Where-Object { $_.phone -eq $body.phone } | Select-Object -First 1
+
+            $phone = Normalize-PhoneNumber $body.phone
+            $otp = if ($body.otp) { $body.otp.ToString().Trim() } elseif ($body.password) { $body.password.ToString().Trim() } else { "" }
+
+            if (-not $phone -or $phone.Length -lt 9) {
+                Send-Json $response @{ success = $false; error = "Số điện thoại không hợp lệ." } 400
+                continue
+            }
+
+            $otpCheck = Test-OtpCode $phone $otp -Consume
+            if (-not $otpCheck.valid) {
+                Send-Json $response @{ success = $false; error = $otpCheck.reason } 401
+                continue
+            }
+
+            $user = $db.users | Where-Object { $_.phone -eq $phone } | Select-Object -First 1
             if (-not $user) {
-                # Create default user profile for login
-                $user = @{
-                    id = "user-" + [System.DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
-                    name = "Người Dùng " + $body.phone.Substring([Math]::Max(0, $body.phone.Length - 4))
-                    phone = $body.phone
-                    email = "user" + $body.phone.Substring([Math]::Max(0, $body.phone.Length - 4)) + "@gmail.com"
-                    role = "WORKER"
-                    karmaScore = 4.9
-                    completionRate = 0.98
-                    walletBalance = 0
-                    isVerified = $true
-                }
+                Send-Json $response @{ success = $false; error = "Tài khoản chưa tồn tại với số $phone. Vui lòng đăng ký tài khoản mới." } 404
+                continue
             }
             Send-Json $response @{ success = $true; user = $user; token = "jwt-" + $user.id }
             continue
@@ -374,6 +459,51 @@ while ($listener.IsListening) {
             if ($page -lt 1) { $page = 1 }; if ($limit -lt 1 -or $limit -gt 100) { $limit = 20 }
             $mapped = @($allUsers | Select-Object -Skip (($page - 1) * $limit) -First $limit | ForEach-Object { @{ id = $_.id; fullName = $_.name; phone = $_.phone; role = $_.role; karmaScore = $_.karmaScore; isKycVerified = [bool]$_.isVerified; isPhoneVerified = [bool]$_.isVerified; createdAt = $_.createdAt; wallet = @{ availableBalance = $_.walletBalance; lockedBalance = 0 } } })
             Send-Json $response @{ success = $true; pagination = @{ page = $page; limit = $limit; total = $allUsers.Count; totalPages = [Math]::Max(1, [Math]::Ceiling($allUsers.Count / $limit)) }; users = $mapped }
+            continue
+        }
+
+        # 5b. Auth: eKYC Verification (Strict CCCD 12 digits + Front/Back + Liveness Selfie)
+        if ($urlPath -eq "/api/auth/ekyc/verify" -and $httpMethod -eq "POST") {
+            $body = Read-RequestBody $request
+            $phone = Normalize-PhoneNumber $body.phone
+            $fullName = if ($body.fullName) { $body.fullName.ToString().Trim() } else { "" }
+            $idNumber = if ($body.idNumber) { ($body.idNumber.ToString() -replace '[^0-9]', '') } else { "" }
+
+            if (-not $phone -or $phone.Length -lt 9) {
+                Send-Json $response @{ success = $false; error = "Thiếu số điện thoại tài khoản cần xác thực." } 400
+                continue
+            }
+            if ($fullName.Length -lt 2) {
+                Send-Json $response @{ success = $false; error = "Họ tên trên CCCD không hợp lệ." } 400
+                continue
+            }
+            if ($idNumber -notmatch '^\d{12}$') {
+                Send-Json $response @{ success = $false; error = "Số CCCD gắn chip phải gồm đúng 12 chữ số." } 400
+                continue
+            }
+            if (-not ($body.hasFrontImage -and $body.hasBackImage -and $body.hasSelfieImage)) {
+                Send-Json $response @{ success = $false; error = "Thiếu ảnh CCCD 2 mặt hoặc ảnh khuôn mặt sinh trắc học." } 400
+                continue
+            }
+
+            $db = Get-Db
+            $user = $db.users | Where-Object { $_.phone -eq $phone } | Select-Object -First 1
+            if (-not $user) {
+                Send-Json $response @{ success = $false; error = "Không tìm thấy tài khoản để gắn kết eKYC." } 404
+                continue
+            }
+
+            $user.name = $fullName
+            $user.idNumber = $idNumber
+            $user.isVerified = $true
+            $user | Add-Member -NotePropertyName "ekycVerifiedAt" -NotePropertyValue ((Get-Date).ToString("o")) -Force
+            Save-Db $db
+
+            Send-Json $response @{
+                success = $true
+                message = "Xác thực định danh eKYC cấp độ 2 thành công!"
+                user = $user
+            }
             continue
         }
 
@@ -448,54 +578,129 @@ while ($listener.IsListening) {
             continue
         }
 
-        # 9. Escrow Check-in
+        # 9. Escrow Check-in (Strict 3-Tier Geofence + Accuracy <= 50m + Radius <= 150m)
         if ($urlPath -eq "/api/escrow/check-in" -and $httpMethod -eq "POST") {
             $body = Read-RequestBody $request
             $jobId = if ($body.jobId) { $body.jobId } else { "JOB-HANOI-001" }
-            $lat = if ($body.lat) { [double]$body.lat } else { 21.0286 }
-            $lng = if ($body.lng) { [double]$body.lng } else { 105.8545 }
+            $phone = Normalize-PhoneNumber $body.workerPhone
+
+            if ($null -eq $body.lat -or $null -eq $body.lng -or $null -eq $body.accuracyMeters) {
+                Send-Json $response @{
+                    success = $false
+                    error = "Thiếu dữ liệu GPS thực tế (lat, lng, accuracyMeters). Không thể chấm công."
+                } 422
+                continue
+            }
+
+            $lat = [double]$body.lat
+            $lng = [double]$body.lng
+            $accuracy = [double]$body.accuracyMeters
+
+            if ($accuracy -le 0 -or $accuracy -gt 50) {
+                Send-Json $response @{
+                    success = $false
+                    error = "Tín hiệu GPS chưa đủ chính xác (sai số ±$([Math]::Round($accuracy))m > ngưỡng cho phép 50m). Vui lòng bật GPS độ chính xác cao và ra nơi thoáng."
+                } 422
+                continue
+            }
 
             $db = Get-Db
+            if ($phone) {
+                $workerUser = $db.users | Where-Object { $_.phone -eq $phone } | Select-Object -First 1
+                if ($workerUser -and -not $workerUser.isVerified) {
+                    Send-Json $response @{
+                        success = $false
+                        error = "Tài khoản chưa hoàn tất xác thực eKYC CCCD. Vui lòng xác minh danh tính trước khi chấm công."
+                    } 403
+                    continue
+                }
+            }
+
+            $jobRecord = $db.jobs | Where-Object { $_.id -eq $jobId } | Select-Object -First 1
+            $targetLat = if ($jobRecord -and $jobRecord.location) { [double]$jobRecord.location.lat } elseif ($null -ne $body.jobLat) { [double]$body.jobLat } else { 21.028511 }
+            $targetLng = if ($jobRecord -and $jobRecord.location) { [double]$jobRecord.location.lng } elseif ($null -ne $body.jobLng) { [double]$body.jobLng } else { 105.854444 }
+
+            $distMeters = Get-HaversineMeters $lat $lng $targetLat $targetLng
+            if ($distMeters -gt 150) {
+                Send-Json $response @{
+                    success = $false
+                    distanceMeters = $distMeters
+                    error = "Check-in bị từ chối: Bạn đang cách điểm làm việc ${distMeters}m (vượt quá bán kính Geofence 150m)."
+                } 400
+                continue
+            }
+
             $escrow = $db.escrows | Where-Object { $_.jobId -eq $jobId } | Select-Object -First 1
             if ($escrow) {
                 $escrow.status = "IN_PROGRESS"
                 $escrow.updatedAt = (Get-Date).ToString("o")
-                Save-Db $db
+            } else {
+                $escrow = @{
+                    jobId = $jobId
+                    status = "IN_PROGRESS"
+                    grossAmount = 240000
+                    platformFee = 0
+                    workerNet = 240000
+                    updatedAt = (Get-Date).ToString("o")
+                }
+                $escList = [System.Collections.ArrayList]@($db.escrows)
+                $escList.Add($escrow) | Out-Null
+                $db.escrows = $escList
             }
-            Send-Json $response @{ success = $true; message = "Check-in thành công tại vị trí thực địa!"; escrowStatus = "IN_PROGRESS" }
+            Save-Db $db
+            Send-Json $response @{
+                success = $true
+                message = "Check-in thực địa thành công (cách điểm làm ${distMeters}m, sai số ±$([Math]::Round($accuracy))m)!"
+                escrowStatus = "IN_PROGRESS"
+                distanceMeters = $distMeters
+                accuracyMeters = [Math]::Round($accuracy)
+            }
             continue
         }
 
-        # 10. Escrow Check-out
+        # 10. Escrow Check-out (Requires IN_PROGRESS + real photo proof)
         if ($urlPath -eq "/api/escrow/check-out" -and $httpMethod -eq "POST") {
             $body = Read-RequestBody $request
             $jobId = if ($body.jobId) { $body.jobId } else { "JOB-HANOI-001" }
+            $photoUrl = if ($body.photoUrl) { $body.photoUrl.ToString().Trim() } else { "" }
+
+            if (-not $photoUrl) {
+                Send-Json $response @{ success = $false; error = "Bắt buộc phải có ảnh nghiệm thu thực tế trước khi check-out." } 400
+                continue
+            }
+
             $db = Get-Db
             $escrow = $db.escrows | Where-Object { $_.jobId -eq $jobId } | Select-Object -First 1
-            if ($escrow) {
-                $escrow.status = "PENDING_REVIEW"
-                $escrow.updatedAt = (Get-Date).ToString("o")
-                Save-Db $db
+            if (-not $escrow -or $escrow.status -ne "IN_PROGRESS") {
+                Send-Json $response @{ success = $false; error = "Ca việc chưa ở trạng thái đang làm (IN_PROGRESS) để nghiệm thu." } 400
+                continue
             }
-            Send-Json $response @{ success = $true; message = "Check-out và nộp bằng chứng thành công!"; escrowStatus = "PENDING_REVIEW" }
+            $escrow.status = "PENDING_REVIEW"
+            $escrow | Add-Member -NotePropertyName "photoUrl" -NotePropertyValue $photoUrl -Force
+            $escrow.updatedAt = (Get-Date).ToString("o")
+            Save-Db $db
+            Send-Json $response @{ success = $true; message = "Đã nộp ảnh nghiệm thu! Chờ chủ việc xác nhận giải ngân."; escrowStatus = "PENDING_REVIEW" }
             continue
         }
 
-        # 11. Escrow Release
+        # 11. Escrow Release (Requires PENDING_REVIEW)
         if ($urlPath -eq "/api/escrow/release" -and $httpMethod -eq "POST") {
             $body = Read-RequestBody $request
             $jobId = if ($body.jobId) { $body.jobId } else { "JOB-HANOI-001" }
+            $phone = Normalize-PhoneNumber $body.workerPhone
             $db = Get-Db
             $escrow = $db.escrows | Where-Object { $_.jobId -eq $jobId } | Select-Object -First 1
-            $payout = 240000
-            if ($escrow) {
-                $escrow.status = "COMPLETED"
-                $payout = $escrow.workerNet
-                $escrow.updatedAt = (Get-Date).ToString("o")
+            if (-not $escrow -or $escrow.status -ne "PENDING_REVIEW") {
+                Send-Json $response @{ success = $false; error = "Chỉ có thể giải ngân khi ca việc đã nộp ảnh nghiệm thu (PENDING_REVIEW)." } 400
+                continue
             }
+            $escrow.status = "COMPLETED"
+            $payout = if ($body.amount) { [int]$body.amount } else { [int]$escrow.workerNet }
+            $escrow.updatedAt = (Get-Date).ToString("o")
 
             # Update worker wallet
-            $worker = $db.users | Where-Object { $_.id -eq "worker-001" } | Select-Object -First 1
+            $worker = if ($phone) { $db.users | Where-Object { $_.phone -eq $phone } | Select-Object -First 1 } else { $null }
+            if (-not $worker) { $worker = $db.users | Where-Object { $_.id -eq "worker-001" } | Select-Object -First 1 }
             if ($worker) {
                 $worker.walletBalance = [int]$worker.walletBalance + $payout
             }
@@ -521,6 +726,7 @@ while ($listener.IsListening) {
                 message = "Đã giải ngân trọn vẹn 100% thù lao về ví Worker!"
                 escrowStatus = "COMPLETED"
                 workerBalance = if ($worker) { $worker.walletBalance } else { $payout }
+                transaction = $tx
             }
             continue
         }
@@ -596,18 +802,29 @@ while ($listener.IsListening) {
             $amount = [int]$body.amount
             $bank = $body.bank
             $account = $body.account
+            $phone = Normalize-PhoneNumber $body.phone
             $db = Get-Db
-            $worker = $db.users | Where-Object { $_.id -eq "worker-001" } | Select-Object -First 1
+            $worker = if ($phone) { $db.users | Where-Object { $_.phone -eq $phone } | Select-Object -First 1 } else { $null }
+            if (-not $worker) {
+                Send-Json $response @{ success = $false; error = "Không tìm thấy tài khoản người dùng để rút tiền." } 404
+                continue
+            }
+            if (-not $worker.isVerified) {
+                Send-Json $response @{ success = $false; error = "Tài khoản chưa xác thực eKYC CCCD nên chưa thể rút tiền." } 403
+                continue
+            }
+            if ($amount -lt 10000) {
+                Send-Json $response @{ success = $false; error = "Số tiền rút tối thiểu là 10.000 VNĐ." } 400
+                continue
+            }
 
-            $curBalance = if ($worker) { [int]$worker.walletBalance } else { 390000 }
+            $curBalance = [int]$worker.walletBalance
             if ($amount -gt $curBalance) {
                 Send-Json $response @{ success = $false; error = "Số dư không đủ để thực hiện lệnh rút!" } 400
                 continue
             }
 
-            if ($worker) {
-                $worker.walletBalance = $curBalance - $amount
-            }
+            $worker.walletBalance = $curBalance - $amount
 
             $tx = @{
                 id = "tx-wd-" + [System.DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()

@@ -221,12 +221,4 @@ export class PaymentWebhookController {
       return res.status(500).json({ success: false, message: 'Không thể ghi nhận giao dịch; SePay có thể gửi lại.' });
     }
   }
-
-  public static async simulateWebhook(_req: Request, res: Response) {
-    return res.status(503).json({
-      success: false,
-      status: 'PAYMENT_SIMULATION_DISABLED',
-      message: 'Không hỗ trợ giả lập thanh toán trên môi trường ứng dụng.'
-    });
-  }
 }

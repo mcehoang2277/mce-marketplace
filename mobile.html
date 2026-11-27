@@ -200,11 +200,11 @@
             <div class="flex gap-1.5">
               <div class="flex-1 bg-brand-surface/95 backdrop-blur-md px-2.5 py-1.5 rounded-xl border border-brand-border shadow flex items-center gap-1.5">
                 <svg class="w-3.5 h-3.5 text-brand-textSecondary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                <input id="inputMapSearch" type="text" placeholder="Tìm việc/khu vực quanh bạn..." onkeydown="if(event.key==='Enter') searchLocationOnMap()" class="bg-transparent text-[11px] text-brand-textPrimary focus:outline-none w-full placeholder:text-brand-textSecondary/60">
+                <input id="inputMapSearch" type="text" placeholder="Tìm việc/khu vực quanh bạn..." oninput="handleMapSearchInput()" onkeydown="if(event.key==='Enter') searchLocationOnMap()" class="bg-transparent text-[11px] text-brand-textPrimary focus:outline-none w-full placeholder:text-brand-textSecondary/60">
               </div>
               
-              <!-- Nút Quét Việc Làm Ngay -->
-              <button onclick="triggerManualJobScan()" title="Quét tìm việc làm quanh tọa độ" class="bg-brand-primary hover:bg-brand-secondary text-white px-2.5 py-1.5 rounded-xl shadow border border-brand-primary/40 flex items-center gap-1 text-[10px] font-black transition active:scale-95 whitespace-nowrap">
+              <!-- Nút Quét Việc Làm Ngay (Ưu tiên GPS cá nhân thực tế) -->
+              <button onclick="triggerManualJobScan()" title="Ưu tiên định vị GPS cá nhân thực tế và quét tỏa ra xung quanh" class="bg-brand-primary hover:bg-brand-secondary text-white px-2.5 py-1.5 rounded-xl shadow border border-brand-primary/40 flex items-center gap-1 text-[10px] font-black transition active:scale-95 whitespace-nowrap">
                 <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
                 <span>📡 Quét Việc</span>
               </button>
@@ -233,15 +233,21 @@
             </div>
           </div>
 
-          <!-- Bottom Map Mode Bar: Toggle Fullscreen Map Mode & Off-site Hiring -->
+          <!-- Bottom Map Mode Bar: Personal GPS Priority, Fullscreen Map Mode & Off-site Hiring -->
           <div class="absolute bottom-2 left-2 right-2 z-20 flex flex-col gap-1.5">
-            <div class="bg-brand-card/95 backdrop-blur-md px-2.5 py-1.5 rounded-xl border border-brand-border shadow flex items-center justify-between text-[10px]">
+            <div class="bg-brand-card/95 backdrop-blur-md px-2 py-1.5 rounded-xl border border-brand-border shadow flex items-center justify-between gap-1.5 text-[10px]">
+              <!-- Nút Định Vị Cá Nhân Thực Tế -->
+              <button onclick="triggerRealtimeGPSScan(true)" id="btnLocateMe" title="Ưu tiên lấy tọa độ GPS cá nhân thực tế và quét từ vị trí của bạn" class="text-[9px] bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 font-extrabold px-2 py-1 rounded-lg shadow flex items-center gap-1 active:scale-95 transition whitespace-nowrap">
+                <span id="gpsLocateDot" class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                <span id="gpsLocateLabel">🎯 Vị trí tôi</span>
+              </button>
+
               <!-- Nút chuyển sang Chế độ bản đồ không dùng list -->
-              <button onclick="toggleMapOnlyMode()" id="btnMapOnlyToggle" class="text-[9px] bg-brand-primary text-white font-extrabold px-2.5 py-1 rounded-lg shadow flex items-center gap-1 active:scale-95 transition">
+              <button onclick="toggleMapOnlyMode()" id="btnMapOnlyToggle" class="text-[9px] bg-brand-primary text-white font-extrabold px-2 py-1 rounded-lg shadow flex items-center gap-1 active:scale-95 transition whitespace-nowrap">
                 <span>🗺️ Chỉ Bản Đồ</span>
               </button>
 
-              <button onclick="toggleOffsiteMode()" id="btnOffsiteToggle" class="text-[9px] bg-brand-surface hover:bg-brand-border px-2.5 py-1 rounded-lg border border-brand-border text-indigo-300 font-semibold transition flex items-center gap-1">
+              <button onclick="toggleOffsiteMode()" id="btnOffsiteToggle" class="text-[9px] bg-brand-surface hover:bg-brand-border px-2 py-1 rounded-lg border border-brand-border text-indigo-300 font-semibold transition flex items-center gap-1 whitespace-nowrap">
                 <span>🎯 Thuê Chỗ Khác</span>
               </button>
             </div>
@@ -254,7 +260,7 @@
             <div>
               <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-brand-success/10 text-emerald-400 border border-brand-success/30">⚡ ĐANG CHỌN TRÊN BẢN ĐỒ</span>
               <h3 id="directJobTitle" class="font-extrabold text-xs text-brand-textPrimary mt-1">Phụ đóng gói 300 kiện hàng shopee</h3>
-              <p id="directJobMeta" class="text-[10px] text-brand-textSecondary mt-0.5">Số 12 Tràng Thi · Cách bạn 1.8 km · 14:00 - 17:00</p>
+              <p id="directJobMeta" class="text-[10px] text-brand-textSecondary mt-0.5">Số 12 Tràng Thi · Cách bạn 0 m · 14:00 - 17:00</p>
             </div>
             <div class="text-right">
               <div id="directJobPay" class="text-sm font-black text-brand-primary">240.000đ</div>
@@ -264,7 +270,7 @@
 
           <!-- Direct Communication & Apply Buttons (Kể cả khi hết tiền SIM) -->
           <div class="pt-1 flex gap-2">
-            <button onclick="openJobApplicationModal('JOB-001')" class="flex-2 py-2 px-3 bg-gradient-to-r from-brand-primary to-brand-secondary hover:opacity-95 text-white font-extrabold text-[11px] rounded-xl shadow transition active:scale-95 flex items-center justify-center gap-1">
+            <button onclick="openSelectedDirectJobApplication()" class="flex-2 py-2 px-3 bg-gradient-to-r from-brand-primary to-brand-secondary hover:opacity-95 text-white font-extrabold text-[11px] rounded-xl shadow transition active:scale-95 flex items-center justify-center gap-1">
               <span>⚡ Ứng Tuyển Ca Này</span>
             </button>
             <button onclick="openChatModal()" title="Nhắn tin với người thuê" class="py-2 px-2.5 bg-brand-surface hover:bg-brand-border border border-brand-border rounded-xl text-brand-textPrimary text-xs font-bold flex items-center gap-1 transition">
@@ -280,9 +286,9 @@
         <div id="staticJobListSection" class="px-3 pb-3 space-y-2">
           <div class="flex items-center justify-between text-[11px] font-bold text-brand-textSecondary px-0.5">
             <span id="jobListCountHeader">Danh sách việc làm (13 ca đang mở):</span>
-            <span class="text-[9px] text-emerald-400 font-extrabold flex items-center gap-1">
+            <span id="scanOrderBadge" class="text-[9px] text-emerald-400 font-extrabold flex items-center gap-1">
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-              Đã gồm cả vùng xa
+              Gần nhất → Xa dần
             </span>
           </div>
 
@@ -310,41 +316,53 @@
         <div class="bg-brand-card p-4 rounded-3xl border border-brand-border shadow space-y-3">
           <div class="flex items-center justify-between">
             <span id="mobileShiftBadge" class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30">
-              ĐÃ GÁN VIỆC · CHỜ CHECK-IN
+              CHƯA NHẬN CA · CHỌN VIỆC TRƯỚC
             </span>
-            <span class="text-[10px] font-bold text-brand-textSecondary">MÃ: #MCE-772</span>
+            <span id="mobileActiveJobCode" class="text-[10px] font-bold text-brand-textSecondary">MÃ: --</span>
           </div>
 
           <div>
-            <h3 id="mobileActiveTitle" class="text-sm font-extrabold text-brand-textPrimary">Phụ đóng gói 300 kiện hàng shopee</h3>
-            <p class="text-xs text-brand-textSecondary mt-0.5">Số 12 Tràng Thi, Hoàn Kiếm, Hà Nội</p>
+            <h3 id="mobileActiveTitle" class="text-sm font-extrabold text-brand-textPrimary">Chưa có ca làm việc đang nhận</h3>
+            <p id="mobileActiveAddress" class="text-xs text-brand-textSecondary mt-0.5">Hãy chọn một ca việc ở tab Tìm Việc để bắt đầu quy trình chấm công thực địa.</p>
           </div>
 
-          <!-- Proximity Radar Card -->
+          <!-- eKYC Verification Gate Warning -->
+          <div id="shiftEkycWarning" class="p-2.5 bg-amber-500/10 border border-amber-500/40 rounded-2xl text-[10px] text-amber-200 flex items-center justify-between gap-2 hidden">
+            <span>⚠️ Tài khoản chưa xác thực eKYC CCCD nên chưa được phép chấm công.</span>
+            <button type="button" onclick="openEkycModal()" class="px-2.5 py-1 bg-amber-400 text-slate-950 font-black rounded-lg whitespace-nowrap active:scale-95 transition">
+              🪪 Xác Minh Ngay
+            </button>
+          </div>
+
+          <!-- Proximity Radar Card (Số liệu thực tế 100%, không hardcode demo) -->
           <div class="bg-brand-surface text-brand-textPrimary p-3 rounded-2xl border border-brand-border space-y-2">
             <div class="flex items-center justify-between text-xs">
               <span class="flex items-center gap-1.5 text-emerald-400 font-bold">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                <span id="shiftRadarDot" class="w-2 h-2 rounded-full bg-amber-400"></span>
                 Định Vị GPS Chấm Công
               </span>
-              <span class="text-brand-textSecondary text-[10px]">Sai số ± 8m</span>
+              <span id="shiftAccuracyText" class="text-amber-300 text-[10px] font-bold">Chưa đo sai số GPS</span>
             </div>
 
             <div class="flex items-center justify-between py-1">
               <div>
                 <div class="text-[10px] text-brand-textSecondary">Khoảng cách tới điểm làm:</div>
-                <div id="mobileDistanceText" class="text-lg font-black text-emerald-400">25 mét</div>
+                <div id="mobileDistanceText" class="text-lg font-black text-amber-300">--</div>
               </div>
               <div class="text-right">
-                <div class="text-[10px] text-brand-textSecondary">Bán kính cho phép:</div>
-                <div class="text-sm font-bold text-brand-textPrimary">150 mét</div>
+                <div class="text-[10px] text-brand-textSecondary">Chuẩn cho phép:</div>
+                <div class="text-xs font-bold text-brand-textPrimary">≤ 150m · Sai số ≤ 50m</div>
               </div>
             </div>
 
             <div class="w-full bg-brand-card h-2 rounded-full overflow-hidden border border-brand-border">
-              <div class="bg-brand-success h-full rounded-full" style="width: 90%"></div>
+              <div id="shiftGeofenceBar" class="bg-amber-500 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
             </div>
-            <p class="text-[9px] text-emerald-400 text-center">✓ Đã nằm trong vùng chấm công an toàn (&lt; 150m)</p>
+            <p id="shiftGeofenceStatus" class="text-[9px] text-amber-300 text-center font-semibold">⏳ Bấm đo GPS độ chính xác cao để kiểm tra vùng chấm công thực địa</p>
+
+            <button type="button" onclick="refreshShiftAttendanceGPS()" class="w-full py-1.5 px-3 rounded-xl bg-brand-card hover:bg-brand-border border border-brand-border text-sky-300 font-bold text-[10px] transition flex items-center justify-center gap-1.5">
+              <span>🛰️ Đo Lại GPS Chấm Công Độ Chính Xác Cao</span>
+            </button>
           </div>
 
           <!-- Direct Communication Channels (Khi điện thoại hết tiền) -->
@@ -365,11 +383,14 @@
 
           <!-- Action Buttons for Shift -->
           <div class="space-y-2 pt-1">
-            <button id="btnMobileCheckIn" onclick="handleMobileCheckIn()" class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-95 text-slate-950 font-black text-xs shadow transition flex items-center justify-center gap-2">
+            <button id="btnMobileCheckIn" onclick="handleMobileCheckIn()" class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-95 text-slate-950 font-black text-xs shadow transition flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
               📍 1. Bấm Chấm Công Check-in (Vào Ca)
             </button>
             <button id="btnMobilePhotoProof" onclick="openCameraModal()" class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-brand-primary to-brand-secondary hover:opacity-95 text-white font-extrabold text-xs shadow transition flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed" disabled>
-              📸 2. Chụp Ảnh Nghiệm Thu & Đánh Giá
+              📸 2. Chụp Ảnh Nghiệm Thu Thực Tế (Check-out)
+            </button>
+            <button id="btnPosterReleaseEscrow" onclick="releaseActiveShiftEscrow()" class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-emerald-500 hover:opacity-95 text-slate-950 font-black text-xs shadow transition flex items-center justify-center gap-2 hidden">
+              ✅ 3. Chủ Việc Xác Nhận Nghiệm Thu &amp; Giải Ngân
             </button>
           </div>
         </div>
@@ -379,8 +400,8 @@
           <div class="font-extrabold flex items-center gap-1.5 text-indigo-300">
             <span>🛡️ Bảo Hiểm Tiền Lương Escrow:</span>
           </div>
-          <p class="text-brand-textSecondary leading-relaxed">
-            Số tiền <strong class="text-emerald-400">240.000 VNĐ</strong> đã được Người thuê nạp ký quỹ trên hệ thống MCE. Tiền tự động giải ngân 100% về ví bạn ngay khi hoàn thành ca làm việc.
+          <p id="mobileEscrowNoticeText" class="text-brand-textSecondary leading-relaxed">
+            Tiền thù lao được Người thuê nạp ký quỹ trên hệ thống MCE trước khi nhận ca. Sau khi bạn check-in hợp lệ trong bán kính 150m và nộp ảnh nghiệm thu thực tế, hệ thống sẽ giải ngân 100% về ví (0% phí sàn).
           </p>
         </div>
       </div>
@@ -490,7 +511,7 @@
                 <h3 id="displayProfileName" class="font-extrabold text-sm text-brand-textPrimary">Nguyễn Văn An</h3>
                 <span id="displayProfileBadge" class="text-[9px] bg-brand-success/20 text-emerald-300 font-bold px-1.5 py-0.2 rounded border border-brand-success/30">eKYC ĐẠT</span>
               </div>
-              <p id="displayProfileRole" class="text-[11px] text-brand-textSecondary font-semibold">Người Làm Việc (Worker) · <span id="displayKarmaScore">4.9⭐</span></p>
+              <p class="text-[11px] text-brand-textSecondary font-semibold"><span id="displayProfileRole">Người Làm Việc (Worker)</span> · <span id="displayKarmaScore">4.9⭐</span></p>
               <p id="displayProfilePhone" class="text-[10px] text-indigo-400 font-mono mt-0.5">📞 0981 234 567</p>
             </div>
           </div>
@@ -710,51 +731,39 @@
 
       <!-- Body -->
       <div class="p-4 overflow-y-auto space-y-3.5 custom-scroll flex-1 text-xs">
-        
-        <!-- Google Quick 1-Tap Sign-In -->
-        <button type="button" onclick="loginWithGoogleQuick()" class="w-full py-2.5 px-3 bg-brand-surface hover:bg-brand-border/60 border border-brand-border rounded-xl text-xs font-bold text-brand-textPrimary flex items-center justify-center gap-2 transition active:scale-98">
-          <svg class="w-4 h-4" viewBox="0 0 24 24">
-            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-          </svg>
-          <span>Tiếp tục với Google (Gmail)</span>
-        </button>
 
-        <div class="relative flex items-center py-1">
-          <div class="flex-grow border-t border-brand-border"></div>
-          <span class="flex-shrink mx-2 text-[9px] uppercase font-bold text-brand-textSecondary">Hoặc dùng số điện thoại</span>
-          <div class="flex-grow border-t border-brand-border"></div>
+        <div class="p-2.5 bg-brand-surface rounded-xl border border-brand-border text-[10px] text-brand-textSecondary">
+          🔒 Xác thực tài khoản bắt buộc qua <strong class="text-emerald-400">Số điện thoại + Mã OTP 6 số</strong> do máy chủ cấp (hiệu lực 120 giây). Tài khoản mới cần hoàn tất <strong class="text-indigo-300">eKYC CCCD</strong> trước khi chấm công hoặc rút tiền.
         </div>
 
         <!-- FORM LOGIN -->
         <form id="formInAppLogin" onsubmit="handleInAppLogin(event)" class="space-y-3">
+          <div id="inAppLoginAlertBox" class="text-[10px] p-2 rounded-xl border hidden font-bold"></div>
+
           <div>
             <label class="block text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider mb-1">
-              Số điện thoại <span class="text-rose-400">*</span>
+              Số điện thoại đã đăng ký <span class="text-rose-400">*</span>
             </label>
             <div class="flex gap-2">
               <span class="flex items-center px-2.5 border border-brand-border rounded-xl bg-brand-surface text-xs font-semibold text-brand-textSecondary">🇻🇳 +84</span>
-              <input id="inAppLoginPhone" type="tel" value="0981234567" required placeholder="0981 234 567" class="flex-1 p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs font-bold text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none">
+              <input id="inAppLoginPhone" type="tel" required placeholder="Nhập SĐT (VD: 0981234567)" class="flex-1 p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs font-bold text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none">
             </div>
           </div>
 
           <div>
             <div class="flex justify-between items-center mb-1">
-              <label class="text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider">Mật khẩu hoặc Mã OTP</label>
-              <button type="button" onclick="sendAuthOtp('LOGIN')" class="text-[10px] text-brand-primary font-bold hover:underline">Gửi SMS OTP</button>
+              <label class="text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider">Mã xác thực OTP (6 số) <span class="text-rose-400">*</span></label>
+              <button type="button" id="btnSendLoginOtp" onclick="sendAuthOtp('LOGIN')" class="text-[10px] text-brand-primary font-bold hover:underline">Gửi SMS OTP</button>
             </div>
-            <input id="inAppLoginPass" type="password" value="123456" placeholder="Nhập mật khẩu hoặc OTP..." required class="w-full p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none">
-            
-            <div id="loginOtpBanner" class="mt-2 p-2 bg-emerald-500/15 border border-emerald-500/30 rounded-xl text-[10px] text-emerald-300 hidden flex items-center justify-between">
-              <span id="loginOtpText">Mã OTP: 882910</span>
-              <button type="button" onclick="document.getElementById('inAppLoginPass').value='882910'" class="px-2 py-0.5 bg-emerald-500/30 text-emerald-200 font-bold rounded">Điền Nhanh</button>
+            <input id="inAppLoginPass" type="text" inputmode="numeric" maxlength="6" placeholder="Nhập đúng mã OTP gồm 6 chữ số..." required class="w-full p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs text-center font-mono font-bold tracking-widest text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none">
+
+            <div id="loginOtpBanner" class="mt-2 p-2 bg-emerald-500/15 border border-emerald-500/30 rounded-xl text-[10px] text-emerald-300 hidden">
+              <span id="loginOtpText">Mã OTP đã được gửi qua SMS.</span>
             </div>
           </div>
 
           <button type="submit" class="w-full py-2.5 bg-brand-primary hover:bg-brand-secondary text-white font-extrabold text-xs rounded-xl shadow transition active:scale-98">
-            Đăng Nhập Vào Sàn
+            🔐 Xác Thực OTP &amp; Đăng Nhập
           </button>
         </form>
 
@@ -764,9 +773,9 @@
 
           <div>
             <label class="block text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider mb-1">
-              Họ và tên thật <span class="text-rose-400">*</span>
+              Họ và tên thật theo CCCD <span class="text-rose-400">*</span>
             </label>
-            <input id="inAppRegName" type="text" placeholder="Nguyễn Văn An" class="w-full p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs font-bold text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none">
+            <input id="inAppRegName" type="text" required placeholder="Nhập họ và tên đầy đủ" class="w-full p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs font-bold text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none">
           </div>
 
           <div>
@@ -786,54 +795,29 @@
               <label class="text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider">
                 Số điện thoại <span class="text-rose-400">*</span>
               </label>
-              <button type="button" onclick="sendAuthOtp('REGISTER')" class="text-[10px] text-brand-primary font-bold hover:underline">Gửi SMS OTP</button>
+              <button type="button" id="btnSendRegOtp" onclick="sendAuthOtp('REGISTER')" class="text-[10px] text-brand-primary font-bold hover:underline">Gửi SMS OTP</button>
             </div>
             <div class="flex gap-2">
               <span class="flex items-center px-2.5 border border-brand-border rounded-xl bg-brand-surface text-xs font-semibold text-brand-textSecondary">🇻🇳 +84</span>
-              <input id="inAppRegPhone" type="tel" oninput="handleRegPhoneInput(this.value)" placeholder="0912 345 678" class="flex-1 p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs font-bold text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none">
+              <input id="inAppRegPhone" type="tel" required placeholder="0912 345 678" class="flex-1 p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs font-bold text-brand-textPrimary focus:ring-2 focus:ring-brand-primary focus:outline-none">
             </div>
 
-            <div id="regOtpBanner" class="mt-2 p-2 bg-emerald-500/15 border border-emerald-500/30 rounded-xl text-[10px] text-emerald-300 hidden flex items-center justify-between">
-              <span id="regOtpText">Mã OTP: 654321</span>
-              <button type="button" onclick="document.getElementById('inAppRegOtp').value='654321'" class="px-2 py-0.5 bg-emerald-500/30 text-emerald-200 font-bold rounded">Điền Nhanh</button>
+            <div id="regOtpBanner" class="mt-2 p-2 bg-emerald-500/15 border border-emerald-500/30 rounded-xl text-[10px] text-emerald-300 hidden">
+              <span id="regOtpText">Mã OTP đã được gửi qua SMS.</span>
             </div>
           </div>
 
           <div>
-            <label class="block text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider mb-1">Mã xác nhận OTP (6 số)</label>
-            <input id="inAppRegOtp" type="text" maxlength="6" value="654321" placeholder="654321" class="w-full p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs text-center font-mono font-bold tracking-widest text-brand-textPrimary">
+            <label class="block text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider mb-1">Mã xác nhận OTP (6 số) <span class="text-rose-400">*</span></label>
+            <input id="inAppRegOtp" type="text" inputmode="numeric" maxlength="6" required placeholder="Nhập mã 6 số vừa nhận" class="w-full p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs text-center font-mono font-bold tracking-widest text-brand-textPrimary">
           </div>
 
-          <div class="space-y-1.5 pt-1">
+          <div class="pt-1">
             <button type="submit" class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-xs rounded-xl shadow transition active:scale-98 flex items-center justify-center gap-1.5">
-              <span>🚀 Đăng Ký Tài Khoản Ngay</span>
-            </button>
-            <button type="button" onclick="handleInAppRegister(event)" class="w-full py-2 bg-brand-surface hover:bg-brand-border border border-brand-border text-brand-textPrimary font-bold text-[10px] rounded-xl transition flex items-center justify-center gap-1">
-              <span>⚡ Kích Hoạt Nhanh 1 Chạm (Tự Động Xác Thực)</span>
+              <span>🚀 Xác Thực OTP &amp; Đăng Ký Tài Khoản</span>
             </button>
           </div>
         </form>
-
-        <!-- Quick Switch Preset Accounts -->
-        <div class="pt-3 border-t border-brand-border/60 space-y-1.5">
-          <span class="text-[9px] uppercase font-bold text-brand-textSecondary block text-center">Hoặc chọn nhanh tài khoản mẫu:</span>
-          <div class="grid grid-cols-2 gap-2">
-            <button type="button" onclick="quickSwitchDemoAccount('WORKER')" class="p-2 rounded-xl border border-brand-border bg-brand-surface hover:bg-brand-border text-left transition flex items-center gap-1.5">
-              <span class="text-base">🛵</span>
-              <div>
-                <strong class="text-[10px] text-brand-textPrimary block">Nguyễn Văn An</strong>
-                <span class="text-[8px] text-emerald-400 font-bold">Thợ · 4.9⭐</span>
-              </div>
-            </button>
-            <button type="button" onclick="quickSwitchDemoAccount('POSTER')" class="p-2 rounded-xl border border-brand-border bg-brand-surface hover:bg-brand-border text-left transition flex items-center gap-1.5">
-              <span class="text-base">🏢</span>
-              <div>
-                <strong class="text-[10px] text-brand-textPrimary block">Shop Tràng Thi</strong>
-                <span class="text-[8px] text-indigo-400 font-bold">Chủ Shop Thuê</span>
-              </div>
-            </button>
-          </div>
-        </div>
 
       </div>
 
@@ -873,37 +857,50 @@
       <!-- Body -->
       <div class="p-4 overflow-y-auto space-y-3.5 custom-scroll flex-1 text-xs text-brand-textPrimary">
         
-        <!-- STEP 1: CCCD 2 MẶT -->
+        <!-- STEP 1: CCCD 2 MẶT & THÔNG TIN ĐỊNH DANH -->
         <div id="ekycStep1Content" class="space-y-3">
-          <div class="p-3 bg-brand-surface rounded-2xl border border-brand-border text-center space-y-2">
-            <span class="text-2xl">💳</span>
-            <h4 class="font-bold text-xs text-brand-textPrimary">Chụp Hoặc Tải Thẻ CCCD Gắn Chip</h4>
-            <p class="text-[10px] text-brand-textSecondary">Đảm bảo rõ góc, không bị chói sáng hoặc mất góc chữ số định danh</p>
-            
+          <div class="p-3 bg-brand-surface rounded-2xl border border-brand-border space-y-2.5">
+            <div class="text-center space-y-1">
+              <span class="text-2xl">💳</span>
+              <h4 class="font-bold text-xs text-brand-textPrimary">Nhập Thông Tin &amp; Tải Thẻ CCCD Gắn Chip (2 Mặt)</h4>
+              <p class="text-[10px] text-brand-textSecondary">Bắt buộc đầy đủ số CCCD 12 số, ảnh mặt trước và mặt sau rõ nét</p>
+            </div>
+
+            <div class="space-y-2 text-left">
+              <div>
+                <label class="block text-[9px] font-bold text-brand-textSecondary uppercase mb-0.5">Họ và tên trên CCCD <span class="text-rose-400">*</span></label>
+                <input id="ekycInputFullName" type="text" placeholder="VD: NGUYỄN VĂN AN" class="w-full p-2 bg-brand-card border border-brand-border rounded-xl text-xs font-bold text-brand-textPrimary focus:outline-none focus:ring-1 focus:ring-brand-primary">
+              </div>
+              <div>
+                <label class="block text-[9px] font-bold text-brand-textSecondary uppercase mb-0.5">Số CCCD gắn chip (12 chữ số) <span class="text-rose-400">*</span></label>
+                <input id="ekycInputIdNumber" type="text" inputmode="numeric" maxlength="12" placeholder="Nhập đúng 12 số CCCD" class="w-full p-2 bg-brand-card border border-brand-border rounded-xl text-xs font-mono font-bold text-brand-textPrimary focus:outline-none focus:ring-1 focus:ring-brand-primary">
+              </div>
+            </div>
+
             <div class="grid grid-cols-2 gap-2 pt-1">
               <!-- Mặt trước -->
               <div class="border border-brand-border rounded-xl p-2 bg-brand-card text-center space-y-1">
-                <span class="text-[9px] font-bold text-brand-textSecondary block">MẶT TRƯỚC</span>
+                <span class="text-[9px] font-bold text-brand-textSecondary block">MẶT TRƯỚC *</span>
                 <img id="imgCccdFront" class="w-full h-16 object-cover rounded-lg hidden" alt="CCCD Trước">
                 <div id="phCccdFront" class="h-16 rounded-lg bg-brand-surface flex items-center justify-center text-[9px] text-brand-textSecondary border border-dashed border-brand-border">
-                  Chưa tải
+                  Chưa tải ảnh
                 </div>
                 <input type="file" id="fileCccdFront" accept="image/*" class="hidden" onchange="handleEkycCccdFile(event, 'FRONT')">
                 <button type="button" onclick="document.getElementById('fileCccdFront').click()" class="w-full py-1 bg-brand-surface hover:bg-brand-border border border-brand-border text-[9px] font-bold rounded-lg transition">
-                  Chọn Ảnh
+                  Chọn Ảnh Trước
                 </button>
               </div>
 
               <!-- Mặt sau -->
               <div class="border border-brand-border rounded-xl p-2 bg-brand-card text-center space-y-1">
-                <span class="text-[9px] font-bold text-brand-textSecondary block">MẶT SAU (CHÍP)</span>
+                <span class="text-[9px] font-bold text-brand-textSecondary block">MẶT SAU (CHÍP) *</span>
                 <img id="imgCccdBack" class="w-full h-16 object-cover rounded-lg hidden" alt="CCCD Sau">
                 <div id="phCccdBack" class="h-16 rounded-lg bg-brand-surface flex items-center justify-center text-[9px] text-brand-textSecondary border border-dashed border-brand-border">
-                  Chưa tải
+                  Chưa tải ảnh
                 </div>
                 <input type="file" id="fileCccdBack" accept="image/*" class="hidden" onchange="handleEkycCccdFile(event, 'BACK')">
                 <button type="button" onclick="document.getElementById('fileCccdBack').click()" class="w-full py-1 bg-brand-surface hover:bg-brand-border border border-brand-border text-[9px] font-bold rounded-lg transition">
-                  Chọn Ảnh
+                  Chọn Ảnh Sau
                 </button>
               </div>
             </div>
@@ -919,25 +916,29 @@
           <div class="p-3 bg-brand-surface rounded-2xl border border-brand-border text-center space-y-2">
             <span class="text-2xl">👤</span>
             <h4 class="font-bold text-xs text-brand-textPrimary">Quét Khuôn Mặt Sinh Trắc Học (Liveness)</h4>
-            <p class="text-[10px] text-brand-textSecondary">Giữ thẳng khuôn mặt trong khung hình để hệ thống kiểm tra người thật</p>
+            <p class="text-[10px] text-brand-textSecondary">Bắt buộc chụp ảnh chân dung trực tiếp hoặc tải ảnh rõ khuôn mặt</p>
 
             <!-- Video / Preview -->
             <div class="h-44 w-full bg-slate-950 rounded-2xl border-2 border-emerald-500/50 flex flex-col items-center justify-center relative overflow-hidden">
               <video id="ekycSelfieVideo" autoplay playsinline class="w-full h-full object-cover hidden"></video>
-              <canvas id="ekycSelfieCanvas" class="w-full h-full object-cover hidden"></canvas>
-              
+              <canvas id="ekycSelfieCanvas" class="hidden"></canvas>
+              <img id="ekycSelfiePreview" class="w-full h-full object-cover hidden" alt="Ảnh chân dung eKYC">
+
               <!-- Placeholder -->
               <div id="ekycSelfiePlaceholder" class="p-4 flex flex-col items-center justify-center space-y-1.5">
                 <div class="w-16 h-20 rounded-full border-2 border-dashed border-emerald-400 flex items-center justify-center text-xs text-emerald-400">
                   Khung Mặt
                 </div>
-                <span class="text-[9px] text-brand-textSecondary">Chạm Bật Camera hoặc Chọn Ảnh Chân Dung</span>
+                <span class="text-[9px] text-brand-textSecondary">Chưa có ảnh khuôn mặt xác thực</span>
               </div>
             </div>
 
             <div class="flex gap-2">
               <button type="button" id="btnToggleEkycCam" onclick="startEkycCam()" class="flex-1 py-2 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold rounded-xl transition">
-                📹 Bật Camera Trực Tiếp
+                📹 Bật Camera
+              </button>
+              <button type="button" id="btnCaptureEkycSelfie" onclick="captureEkycSelfie()" class="flex-1 py-2 bg-emerald-500 text-slate-950 text-[10px] font-black rounded-xl transition hidden">
+                📸 Chụp Khuôn Mặt
               </button>
               <input type="file" id="fileEkycSelfie" accept="image/*" class="hidden" onchange="handleEkycSelfieFile(event)">
               <button type="button" onclick="document.getElementById('fileEkycSelfie').click()" class="py-2 px-3 bg-brand-surface border border-brand-border text-[10px] font-bold rounded-xl transition">
@@ -951,50 +952,50 @@
               ‹ Quay lại
             </button>
             <button type="button" onclick="goEkycStep(3)" class="flex-2 py-2.5 px-3 bg-brand-primary hover:bg-brand-secondary text-white font-extrabold text-xs rounded-xl shadow transition">
-              Đối Chiếu Dữ Liệu Quốc Gia ›
+              Kiểm Tra Hồ Sơ &amp; Xác Thực ›
             </button>
           </div>
         </div>
 
-        <!-- STEP 3: OCR EXTRACTION & NATIONAL DB MATCH -->
+        <!-- STEP 3: SUMMARY & SERVER VERIFICATION -->
         <div id="ekycStep3Content" class="space-y-3 hidden">
           <div class="p-3.5 bg-brand-surface rounded-2xl border border-brand-border space-y-2.5">
             <div class="flex items-center justify-between pb-2 border-b border-brand-border/60">
-              <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Kết Quả Đối Chiếu OCR AI:</span>
-              <span class="text-[9px] bg-emerald-500/20 text-emerald-300 font-extrabold px-1.5 py-0.5 rounded border border-emerald-500/30">TRÙNG KHỚP 99.8%</span>
+              <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Hồ Sơ Định Danh Đã Nộp:</span>
+              <span id="ekycStep3StatusBadge" class="text-[9px] bg-emerald-500/20 text-emerald-300 font-extrabold px-1.5 py-0.5 rounded border border-emerald-500/30">ĐỦ 3/3 TÀI LIỆU</span>
             </div>
 
             <div class="space-y-1 text-xs">
               <div class="flex justify-between py-1 border-b border-brand-border/30">
                 <span class="text-brand-textSecondary">Số CCCD Gắn Chip:</span>
-                <strong id="ekycResultId" class="font-mono text-brand-primary">001098012345</strong>
+                <strong id="ekycResultId" class="font-mono text-brand-primary">--</strong>
               </div>
               <div class="flex justify-between py-1 border-b border-brand-border/30">
                 <span class="text-brand-textSecondary">Họ và tên:</span>
-                <strong id="ekycResultName" class="text-brand-textPrimary uppercase">NGUYỄN VĂN AN</strong>
+                <strong id="ekycResultName" class="text-brand-textPrimary uppercase">--</strong>
               </div>
               <div class="flex justify-between py-1 border-b border-brand-border/30">
-                <span class="text-brand-textSecondary">Ngày sinh:</span>
-                <span class="text-brand-textPrimary">15/08/1998</span>
+                <span class="text-brand-textSecondary">Số điện thoại:</span>
+                <span id="ekycResultPhone" class="text-brand-textPrimary font-mono">--</span>
               </div>
               <div class="flex justify-between py-1 border-b border-brand-border/30">
-                <span class="text-brand-textSecondary">Quê quán:</span>
-                <span class="text-brand-textPrimary">Hà Nội</span>
+                <span class="text-brand-textSecondary">CCCD 2 mặt:</span>
+                <span id="ekycResultCccdFiles" class="text-emerald-400 font-bold">Chưa đủ</span>
               </div>
               <div class="flex justify-between py-1">
-                <span class="text-brand-textSecondary">Trực thuộc CSDL:</span>
-                <span class="text-emerald-400 font-bold">C06 - Bộ Công An (Hợp Lệ)</span>
+                <span class="text-brand-textSecondary">Sinh trắc khuôn mặt:</span>
+                <span id="ekycResultSelfieStatus" class="text-emerald-400 font-bold">Chưa có</span>
               </div>
             </div>
           </div>
 
           <div class="p-2.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-[10px] text-emerald-300 flex items-center gap-2">
             <span>🛡️</span>
-            <span>Sau khi hoàn tất, hồ sơ của bạn sẽ nhận Huy hiệu Tích Xanh uy tín và được ưu tiên nhận các ca thù lao cao!</span>
+            <span>Dữ liệu sẽ được lưu xác thực lên máy chủ để mở khóa chấm công thực địa và rút tiền 24/7.</span>
           </div>
 
           <button type="button" onclick="completeEkycVerification()" class="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:opacity-95 text-slate-950 font-black text-xs rounded-xl shadow transition active:scale-98">
-            ✅ Hoàn Tất Xác Thực & Nhận Huy Hiệu Tích Xanh
+            ✅ Gửi Xác Thực eKYC Chính Thức
           </button>
         </div>
 
@@ -1814,9 +1815,19 @@
       role: 'WORKER', // 'WORKER' or 'POSTER'
       currentTab: 1,
       activeJob: null,
-      walletBalance: 480000,
+      selectedJobId: 'JOB-001',
+      walletBalance: 0,
       shiftStatus: 'READY',
-      currentCoords: { lat: 21.0285, lng: 105.8544 }, // Mặc định Hoàn Kiếm, HN
+      currentCoords: { lat: 21.0285, lng: 105.8544 }, // Tọa độ dự phòng khi chưa có GPS thực tế
+      lastGpsPing: null,
+      gps: {
+        source: 'DEFAULT', // 'REAL_GPS' | 'MANUAL_PIN' | 'DEFAULT'
+        accuracyMeters: null,
+        lastUpdatedAt: null,
+        permissionState: 'unknown',
+        watchId: null,
+        isLocating: false
+      },
       offsiteMode: false,
       mapOnlyMode: false,
       callTimerInterval: null,
@@ -1825,15 +1836,16 @@
       isSpeaker: true,
       currentRating: 5,
       userProfile: {
-        name: "Nguyễn Văn An",
-        phone: "0981234567",
-        email: "nguyenvanan.mce@gmail.com",
-        idNumber: "001098012345",
+        name: "Khách Chưa Đăng Nhập",
+        phone: "",
+        email: "",
+        idNumber: "",
         bank: "MBBank",
-        account: "0981234567",
-        karma: 4.9,
+        account: "",
+        karma: 5.0,
         role: "WORKER",
-        verified: true
+        verified: false,
+        isLoggedIn: false
       }
     };
 
@@ -1842,61 +1854,250 @@
       const stored = localStorage.getItem('mce_current_user');
       if (stored) {
         const parsed = JSON.parse(stored);
-        mobileState.userProfile = Object.assign(mobileState.userProfile, parsed);
+        const normalizedVerified = parsed.verified !== undefined ? Boolean(parsed.verified) : Boolean(parsed.isVerified);
+        mobileState.userProfile = Object.assign(mobileState.userProfile, parsed, {
+          verified: normalizedVerified,
+          isLoggedIn: Boolean(parsed.phone)
+        });
         mobileState.role = parsed.role || 'WORKER';
+        if (typeof parsed.walletBalance === 'number') {
+          mobileState.walletBalance = parsed.walletBalance;
+        }
       }
     } catch (e) {
       console.warn("Storage profile load", e);
     }
 
     // --- LEAFLET MAP ON MOBILE (INTERACTIVE LIVE RADAR) ---
-    let map, radarCircle, userMarker, offsiteMarker, activeRoutePolyline;
+    let map, radarCircle, gpsAccuracyCircle, userMarker, offsiteMarker, activeRoutePolyline;
     let jobMarkers = [];
+    let currentSelectedRadius = 'ALL';
+    let currentSelectedCategory = 'ALL';
+    let currentSearchQuery = '';
 
     // Danh sách 13 ca việc phong phú (Nội thành, Vùng ven & Vùng xa/thưa dân)
     const jobData = [
-      { id: 'JOB-001', title: 'Phụ đóng gói 300 kiện hàng shopee', pay: 240000, lat: 21.0285, lng: 105.8544, dist: '1.8 km', type: 'PACK', poster: 'Shop Tràng Thi', zone: 'NEAR', address: 'Số 12 Tràng Thi, Hoàn Kiếm' },
-      { id: 'JOB-002', title: 'Trông giữ thú cưng chiều thứ 7', pay: 150000, lat: 21.0250, lng: 105.8510, dist: '1.2 km', type: 'PET', poster: 'Chị Mai Lan', zone: 'NEAR', address: '45 Lý Thường Kiệt, Hai Bà Trưng' },
-      { id: 'JOB-003', title: 'Bốc xếp kho bánh kẹo Bạch Đằng', pay: 270000, lat: 21.0210, lng: 105.8600, dist: '2.5 km', type: 'PACK', poster: 'Kho Vận 18', zone: 'NEAR', address: '18 Bạch Đằng, Hai Bà Trưng' },
-      { id: 'JOB-004', title: 'Xếp hàng mua vé xem phim suất sớm', pay: 120000, lat: 21.0320, lng: 105.8480, dist: '3.1 km', type: 'QUEUE', poster: 'Anh Hoàng', zone: 'NEAR', address: 'Rạp Tháng 8, Hàng Bài' },
-      { id: 'JOB-005', title: 'Phụ việc dọn vệ sinh quán cafe tối', pay: 160000, lat: 21.0360, lng: 105.7905, dist: '4.8 km', type: 'CLEAN', poster: 'The Coffee Cầu Giấy', zone: 'NEAR', address: '128 Xuân Thủy, Cầu Giấy' },
-      { id: 'JOB-006', title: 'Giao linh kiện xe máy hỏa tốc', pay: 220000, lat: 21.0120, lng: 105.8200, dist: '6.5 km', type: 'DELIVERY', poster: 'Phụ Tùng Hùng Cường', zone: 'SUBURB', address: '88 Thái Hà, Đống Đa' },
-      { id: 'JOB-007', title: 'Phụ kho đóng kiện hàng cơ khí', pay: 290000, lat: 21.0500, lng: 105.8900, dist: '11.0 km', type: 'PACK', poster: 'Cơ Khí Gia Lâm', zone: 'SUBURB', address: 'KCN Đài Tư, Long Biên' },
-      { id: 'JOB-008', title: 'Thu hái & đóng sọt bưởi Diễn theo ngày', pay: 350000, lat: 21.0450, lng: 105.7100, dist: '14.2 km', type: 'FARM', poster: 'Hợp Tác Xã Hoài Đức', zone: 'REMOTE', address: 'Vườn Bưởi Xã Cát Quế, Hoài Đức' },
-      { id: 'JOB-009', title: 'Chăm sóc vườn lan & tưới tiêu cây cảnh', pay: 260000, lat: 21.1400, lng: 105.8500, dist: '16.5 km', type: 'FARM', poster: 'Nhà Vườn Đông Anh', zone: 'REMOTE', address: 'Thôn Cổ Loa, Đông Anh' },
-      { id: 'JOB-010', title: 'Phân loại nông sản & đóng thùng xuất kho', pay: 320000, lat: 20.8700, lng: 105.8600, dist: '18.5 km', type: 'FARM', poster: 'Kho Nông Sản Thường Tín', zone: 'REMOTE', address: 'Thị Trấn Thường Tín' },
-      { id: 'JOB-011', title: 'Dọn dẹp xưởng gỗ thủ công mỹ nghệ', pay: 380000, lat: 21.0100, lng: 105.5800, dist: '28.5 km', type: 'CLEAN', poster: 'Làng Nghề Thạch Thất', zone: 'REMOTE', address: 'Làng Nghề Chàng Sơn, Thạch Thất' },
-      { id: 'JOB-012', title: 'Phụ hồ & bốc dỡ vật liệu xây dựng', pay: 450000, lat: 21.1300, lng: 105.5000, dist: '38.0 km', type: 'HEAVY', poster: 'Công Trình Sơn Tây', zone: 'REMOTE', address: 'Phường Trung Hưng, Thị Xã Sơn Tây' },
-      { id: 'JOB-013', title: 'Phụ bếp nấu cỗ tiệc gia đình cuối tuần', pay: 400000, lat: 21.1800, lng: 105.7300, dist: '26.0 km', type: 'CLEAN', poster: 'Ẩm Thực Mê Linh', zone: 'REMOTE', address: 'Xã Tiền Phong, Mê Linh' }
+      { id: 'JOB-001', title: 'Phụ đóng gói 300 kiện hàng shopee', pay: 240000, lat: 21.0285, lng: 105.8544, dist: '0 m', distanceKm: 0, type: 'PACK', poster: 'Shop Tràng Thi', zone: 'NEAR', address: 'Số 12 Tràng Thi, Hoàn Kiếm' },
+      { id: 'JOB-002', title: 'Trông giữ thú cưng chiều thứ 7', pay: 150000, lat: 21.0250, lng: 105.8510, dist: '0.5 km', distanceKm: 0.5, type: 'PET', poster: 'Chị Mai Lan', zone: 'NEAR', address: '45 Lý Thường Kiệt, Hai Bà Trưng' },
+      { id: 'JOB-003', title: 'Bốc xếp kho bánh kẹo Bạch Đằng', pay: 270000, lat: 21.0210, lng: 105.8600, dist: '1.0 km', distanceKm: 1.0, type: 'PACK', poster: 'Kho Vận 18', zone: 'NEAR', address: '18 Bạch Đằng, Hai Bà Trưng' },
+      { id: 'JOB-004', title: 'Xếp hàng mua vé xem phim suất sớm', pay: 120000, lat: 21.0320, lng: 105.8480, dist: '0.8 km', distanceKm: 0.8, type: 'QUEUE', poster: 'Anh Hoàng', zone: 'NEAR', address: 'Rạp Tháng 8, Hàng Bài' },
+      { id: 'JOB-005', title: 'Phụ việc dọn vệ sinh quán cafe tối', pay: 160000, lat: 21.0360, lng: 105.7905, dist: '6.7 km', distanceKm: 6.7, type: 'CLEAN', poster: 'The Coffee Cầu Giấy', zone: 'NEAR', address: '128 Xuân Thủy, Cầu Giấy' },
+      { id: 'JOB-006', title: 'Giao linh kiện xe máy hỏa tốc', pay: 220000, lat: 21.0120, lng: 105.8200, dist: '4.0 km', distanceKm: 4.0, type: 'DELIVERY', poster: 'Phụ Tùng Hùng Cường', zone: 'SUBURB', address: '88 Thái Hà, Đống Đa' },
+      { id: 'JOB-007', title: 'Phụ kho đóng kiện hàng cơ khí', pay: 290000, lat: 21.0500, lng: 105.8900, dist: '4.4 km', distanceKm: 4.4, type: 'PACK', poster: 'Cơ Khí Gia Lâm', zone: 'SUBURB', address: 'KCN Đài Tư, Long Biên' },
+      { id: 'JOB-008', title: 'Thu hái & đóng sọt bưởi Diễn theo ngày', pay: 350000, lat: 21.0450, lng: 105.7100, dist: '15.1 km', distanceKm: 15.1, type: 'FARM', poster: 'Hợp Tác Xã Hoài Đức', zone: 'REMOTE', address: 'Vườn Bưởi Xã Cát Quế, Hoài Đức' },
+      { id: 'JOB-009', title: 'Chăm sóc vườn lan & tưới tiêu cây cảnh', pay: 260000, lat: 21.1400, lng: 105.8500, dist: '12.4 km', distanceKm: 12.4, type: 'FARM', poster: 'Nhà Vườn Đông Anh', zone: 'REMOTE', address: 'Thôn Cổ Loa, Đông Anh' },
+      { id: 'JOB-010', title: 'Phân loại nông sản & đóng thùng xuất kho', pay: 320000, lat: 20.8700, lng: 105.8600, dist: '17.6 km', distanceKm: 17.6, type: 'FARM', poster: 'Kho Nông Sản Thường Tín', zone: 'REMOTE', address: 'Thị Trấn Thường Tín' },
+      { id: 'JOB-011', title: 'Dọn dẹp xưởng gỗ thủ công mỹ nghệ', pay: 380000, lat: 21.0100, lng: 105.5800, dist: '28.6 km', distanceKm: 28.6, type: 'CLEAN', poster: 'Làng Nghề Thạch Thất', zone: 'REMOTE', address: 'Làng Nghề Chàng Sơn, Thạch Thất' },
+      { id: 'JOB-012', title: 'Phụ hồ & bốc dỡ vật liệu xây dựng', pay: 450000, lat: 21.1300, lng: 105.5000, dist: '38.4 km', distanceKm: 38.4, type: 'HEAVY', poster: 'Công Trình Sơn Tây', zone: 'REMOTE', address: 'Phường Trung Hưng, Thị Xã Sơn Tây' },
+      { id: 'JOB-013', title: 'Phụ bếp nấu cỗ tiệc gia đình cuối tuần', pay: 400000, lat: 21.1800, lng: 105.7300, dist: '21.2 km', distanceKm: 21.2, type: 'CLEAN', poster: 'Ẩm Thực Mê Linh', zone: 'REMOTE', address: 'Xã Tiền Phong, Mê Linh' }
     ];
 
+    function calculateHaversineKm(lat1, lng1, lat2, lng2) {
+      const toRad = (deg) => deg * Math.PI / 180;
+      const R = 6371;
+      const dLat = toRad(lat2 - lat1);
+      const dLng = toRad(lng2 - lng1);
+      const a = Math.sin(dLat / 2) ** 2 +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    function formatDistanceKm(km) {
+      if (!Number.isFinite(km)) return '--';
+      if (km < 1) return `${Math.max(10, Math.round(km * 1000))} m`;
+      return `${km.toFixed(1)} km`;
+    }
+
+    // Tính lại khoảng cách thực tế từ vị trí cá nhân của tôi và sắp xếp tỏa ra xung quanh (gần nhất -> xa dần)
+    function recomputeJobsFromOrigin(origin = mobileState.currentCoords) {
+      jobData.forEach(job => {
+        const km = calculateHaversineKm(origin.lat, origin.lng, job.lat, job.lng);
+        job.distanceKm = Number(km.toFixed(2));
+        job.dist = formatDistanceKm(km);
+      });
+      jobData.sort((a, b) => a.distanceKm - b.distanceKm);
+    }
+
+    function getFilteredJobs() {
+      let filtered = jobData.slice();
+      if (currentSelectedCategory !== 'ALL') {
+        filtered = filtered.filter(j => j.type === currentSelectedCategory);
+      }
+      if (currentSelectedRadius !== 'ALL') {
+        const maxDist = parseFloat(currentSelectedRadius);
+        filtered = filtered.filter(j => j.distanceKm <= maxDist);
+      }
+      if (currentSearchQuery) {
+        const q = currentSearchQuery.toLowerCase();
+        filtered = filtered.filter(j =>
+          j.title.toLowerCase().includes(q) ||
+          (j.address || '').toLowerCase().includes(q) ||
+          (j.poster || '').toLowerCase().includes(q)
+        );
+      }
+      return filtered;
+    }
+
+    function updateDirectMatchCard(job) {
+      if (!job) return;
+      mobileState.selectedJobId = job.id;
+      const titleEl = document.getElementById('directJobTitle');
+      const payEl = document.getElementById('directJobPay');
+      const metaEl = document.getElementById('directJobMeta');
+      if (titleEl) titleEl.textContent = job.title;
+      if (payEl) payEl.textContent = job.pay.toLocaleString('vi-VN') + "đ";
+      if (metaEl) metaEl.textContent = `Cách vị trí của bạn: ${job.dist} · ${job.address || job.poster}`;
+    }
+
+    function openSelectedDirectJobApplication() {
+      const targetId = mobileState.selectedJobId || (jobData[0] && jobData[0].id);
+      if (targetId) openJobApplicationModal(targetId);
+    }
+
+    function applyScanFiltersAndRender({ fitBounds = false, preserveSelected = true } = {}) {
+      recomputeJobsFromOrigin();
+      const filtered = getFilteredJobs();
+
+      renderJobMarkers(filtered);
+      renderJobList(filtered);
+
+      const selectedJob = preserveSelected
+        ? filtered.find(j => j.id === mobileState.selectedJobId) || filtered[0]
+        : filtered[0];
+      if (selectedJob) {
+        updateDirectMatchCard(selectedJob);
+      }
+
+      if (fitBounds && map && userMarker) {
+        if (jobMarkers.length > 0) {
+          const group = new L.featureGroup([userMarker, ...jobMarkers]);
+          map.fitBounds(group.getBounds().pad(0.08));
+        } else {
+          map.setView([mobileState.currentCoords.lat, mobileState.currentCoords.lng], 13);
+        }
+      }
+      return filtered;
+    }
+
+    function getUserMarkerPopupHtml() {
+      const { lat, lng } = mobileState.currentCoords;
+      const { source, accuracyMeters } = mobileState.gps;
+      let badge = '📍 Vị trí mặc định (Chưa bật GPS)';
+      if (source === 'REAL_GPS') {
+        badge = `🛰️ GPS cá nhân thực tế${accuracyMeters ? ` (±${accuracyMeters}m)` : ''}`;
+      } else if (source === 'MANUAL_PIN') {
+        badge = '📌 Ghim cá nhân thủ công';
+      }
+      return `<b>${badge}</b><br><span style='font-size:10px;'>Tọa độ: ${lat.toFixed(5)}, ${lng.toFixed(5)}<br>Kéo ghim hoặc bấm 🎯 Vị trí tôi để quét tỏa ra xung quanh</span>`;
+    }
+
+    function updateGpsStatusUI() {
+      const btn = document.getElementById('btnLocateMe');
+      const dot = document.getElementById('gpsLocateDot');
+      const label = document.getElementById('gpsLocateLabel');
+      const orderBadge = document.getElementById('scanOrderBadge');
+      const { source, accuracyMeters, isLocating } = mobileState.gps;
+
+      if (btn && dot && label) {
+        if (isLocating) {
+          btn.className = "text-[9px] bg-sky-500/20 border border-sky-400/50 text-sky-200 font-extrabold px-2 py-1 rounded-lg shadow flex items-center gap-1 active:scale-95 transition whitespace-nowrap";
+          dot.className = "w-1.5 h-1.5 rounded-full bg-sky-400 animate-ping";
+          label.textContent = "Đang định vị...";
+        } else if (source === 'REAL_GPS') {
+          btn.className = "text-[9px] bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/50 text-emerald-300 font-extrabold px-2 py-1 rounded-lg shadow flex items-center gap-1 active:scale-95 transition whitespace-nowrap";
+          dot.className = "w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse";
+          label.textContent = accuracyMeters ? `🛰️ GPS ±${accuracyMeters}m` : "🛰️ GPS thực tế";
+        } else if (source === 'MANUAL_PIN') {
+          btn.className = "text-[9px] bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-400/50 text-indigo-200 font-extrabold px-2 py-1 rounded-lg shadow flex items-center gap-1 active:scale-95 transition whitespace-nowrap";
+          dot.className = "w-1.5 h-1.5 rounded-full bg-indigo-400";
+          label.textContent = "📌 Ghim tôi · Lấy GPS";
+        } else {
+          btn.className = "text-[9px] bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 font-extrabold px-2 py-1 rounded-lg shadow flex items-center gap-1 active:scale-95 transition whitespace-nowrap";
+          dot.className = "w-1.5 h-1.5 rounded-full bg-amber-400";
+          label.textContent = "🎯 Bật GPS tôi";
+        }
+      }
+
+      if (orderBadge) {
+        const originLabel = source === 'REAL_GPS'
+          ? `GPS thực tế${accuracyMeters ? ` (±${accuracyMeters}m)` : ''} · Gần → Xa`
+          : (source === 'MANUAL_PIN' ? 'Ghim cá nhân · Gần → Xa' : 'Từ vị trí hiện tại · Gần → Xa');
+        orderBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full ${source === 'REAL_GPS' ? 'bg-emerald-400' : 'bg-amber-400'} animate-ping"></span>${originLabel}`;
+      }
+
+      if (userMarker) {
+        userMarker.setPopupContent(getUserMarkerPopupHtml());
+      }
+
+      const headerSub = document.getElementById('headerSubtext');
+      if (headerSub && /^(📍|🛰️|📌|⏳)/.test(headerSub.textContent.trim())) {
+        const { lat, lng } = mobileState.currentCoords;
+        if (isLocating) {
+          headerSub.textContent = '⏳ Đang định vị GPS...';
+        } else if (source === 'REAL_GPS') {
+          headerSub.textContent = `🛰️ ${lat.toFixed(3)}, ${lng.toFixed(3)}${accuracyMeters ? ` (±${accuracyMeters}m)` : ''}`;
+        } else if (source === 'MANUAL_PIN') {
+          headerSub.textContent = `📌 Ghim: ${lat.toFixed(3)}, ${lng.toFixed(3)}`;
+        } else {
+          headerSub.textContent = '📍 Mặc định (Chưa GPS)';
+        }
+      }
+    }
+
     function initMobileMap() {
+      recomputeJobsFromOrigin();
+
       map = L.map('mobileMap', { preferCanvas: true, zoomControl: false }).setView([mobileState.currentCoords.lat, mobileState.currentCoords.lng], 13);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
 
-      // Current User Pin (Blue Pin with Pulse)
+      // Current User Pin (Blue Pin — ưu tiên GPS thực tế, có thể kéo nếu muốn tự ghim)
       const blueIcon = new L.Icon({
         iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
         iconSize: [22, 34],
         iconAnchor: [11, 34]
       });
 
-      userMarker = L.marker([mobileState.currentCoords.lat, mobileState.currentCoords.lng], { icon: blueIcon }).addTo(map)
-        .bindPopup("<b>📍 Vị trí của bạn (Worker)</b><br><span style='font-size:10px;'>Đang quét việc xung quanh (Cả vùng xa)</span>");
+      userMarker = L.marker([mobileState.currentCoords.lat, mobileState.currentCoords.lng], {
+        icon: blueIcon,
+        draggable: true
+      }).addTo(map).bindPopup(getUserMarkerPopupHtml());
+
+      userMarker.on('dragend', function(e) {
+        const pos = e.target.getLatLng();
+        updateScanLocation(
+          pos.lat,
+          pos.lng,
+          "📌 Đã đặt vị trí cá nhân thủ công — đang tính khoảng cách tỏa ra xung quanh!",
+          { source: 'MANUAL_PIN', accuracyMeters: null, panTo: true, preserveSelected: false }
+        );
+      });
+
+      // GPS accuracy halo
+      gpsAccuracyCircle = L.circle([mobileState.currentCoords.lat, mobileState.currentCoords.lng], {
+        color: '#38bdf8',
+        fillColor: '#38bdf8',
+        fillOpacity: 0.14,
+        weight: 1,
+        radius: 0
+      }).addTo(map);
 
       // Radar circle (mở rộng bao quát cả vùng thưa dân 35km)
       radarCircle = L.circle([mobileState.currentCoords.lat, mobileState.currentCoords.lng], {
         color: '#10b981',
         fillColor: '#10b981',
-        fillOpacity: 0.12,
+        fillOpacity: 0.10,
         radius: 35000
       }).addTo(map);
 
-      // Render job markers directly on map & scrollable list
-      renderJobMarkers(jobData);
-      renderJobList(jobData);
+      // Render job markers & list sorted outward from origin
+      applyScanFiltersAndRender({ fitBounds: false, preserveSelected: false });
+      updateGpsStatusUI();
 
-      // Map Click Handler: Cho phép chọn vị trí việc làm hoặc chuyển tâm quét
+      // Ưu tiên tự động lấy định vị GPS cá nhân thực tế ngay khi mở ứng dụng
+      requestPersonalGPSLocation({ silent: false, fitBounds: false });
+
+      // Map Click Handler: Chọn vị trí tuyển (Poster) hoặc đặt ghim vị trí cá nhân
       map.on('click', function(e) {
         handleMapClick(e.latlng);
       });
@@ -1919,15 +2120,17 @@
         iconAnchor: [10, 32]
       });
 
-      jobs.forEach(job => {
-        const isFar = parseFloat(job.dist) > 12;
+      jobs.forEach((job, idx) => {
+        const km = typeof job.distanceKm === 'number' ? job.distanceKm : (parseFloat(job.dist) || 0);
+        const isFar = km > 12;
         const marker = L.marker([job.lat, job.lng], { icon: isFar ? goldIcon : redIcon }).addTo(map);
-        
+        const proximityLabel = idx === 0 ? '⚡ Gần bạn nhất' : (isFar ? '🌾 Vùng Xa / Ngoại Ô' : 'Gần bạn');
+
         const popupContent = `
           <div style="font-family: sans-serif; font-size: 11px; line-height: 1.4; min-width: 175px;">
             <div style="font-weight: 800; color: #F8FAFC; margin-bottom: 2px;">${job.title}</div>
             <div style="color: #6366F1; font-weight: 800; font-size: 13px;">${job.pay.toLocaleString('vi-VN')}đ</div>
-            <div style="color: #94A3B8; font-size: 10px; margin-bottom: 6px;">📍 Cách bạn: ${job.dist} · ${isFar ? '🌾 Vùng Xa / Ngoại Ô' : 'Gần bạn'}</div>
+            <div style="color: #94A3B8; font-size: 10px; margin-bottom: 6px;">📍 Cách bạn: ${job.dist} · ${proximityLabel}</div>
             <button onclick="mobileAcceptJob('${job.id}', '${job.title}', ${job.pay})" style="width: 100%; background: #6366F1; color: white; border: none; padding: 6px 8px; border-radius: 8px; font-weight: bold; font-size: 10px; cursor: pointer; margin-bottom: 4px;">
               ⚡ Nhận Ca Này Ngay
             </button>
@@ -1938,7 +2141,7 @@
           </div>
         `;
         marker.bindPopup(popupContent);
-        
+
         marker.on('click', function() {
           selectJobOnMapDirectly(job.id);
         });
@@ -1947,13 +2150,13 @@
       });
     }
 
-    // --- DYNAMIC SCROLLABLE JOB LIST ENGINE (DANH SÁCH CUỘN NHIỀU LỰA CHỌN) ---
+    // --- DYNAMIC SCROLLABLE JOB LIST ENGINE (DANH SÁCH CUỘN SẮP XẾP TỪ GẦN ĐẾN XA) ---
     function renderJobList(jobsToRender = jobData) {
       const container = document.getElementById('dynamicJobListContainer');
       const header = document.getElementById('jobListCountHeader');
       if (!container) return;
       if (header) {
-        header.textContent = `Danh sách việc làm (${jobsToRender.length} ca có sẵn):`;
+        header.textContent = `Danh sách việc làm (${jobsToRender.length} ca từ gần → xa):`;
       }
       container.innerHTML = '';
 
@@ -1961,7 +2164,7 @@
         container.innerHTML = `
           <div class="p-6 text-center text-xs text-brand-textSecondary bg-brand-card rounded-2xl border border-brand-border space-y-2">
             <span class="text-2xl block">🔍</span>
-            <p>Không có ca việc nào trong bộ lọc này.</p>
+            <p>Không có ca việc nào trong bán kính/bộ lọc hiện tại.</p>
             <button onclick="setScanRadius('ALL')" class="py-1 px-3 bg-brand-primary text-white text-[10px] font-bold rounded-lg shadow">
               Mở Rộng Bán Kính (Vùng Thưa Dân)
             </button>
@@ -1970,12 +2173,15 @@
         return;
       }
 
-      jobsToRender.forEach(job => {
-        const isFar = parseFloat(job.dist) > 12;
-        const distBadge = isFar
-          ? `<span class="text-[8px] font-extrabold px-1.5 py-0.5 rounded bg-blue-500/10 text-cyan-400 border border-blue-500/30">🌾 VÙNG XA / NGOẠI Ô</span>`
-          : `<span class="text-[8px] font-extrabold px-1.5 py-0.5 rounded bg-brand-success/10 text-emerald-400 border border-brand-success/30">0% PHÍ</span>`;
-        
+      jobsToRender.forEach((job, idx) => {
+        const km = typeof job.distanceKm === 'number' ? job.distanceKm : (parseFloat(job.dist) || 0);
+        const isFar = km > 12;
+        const distBadge = idx === 0
+          ? `<span class="text-[8px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/40">⚡ GẦN NHẤT</span>`
+          : (isFar
+            ? `<span class="text-[8px] font-extrabold px-1.5 py-0.5 rounded bg-blue-500/10 text-cyan-400 border border-blue-500/30">🌾 VÙNG XA / NGOẠI Ô</span>`
+            : `<span class="text-[8px] font-extrabold px-1.5 py-0.5 rounded bg-brand-success/10 text-emerald-400 border border-brand-success/30">0% PHÍ</span>`);
+
         const card = document.createElement('div');
         card.className = "bg-brand-card p-3 rounded-2xl border border-brand-border shadow-sm hover:border-brand-primary/60 transition space-y-2";
         card.innerHTML = `
@@ -2009,27 +2215,57 @@
       });
     }
 
-    // --- MANUAL JOB SCAN & AUTO-SCAN CONTROLLER ---
-    function triggerManualJobScan() {
-      showToast("📡 Đang quét toàn vùng... Đã tìm thấy " + jobData.length + " ca việc (Bao gồm cả vùng thưa dân & xa)!", "success");
-      
-      // Pulse animation
-      let r = 5000;
+    function playRadarOutwardPulse() {
+      if (!radarCircle) return;
+      const targetRadius = currentSelectedRadius === 'ALL' ? 35000 : parseFloat(currentSelectedRadius) * 1000;
+      const step = Math.max(800, Math.round(targetRadius / 6));
+      let r = Math.min(1500, targetRadius);
       const pulseInt = setInterval(() => {
-        r += 7000;
-        if (r > 42000) {
+        r += step;
+        if (r >= targetRadius) {
           clearInterval(pulseInt);
-          radarCircle.setRadius(35000);
+          radarCircle.setRadius(targetRadius);
         } else {
           radarCircle.setRadius(r);
         }
-      }, 50);
+      }, 55);
+    }
 
-      renderJobMarkers(jobData);
-      renderJobList(jobData);
-      if (jobMarkers.length > 0) {
-        const group = new L.featureGroup([userMarker, ...jobMarkers]);
-        map.fitBounds(group.getBounds().pad(0.08));
+    // --- MANUAL JOB SCAN & AUTO-SCAN CONTROLLER (ƯU TIÊN GPS CÁ NHÂN THỰC TẾ) ---
+    function triggerManualJobScan() {
+      playRadarOutwardPulse();
+
+      const finishScan = (gotRealGps) => {
+        const filtered = applyScanFiltersAndRender({ fitBounds: true, preserveSelected: false });
+        const nearest = filtered[0];
+        const nearestNote = nearest ? ` Gần nhất: "${nearest.title}" (${nearest.dist}).` : '';
+
+        if (mobileState.gps.source === 'REAL_GPS') {
+          const acc = mobileState.gps.accuracyMeters ? ` (±${mobileState.gps.accuracyMeters}m)` : '';
+          showToast(`📡 Quét từ GPS thực tế của bạn${acc}: tìm thấy ${filtered.length} ca tỏa ra xung quanh.${nearestNote}`, "success");
+        } else if (mobileState.gps.source === 'MANUAL_PIN') {
+          showToast(`📡 Quét từ ghim cá nhân của bạn: ${filtered.length} ca từ gần đến xa.${nearestNote}`, "info");
+        } else {
+          showToast(`📡 Quét từ tọa độ mặc định: ${filtered.length} ca (${gotRealGps ? 'GPS OK' : 'chưa có quyền GPS thực tế'}).${nearestNote}`, "info");
+        }
+      };
+
+      const isGpsFresh = mobileState.gps.source === 'REAL_GPS' &&
+        mobileState.gps.lastUpdatedAt &&
+        (Date.now() - mobileState.gps.lastUpdatedAt < 15000);
+
+      // Ưu tiên cao nhất cho định vị GPS cá nhân thực tế (trừ khi người dùng đang tự ghim tay hoặc GPS mới cập nhật < 15s)
+      if (mobileState.gps.source !== 'MANUAL_PIN' && !isGpsFresh) {
+        showToast("🛰️ Ưu tiên lấy GPS cá nhân thực tế để quét từ vị trí của bạn...", "info");
+        requestPersonalGPSLocation({
+          forceFresh: true,
+          silent: true,
+          timeoutMs: 4500,
+          fitBounds: true,
+          onComplete: finishScan
+        });
+      } else {
+        finishScan(mobileState.gps.source === 'REAL_GPS');
       }
     }
 
@@ -2046,11 +2282,19 @@
         btn.className = "bg-emerald-500 text-slate-950 font-black px-2 py-1.5 rounded-xl shadow flex items-center gap-1 text-[10px] transition active:scale-95 whitespace-nowrap";
         icon.className = "inline-block animate-spin";
         label.textContent = "Auto: BẬT";
-        showToast("🔄 Đã BẬT Quét Tự Động: Tự động cập nhật việc làm quanh bạn mỗi 6s!", "success");
+        showToast("🔄 Đã BẬT Quét Tự Động: Cập nhật GPS thực tế & xếp việc từ vị trí của bạn mỗi 6s!", "success");
+
+        if (mobileState.gps.source !== 'MANUAL_PIN') {
+          requestPersonalGPSLocation({ silent: true, fitBounds: false });
+        }
 
         autoScanIntervalId = setInterval(() => {
-          radarCircle.setRadius(20000);
-          setTimeout(() => radarCircle.setRadius(35000), 500);
+          playRadarOutwardPulse();
+          if (mobileState.gps.permissionState === 'granted' && mobileState.gps.source !== 'MANUAL_PIN') {
+            requestPersonalGPSLocation({ forceFresh: true, silent: true, timeoutMs: 4000, fitBounds: false });
+          } else {
+            applyScanFiltersAndRender({ fitBounds: false, preserveSelected: true });
+          }
         }, 6000);
       } else {
         btn.className = "bg-brand-surface/95 hover:bg-brand-border border border-brand-border text-brand-textSecondary px-2 py-1.5 rounded-xl shadow flex items-center gap-1 text-[10px] font-bold transition active:scale-95 whitespace-nowrap";
@@ -2064,9 +2308,7 @@
       }
     }
 
-    // --- RADIUS CONTROLLER (KHÔNG LOẠI BỎ CA Ở XA / VÙNG THƯA DÂN) ---
-    let currentSelectedRadius = 'ALL';
-
+    // --- RADIUS CONTROLLER (QUÉT TỎA RA TỪ VỊ TRÍ CÁ NHÂN) ---
     function setScanRadius(rad) {
       currentSelectedRadius = rad;
       ['radBtnAll', 'radBtn50', 'radBtn20', 'radBtn5'].forEach(id => {
@@ -2081,26 +2323,22 @@
         activeB.className = "bg-emerald-500 text-slate-950 text-[9px] font-black py-0.5 px-2.5 rounded-full shadow whitespace-nowrap";
       }
 
-      let filtered = jobData;
       if (rad === 'ALL') {
         radarCircle.setRadius(40000);
-        showToast("🌏 Hiển thị toàn bộ ca việc (Bao gồm cả vùng xa & thưa dân)!", "info");
       } else {
-        const maxDist = parseFloat(rad);
-        filtered = jobData.filter(j => parseFloat(j.dist) <= maxDist);
-        radarCircle.setRadius(maxDist * 1000);
-        showToast(`📍 Lọc ca việc trong bán kính < ${rad}km (${filtered.length} ca)`, "info");
+        radarCircle.setRadius(parseFloat(rad) * 1000);
       }
 
-      renderJobMarkers(filtered);
-      renderJobList(filtered);
-      if (jobMarkers.length > 0) {
-        const group = new L.featureGroup([userMarker, ...jobMarkers]);
-        map.fitBounds(group.getBounds().pad(0.1));
+      const filtered = applyScanFiltersAndRender({ fitBounds: true, preserveSelected: true });
+      if (rad === 'ALL') {
+        showToast(`🌏 Hiển thị toàn bộ ${filtered.length} ca từ gần nhất đến xa dần!`, "info");
+      } else {
+        showToast(`📍 Lọc ${filtered.length} ca trong bán kính < ${rad}km quanh vị trí của bạn`, "info");
       }
     }
 
     function filterListCategory(cat) {
+      currentSelectedCategory = cat;
       const tabs = ['catTabAll', 'catTabPack', 'catTabFarm', 'catTabClean', 'catTabDeliv', 'catTabPet', 'catTabHeavy'];
       tabs.forEach(id => {
         const el = document.getElementById(id);
@@ -2120,27 +2358,18 @@
         activeTab.className = "text-[9px] font-extrabold px-2.5 py-1 rounded-lg bg-brand-primary text-white shadow whitespace-nowrap";
       }
 
-      let filtered = (cat === 'ALL') ? jobData : jobData.filter(j => j.type === cat);
-      if (currentSelectedRadius !== 'ALL') {
-        const maxDist = parseFloat(currentSelectedRadius);
-        filtered = filtered.filter(j => parseFloat(j.dist) <= maxDist);
-      }
-
-      renderJobMarkers(filtered);
-      renderJobList(filtered);
+      applyScanFiltersAndRender({ fitBounds: false, preserveSelected: true });
     }
 
     // --- MÔ PHỎNG THỰC TẾ: TÌM VIỆC TRÊN BẢN ĐỒ KHÔNG DÙNG LIST ---
     function selectJobOnMapDirectly(jobId) {
+      recomputeJobsFromOrigin();
       const job = jobData.find(j => j.id === jobId);
       if (!job) return;
 
-      // Update direct match card
-      document.getElementById('directJobTitle').textContent = job.title;
-      document.getElementById('directJobPay').textContent = job.pay.toLocaleString('vi-VN') + "đ";
-      document.getElementById('directJobMeta').textContent = `Cách bạn: ${job.dist} · ${job.address || job.poster}`;
+      updateDirectMatchCard(job);
 
-      // Vẽ đường chỉ đường polyline neon nối từ Worker đến Job
+      // Vẽ đường chỉ đường polyline neon nối từ vị trí cá nhân hiện tại đến Job
       if (activeRoutePolyline) map.removeLayer(activeRoutePolyline);
       activeRoutePolyline = L.polyline([
         [mobileState.currentCoords.lat, mobileState.currentCoords.lng],
@@ -2153,7 +2382,7 @@
       }).addTo(map);
 
       map.fitBounds(activeRoutePolyline.getBounds(), { padding: [40, 40] });
-      showToast(`📍 Đã định tuyến tới ca "${job.title}" (${job.dist})!`, "info");
+      showToast(`📍 Định tuyến từ vị trí của bạn tới "${job.title}" (${job.dist})!`, "info");
     }
 
     function toggleMapOnlyMode() {
@@ -2165,56 +2394,169 @@
       if (mobileState.mapOnlyMode) {
         mapWrapper.className = "h-[540px] w-full relative transition-all duration-300";
         listSection.classList.add('hidden');
-        toggleBtn.innerHTML = "<span>📋 Xem Lại Danh Sách</span>";
-        toggleBtn.className = "text-[9px] bg-brand-surface border border-brand-border text-brand-textPrimary font-bold px-2.5 py-1 rounded-lg shadow transition";
+        toggleBtn.innerHTML = "<span>📋 Xem Danh Sách</span>";
+        toggleBtn.className = "text-[9px] bg-brand-surface border border-brand-border text-brand-textPrimary font-bold px-2 py-1 rounded-lg shadow transition whitespace-nowrap";
         showToast("🗺️ Đã bật Chế Độ Bản Đồ Toàn Màn Hình: Nhấp ghim để nhận việc trực tiếp!", "success");
       } else {
         mapWrapper.className = "h-80 w-full relative transition-all duration-300";
         listSection.classList.remove('hidden');
-        toggleBtn.innerHTML = "<span>🗺️ Chỉ Dùng Bản Đồ (Ẩn List)</span>";
-        toggleBtn.className = "text-[9px] bg-brand-primary text-white font-extrabold px-2.5 py-1 rounded-lg shadow transition";
+        toggleBtn.innerHTML = "<span>🗺️ Chỉ Bản Đồ</span>";
+        toggleBtn.className = "text-[9px] bg-brand-primary text-white font-extrabold px-2 py-1 rounded-lg shadow transition whitespace-nowrap";
       }
 
       setTimeout(() => map.invalidateSize(), 350);
     }
 
-    // --- REAL-TIME GPS SCAN (QUÉT GPS THỰC TẾ) ---
-    function triggerRealtimeGPSScan() {
-      showToast("📡 Đang kết nối vệ tinh GPS định vị thời gian thực...", "info");
-      
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          function(position) {
-            const lat = position.coords.latitude;
-            const lng = position.coords.longitude;
-            updateScanLocation(lat, lng, "Đã định vị thành công vị trí GPS của bạn!");
-          },
-          function() {
-            // Fallback simulation
-            const simulatedLat = 21.0285 + (Math.random() * 0.006 - 0.003);
-            const simulatedLng = 105.8544 + (Math.random() * 0.006 - 0.003);
-            updateScanLocation(simulatedLat, simulatedLng, "📍 Đã quét radar thực tế tại Hoàn Kiếm, Hà Nội (Bán kính 6km)");
-          },
-          { enableHighAccuracy: true, timeout: 5000 }
-        );
-      } else {
-        showToast("📍 Đã quét radar thực tế tại vị trí hiện tại!", "success");
+    // --- REAL-TIME PERSONAL GPS ENGINE (ƯU TIÊN CAO ĐỊNH VỊ CÁ NHÂN THỰC TẾ) ---
+    function startPersonalGPSWatcher() {
+      if (!navigator.geolocation || mobileState.gps.watchId !== null) return;
+      mobileState.gps.watchId = navigator.geolocation.watchPosition(
+        function(position) {
+          if (mobileState.gps.source === 'MANUAL_PIN') return;
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          const acc = Math.round(position.coords.accuracy || 0);
+          const movedKm = calculateHaversineKm(mobileState.currentCoords.lat, mobileState.currentCoords.lng, lat, lng);
+          const accuracyImproved = mobileState.gps.accuracyMeters && acc < mobileState.gps.accuracyMeters * 0.7;
+
+          mobileState.gps.permissionState = 'granted';
+          if (movedKm >= 0.025 || accuracyImproved || mobileState.gps.source !== 'REAL_GPS') {
+            updateScanLocation(lat, lng, null, {
+              source: 'REAL_GPS',
+              accuracyMeters: acc,
+              panTo: false,
+              preserveSelected: true
+            });
+          }
+        },
+        function() { /* giữ nguyên vị trí hiện tại nếu tín hiệu tạm gián đoạn */ },
+        { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
+      );
+    }
+
+    function requestPersonalGPSLocation(options = {}) {
+      const {
+        forceFresh = false,
+        silent = false,
+        fitBounds = false,
+        timeoutMs = 8000,
+        onComplete = null
+      } = options;
+
+      if (!navigator.geolocation) {
+        mobileState.gps.permissionState = 'unsupported';
+        mobileState.gps.isLocating = false;
+        updateGpsStatusUI();
+        if (!silent) {
+          showToast("⚠️ Trình duyệt không hỗ trợ GPS — bạn có thể kéo ghim xanh để chọn vị trí của mình.", "info");
+        }
+        if (onComplete) onComplete(false);
+        return;
       }
+
+      mobileState.gps.isLocating = true;
+      updateGpsStatusUI();
+
+      navigator.geolocation.getCurrentPosition(
+        function(position) {
+          mobileState.gps.isLocating = false;
+          mobileState.gps.permissionState = 'granted';
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          const acc = Math.round(position.coords.accuracy || 0);
+
+          updateScanLocation(
+            lat,
+            lng,
+            silent ? null : `🛰️ Đã định vị GPS thực tế (±${acc}m) — quét việc từ vị trí của bạn!`,
+            {
+              source: 'REAL_GPS',
+              accuracyMeters: acc,
+              fitBounds,
+              preserveSelected: false
+            }
+          );
+          startPersonalGPSWatcher();
+          if (onComplete) onComplete(true);
+        },
+        function(err) {
+          mobileState.gps.isLocating = false;
+          mobileState.gps.permissionState = (err && err.code === 1) ? 'denied' : 'unavailable';
+          updateGpsStatusUI();
+
+          if (!silent) {
+            const msg = (err && err.code === 1)
+              ? "⚠️ Chưa được cấp quyền Vị trí (GPS). Hãy cho phép Vị trí trên trình duyệt hoặc kéo ghim xanh để chọn chỗ bạn đang đứng."
+              : "⚠️ Chưa bắt được tín hiệu GPS thực tế — giữ vị trí hiện tại. Bạn có thể kéo ghim xanh hoặc bấm 🎯 Bật GPS tôi để thử lại.";
+            showToast(msg, "info");
+          }
+          if (onComplete) onComplete(false);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: timeoutMs,
+          maximumAge: forceFresh ? 0 : 15000
+        }
+      );
     }
 
-    function updateScanLocation(lat, lng, successMsg) {
+    function triggerRealtimeGPSScan(forceFresh = true) {
+      showToast("🛰️ Đang định vị GPS cá nhân độ chính xác cao...", "info");
+      // Khi người dùng bấm nút Vị trí tôi, luôn ưu tiên quay về GPS thực tế (ghi đè ghim tay nếu có)
+      if (mobileState.gps.source === 'MANUAL_PIN') {
+        mobileState.gps.source = 'DEFAULT';
+      }
+      requestPersonalGPSLocation({ forceFresh, silent: false, fitBounds: false });
+    }
+
+    function updateScanLocation(lat, lng, successMsg, options = {}) {
       mobileState.currentCoords = { lat, lng };
-      map.setView([lat, lng], 14);
-      userMarker.setLatLng([lat, lng]);
-      radarCircle.setLatLng([lat, lng]);
-      showToast(successMsg, "success");
+      if (options.source) mobileState.gps.source = options.source;
+      if (options.accuracyMeters !== undefined) mobileState.gps.accuracyMeters = options.accuracyMeters;
+      mobileState.gps.lastUpdatedAt = Date.now();
+
+      if (userMarker) userMarker.setLatLng([lat, lng]);
+      if (radarCircle) radarCircle.setLatLng([lat, lng]);
+      if (gpsAccuracyCircle) {
+        gpsAccuracyCircle.setLatLng([lat, lng]);
+        gpsAccuracyCircle.setRadius(
+          mobileState.gps.source === 'REAL_GPS' && mobileState.gps.accuracyMeters
+            ? Math.min(mobileState.gps.accuracyMeters, 1000)
+            : 0
+        );
+      }
+
+      if (options.panTo !== false && map) {
+        map.setView([lat, lng], options.zoom || Math.max(map.getZoom(), 13));
+      }
+
+      applyScanFiltersAndRender({
+        fitBounds: Boolean(options.fitBounds),
+        preserveSelected: options.preserveSelected !== false
+      });
+      updateGpsStatusUI();
+      if (typeof updateShiftProximityRadar === 'function' && mobileState.activeJob) {
+        updateShiftProximityRadar();
+      }
+
+      if (successMsg) showToast(successMsg, "success");
     }
 
-    // --- MAP CLICK HANDLER (THUÊ Ở ĐỊA ĐIỂM KHÁC) ---
+    function setManualPersonalPin(lat, lng) {
+      if (map) map.closePopup();
+      updateScanLocation(
+        lat,
+        lng,
+        "📌 Đã đặt vị trí cá nhân của bạn tại đây — đang quét tỏa ra xung quanh!",
+        { source: 'MANUAL_PIN', accuracyMeters: null, panTo: true, preserveSelected: false }
+      );
+    }
+
+    // --- MAP CLICK HANDLER (THUÊ Ở ĐỊA ĐIỂM KHÁC HOẶC ĐẶT VỊ TRÍ CÁ NHÂN) ---
     function handleMapClick(latlng) {
       if (mobileState.offsiteMode || mobileState.role === 'POSTER') {
         if (offsiteMarker) map.removeLayer(offsiteMarker);
-        
+
         const greenIcon = new L.Icon({
           iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
           iconSize: [22, 34],
@@ -2227,7 +2569,17 @@
 
         showToast(`📍 Đã ghim điểm làm việc mới tại [${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}]!`, "info");
       } else {
-        map.panTo([latlng.lat, latlng.lng]);
+        L.popup()
+          .setLatLng(latlng)
+          .setContent(`
+            <div style="font-family:sans-serif; font-size:10px; text-align:center;">
+              <div style="font-weight:700; margin-bottom:4px;">Tọa độ [${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}]</div>
+              <button onclick="setManualPersonalPin(${latlng.lat}, ${latlng.lng})" style="background:#6366F1; color:#fff; border:none; padding:5px 8px; border-radius:6px; font-weight:800; cursor:pointer; width:100%;">
+                📌 Đặt làm vị trí tôi & Quét quanh đây
+              </button>
+            </div>
+          `)
+          .openOn(map);
       }
     }
 
@@ -2236,11 +2588,11 @@
       const btn = document.getElementById('btnOffsiteToggle');
       if (mobileState.offsiteMode) {
         btn.textContent = "✓ Chạm bản đồ để ghim nơi làm";
-        btn.className = "text-[9px] bg-emerald-500 text-slate-950 font-bold px-2 py-1 rounded-lg transition";
+        btn.className = "text-[9px] bg-emerald-500 text-slate-950 font-bold px-2 py-1 rounded-lg transition whitespace-nowrap";
         showToast("👉 Hãy chạm vào bất kỳ điểm nào trên bản đồ để đặt nơi cần tuyển người!", "info");
       } else {
-        btn.textContent = "🎯 Thuê ở địa điểm khác";
-        btn.className = "text-[9px] bg-brand-surface hover:bg-brand-border px-2 py-1 rounded-lg border border-brand-border text-indigo-300 font-semibold transition";
+        btn.textContent = "🎯 Thuê Chỗ Khác";
+        btn.className = "text-[9px] bg-brand-surface hover:bg-brand-border px-2 py-1 rounded-lg border border-brand-border text-indigo-300 font-semibold transition whitespace-nowrap";
       }
     }
 
@@ -2256,29 +2608,29 @@
       toggleOffsiteMode();
     }
 
+    function handleMapSearchInput() {
+      const input = document.getElementById('inputMapSearch');
+      currentSearchQuery = input ? input.value.trim() : '';
+      applyScanFiltersAndRender({ fitBounds: false, preserveSelected: true });
+    }
+
     function searchLocationOnMap() {
       const q = document.getElementById('inputMapSearch').value.trim();
-      if (!q) return;
-      showToast(`🔍 Đang tìm kiếm "${q}" trên bản đồ...`, "info");
-      if (q.toLowerCase().includes('cầu giấy')) {
-        map.setView([21.0360, 105.7905], 14);
-      } else if (q.toLowerCase().includes('đống đa') || q.toLowerCase().includes('bách khoa')) {
-        map.setView([21.0060, 105.8431], 14);
-      } else {
-        map.setView([21.0285, 105.8544], 14);
+      currentSearchQuery = q;
+      const filtered = applyScanFiltersAndRender({ fitBounds: Boolean(q), preserveSelected: false });
+      if (!q) {
+        if (map) map.setView([mobileState.currentCoords.lat, mobileState.currentCoords.lng], 13);
+        return;
       }
-      showToast(`📍 Đã hiển thị kết quả cho "${q}"!`, "success");
+      if (filtered.length > 0) {
+        showToast(`📍 Tìm thấy ${filtered.length} ca khớp "${q}" (đã xếp từ gần bạn nhất)!`, "success");
+      } else {
+        showToast(`🔍 Không thấy ca nào khớp "${q}" quanh vị trí của bạn.`, "info");
+      }
     }
 
     function filterMapJobs(type) {
-      if (type === 'ALL') {
-        renderJobMarkers(jobData);
-        showToast("🔥 Hiển thị tất cả 4 ca việc quanh bạn", "info");
-      } else {
-        const filtered = jobData.filter(j => j.type === type);
-        renderJobMarkers(filtered);
-        showToast(`Hiển thị ${filtered.length} ca theo bộ lọc`, "info");
-      }
+      filterListCategory(type);
     }
 
     // --- IN-APP CHAT (NHẮN TIN THỜI GIAN THỰC & ĐỒNG BỘ 2 CHIỀU WEB/MOBILE - DEF-05) ---
@@ -2538,6 +2890,10 @@
         setTimeout(() => map.invalidateSize(), 150);
       }
 
+      if (tabIndex === 2) {
+        updateShiftProximityRadar();
+      }
+
       if (tabIndex === 5) {
         syncProfileToUI();
       }
@@ -2573,26 +2929,49 @@
 
     // --- PROFILE MANAGEMENT (MỤC CÁ NHÂN) ---
     function syncProfileToUI() {
-      const p = mobileState.userProfile;
-      document.getElementById('displayProfileName').textContent = p.name;
-      document.getElementById('displayProfilePhone').textContent = "📞 " + p.phone;
-      document.getElementById('displayKarmaScore').textContent = (p.karma || 4.9) + "⭐";
-      document.getElementById('displayProfileRole').textContent = (p.role === 'WORKER' ? "Người Làm (Worker)" : "Người Thuê (Poster)");
+      const p = mobileState.userProfile || { name: 'Thành Viên', phone: '', karma: 4.9, role: 'WORKER' };
       
-      const initials = p.name.split(' ').map(w => w[0]).join('').slice(-2).toUpperCase();
-      document.getElementById('profileAvatarText').textContent = initials || "MC";
+      const elName = document.getElementById('displayProfileName');
+      if (elName) elName.textContent = p.name || 'Thành Viên MCE';
+      
+      const elPhone = document.getElementById('displayProfilePhone');
+      if (elPhone) elPhone.textContent = "📞 " + (p.phone || '');
+      
+      const elKarma = document.getElementById('displayKarmaScore');
+      if (elKarma) elKarma.textContent = (p.karma || 4.9) + "⭐";
+      
+      const elRole = document.getElementById('displayProfileRole');
+      if (elRole) elRole.textContent = (p.role === 'POSTER' ? "Người Thuê (Poster)" : "Người Làm (Worker)");
+      
+      const elAvatar = document.getElementById('profileAvatarText');
+      if (elAvatar) {
+        const initials = (p.name || 'MC').split(' ').map(w => w[0]).join('').slice(-2).toUpperCase();
+        elAvatar.textContent = initials || "MC";
+      }
 
-      document.getElementById('inputProfileName').value = p.name;
-      document.getElementById('inputProfilePhone').value = p.phone;
-      document.getElementById('inputProfileEmail').value = p.email || "";
-      document.getElementById('inputProfileIdNumber').value = p.idNumber || "001098012345";
-      document.getElementById('inputProfileBank').value = p.bank || "MBBank";
-      document.getElementById('inputProfileAccount').value = p.account || p.phone;
+      const inputName = document.getElementById('inputProfileName');
+      if (inputName) inputName.value = p.name || '';
+      
+      const inputPhone = document.getElementById('inputProfilePhone');
+      if (inputPhone) inputPhone.value = p.phone || '';
+      
+      const inputEmail = document.getElementById('inputProfileEmail');
+      if (inputEmail) inputEmail.value = p.email || "";
+      
+      const inputIdNumber = document.getElementById('inputProfileIdNumber');
+      if (inputIdNumber) inputIdNumber.value = p.idNumber || "001098012345";
+      
+      const inputBank = document.getElementById('inputProfileBank');
+      if (inputBank) inputBank.value = p.bank || "MBBank";
+      
+      const inputAccount = document.getElementById('inputProfileAccount');
+      if (inputAccount) inputAccount.value = p.account || p.phone || '';
 
-      document.getElementById('profileSkillsSection').classList.toggle('hidden', p.role !== 'WORKER');
+      const skillsSection = document.getElementById('profileSkillsSection');
+      if (skillsSection) skillsSection.classList.toggle('hidden', p.role !== 'WORKER');
 
-      // eKYC badge & card sync
-      const isVerified = p.verified !== false;
+      // eKYC badge & card sync (strict boolean — chưa đăng nhập / chưa eKYC là false)
+      const isVerified = p.verified === true;
       const displayBadge = document.getElementById('displayProfileBadge');
       if (displayBadge) {
         displayBadge.textContent = isVerified ? "eKYC ĐẠT" : "CHƯA eKYC";
@@ -2646,25 +3025,54 @@
 
     function logoutToAuth() {
       localStorage.removeItem('mce_current_user');
+      localStorage.removeItem('mce_auth_token');
+      mobileState.walletBalance = 0;
       mobileState.userProfile = {
-        name: "Khách Hàng Mới",
-        phone: "0900000000",
-        email: "khachhang@mce.vn",
-        idNumber: "001099000000",
+        name: "Khách Chưa Đăng Nhập",
+        phone: "",
+        email: "",
+        idNumber: "",
         bank: "MBBank",
-        account: "0900000000",
+        account: "",
         karma: 5.0,
         role: "WORKER",
-        verified: false
+        verified: false,
+        isLoggedIn: false
       };
       syncProfileToUI();
-      showToast("🚪 Đã đăng xuất tài khoản. Mở cổng đăng nhập / đăng ký...", "info");
+      updateShiftProximityRadar();
+      showToast("🚪 Đã đăng xuất tài khoản. Vui lòng đăng nhập lại bằng OTP.", "info");
       setTimeout(() => openAuthModal('LOGIN'), 300);
     }
 
-    // --- IN-APP AUTHENTICATION CONTROLLER (ĐĂNG NHẬP / ĐĂNG KÝ) ---
+    // --- IN-APP AUTHENTICATION CONTROLLER (XÁC THỰC OTP THẬT, KHÔNG DEMO BYPASS) ---
     let authRoleSelected = 'WORKER';
+    let authOtpTimers = { LOGIN: null, REGISTER: null };
+
+    function normalizePhone(raw) {
+      let digits = (raw || '').replace(/[^0-9]/g, '');
+      if (digits.startsWith('84') && digits.length === 11) {
+        digits = '0' + digits.slice(2);
+      }
+      return digits;
+    }
+
+    function setAuthAlert(boxId, message, isError = true) {
+      const box = document.getElementById(boxId);
+      if (!box) return;
+      if (!message) {
+        box.classList.add('hidden');
+        return;
+      }
+      box.className = isError
+        ? "text-[10px] p-2 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-300 font-bold block"
+        : "text-[10px] p-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 font-bold block";
+      box.textContent = message;
+    }
+
     function openAuthModal(mode = 'LOGIN') {
+      setAuthAlert('inAppLoginAlertBox', '');
+      setAuthAlert('inAppRegAlertBox', '');
       document.getElementById('mobileAuthModal').classList.remove('hidden');
       switchAuthTab(mode);
     }
@@ -2700,149 +3108,262 @@
         bW.className = "p-2 rounded-xl border border-brand-border bg-brand-surface text-brand-textSecondary font-bold text-xs flex items-center justify-center gap-1";
       }
     }
-    function sendAuthOtp(type) {
+
+    async function sendAuthOtp(type) {
+      const phoneInput = document.getElementById(type === 'LOGIN' ? 'inAppLoginPhone' : 'inAppRegPhone');
+      const phone = normalizePhone(phoneInput ? phoneInput.value : '');
+      const alertId = type === 'LOGIN' ? 'inAppLoginAlertBox' : 'inAppRegAlertBox';
+
+      if (!phone || phone.length < 9 || phone.length > 11) {
+        setAuthAlert(alertId, "⚠️ Vui lòng nhập đúng số điện thoại (9-11 chữ số) trước khi lấy mã OTP.");
+        showToast("Số điện thoại không hợp lệ!", "error");
+        return;
+      }
+      setAuthAlert(alertId, '');
+
+      const btn = document.getElementById(type === 'LOGIN' ? 'btnSendLoginOtp' : 'btnSendRegOtp');
       const banner = document.getElementById(type === 'LOGIN' ? 'loginOtpBanner' : 'regOtpBanner');
-      if (banner) banner.classList.remove('hidden');
-      const otpInput = document.getElementById(type === 'LOGIN' ? 'inAppLoginOtp' : 'inAppRegOtp');
-      if (otpInput && !otpInput.value) otpInput.value = '654321';
-      showToast("📩 Đã gửi mã xác thực OTP (654321) qua tin nhắn SMS!", "success");
-    }
+      const bannerText = document.getElementById(type === 'LOGIN' ? 'loginOtpText' : 'regOtpText');
 
-    function handleRegPhoneInput(val) {
-      const clean = (val || '').replace(/[^0-9]/g, '');
-      const banner = document.getElementById('regOtpBanner');
-      const otpInput = document.getElementById('inAppRegOtp');
-      if (clean.length >= 9) {
-        if (banner) banner.classList.remove('hidden');
-        if (otpInput && !otpInput.value) otpInput.value = '654321';
-      }
-    }
-
-    function handleInAppLogin(e) {
-      if (e && e.preventDefault) e.preventDefault();
-      const rawPhone = document.getElementById('inAppLoginPhone').value.trim();
-      let phone = rawPhone.replace(/[^0-9]/g, '');
-      if (phone.startsWith('84') && phone.length === 11) {
-        phone = '0' + phone.slice(2);
-      }
-      if (!phone || phone.length < 9) {
-        showToast("Vui lòng nhập đúng số điện thoại!", "error");
-        return;
-      }
-      mobileState.userProfile.phone = phone;
-      if (phone.includes('1234') || phone === '0981234567') {
-        mobileState.userProfile.name = "Nguyễn Văn An";
-        mobileState.userProfile.role = "WORKER";
-        mobileState.userProfile.verified = true;
-      } else {
-        mobileState.userProfile.name = "Khách Hàng " + phone.slice(-4);
-        mobileState.userProfile.role = "WORKER";
-      }
-      localStorage.setItem('mce_current_user', JSON.stringify(mobileState.userProfile));
-      syncProfileToUI();
-      closeAuthModal();
-      showToast(`👋 Chào mừng ${mobileState.userProfile.name} đăng nhập thành công!`, "success");
-    }
-
-    function handleInAppRegister(e) {
-      if (e && e.preventDefault) e.preventDefault();
-      let name = document.getElementById('inAppRegName').value.trim();
-      const rawPhone = document.getElementById('inAppRegPhone').value.trim();
-      const alertBox = document.getElementById('inAppRegAlertBox');
-      
-      let phone = rawPhone.replace(/[^0-9]/g, '');
-      if (phone.startsWith('84') && phone.length === 11) {
-        phone = '0' + phone.slice(2);
-      }
-      
-      if (!phone || phone.length < 9) {
-        if (alertBox) {
-          alertBox.className = "text-[10px] p-2 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-300 font-bold block";
-          alertBox.textContent = "⚠️ Vui lòng nhập số điện thoại hợp lệ (từ 9 đến 11 số)!";
+      try {
+        const res = await fetch('/api/auth/otp/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          setAuthAlert(alertId, `⚠️ ${data.error || 'Không thể gửi mã OTP từ máy chủ.'}`);
+          return;
         }
-        showToast("Vui lòng nhập số điện thoại hợp lệ!", "error");
+
+        if (banner && bannerText) {
+          banner.classList.remove('hidden');
+          bannerText.textContent = data.otp
+            ? `📩 OTP đã cấp cho ${phone} (Sandbox SMS: ${data.otp} · Hiệu lực ${data.expiresIn || 120}s). Vui lòng tự nhập mã vào ô bên dưới.`
+            : `📩 Đã gửi mã OTP 6 số đến ${phone} (hiệu lực 120 giây).`;
+        }
+
+        if (btn) {
+          btn.disabled = true;
+          let sec = 60;
+          if (authOtpTimers[type]) clearInterval(authOtpTimers[type]);
+          btn.textContent = `Gửi lại (${sec}s)`;
+          authOtpTimers[type] = setInterval(() => {
+            sec--;
+            if (sec <= 0) {
+              clearInterval(authOtpTimers[type]);
+              btn.disabled = false;
+              btn.textContent = 'Gửi SMS OTP';
+            } else {
+              btn.textContent = `Gửi lại (${sec}s)`;
+            }
+          }, 1000);
+        }
+        showToast(`📩 Máy chủ đã phát hành OTP cho ${phone}.`, "success");
+      } catch (err) {
+        setAuthAlert(alertId, "❌ Không kết nối được máy chủ xác thực OTP (/api/auth/otp/send).");
+      }
+    }
+
+    async function handleInAppLogin(e) {
+      if (e && e.preventDefault) e.preventDefault();
+      const phone = normalizePhone(document.getElementById('inAppLoginPhone').value);
+      const otp = (document.getElementById('inAppLoginPass').value || '').trim();
+
+      if (!phone || phone.length < 9 || phone.length > 11) {
+        setAuthAlert('inAppLoginAlertBox', "⚠️ Vui lòng nhập đúng số điện thoại (9-11 chữ số).");
         return;
       }
-      
-      if (!name) {
-        name = (authRoleSelected === 'POSTER' ? "Chủ Thuê " : "Thành Viên ") + phone.slice(-4);
+      if (!/^\d{6}$/.test(otp)) {
+        setAuthAlert('inAppLoginAlertBox', "⚠️ Vui lòng bấm 'Gửi SMS OTP' và nhập đúng mã OTP 6 chữ số.");
+        return;
       }
-      
-      if (alertBox) alertBox.classList.add('hidden');
 
-      mobileState.userProfile = {
-        name: name,
-        phone: phone,
-        email: phone + "@mce.vn",
-        role: authRoleSelected || 'WORKER',
-        verified: false,
-        karma: 5.0,
-        registeredAt: new Date().toISOString()
-      };
-      
-      localStorage.setItem('mce_current_user', JSON.stringify(mobileState.userProfile));
-      syncProfileToUI();
-      closeAuthModal();
-      
-      showToast(`🎉 Chúc mừng ${name} đã đăng ký tài khoản thành công!`, "success");
-      
-      const topNotice = document.getElementById('topAuthNoticeText');
-      if (topNotice) topNotice.textContent = `Xin chào ${name} (${phone}) · 0% Phí Sàn`;
-    }
-    function loginWithGoogleQuick() {
-      mobileState.userProfile.name = "Hoàng Minh (Google)";
-      mobileState.userProfile.email = "hoang.minh.developer@gmail.com";
-      mobileState.userProfile.verified = true;
-      localStorage.setItem('mce_current_user', JSON.stringify(mobileState.userProfile));
-      syncProfileToUI();
-      closeAuthModal();
-      showToast("✓ Đăng nhập nhanh Google thành công: Hoàn tất liên kết Gmail!", "success");
-    }
-    function quickSwitchDemoAccount(role) {
-      if (role === 'WORKER') {
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone, otp })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success || !data.user) {
+          setAuthAlert('inAppLoginAlertBox', `❌ ${data.error || 'Đăng nhập thất bại. Vui lòng kiểm tra SĐT và mã OTP.'}`);
+          return;
+        }
+
+        const srvUser = data.user;
         mobileState.userProfile = {
-          name: "Nguyễn Văn An",
-          phone: "0981234567",
-          email: "nguyenvanan.mce@gmail.com",
-          idNumber: "001098012345",
-          bank: "MBBank",
-          account: "0981234567",
-          karma: 4.9,
-          role: "WORKER",
-          verified: true
+          id: srvUser.id,
+          name: srvUser.name,
+          phone: srvUser.phone,
+          email: srvUser.email || '',
+          idNumber: srvUser.idNumber || '',
+          bank: srvUser.bank || 'MBBank',
+          account: srvUser.account || srvUser.phone,
+          karma: srvUser.karmaScore ?? 5.0,
+          role: srvUser.role || 'WORKER',
+          verified: Boolean(srvUser.isVerified),
+          isLoggedIn: true
         };
-        switchRole('WORKER');
-      } else {
-        mobileState.userProfile = {
-          name: "Shop Thời Trang Tràng Thi",
-          phone: "0909888999",
-          email: "shoptrangthi@gmail.com",
-          idNumber: "001089098765",
-          bank: "Techcombank",
-          account: "1903888999",
-          karma: 5.0,
-          role: "POSTER",
-          verified: true
-        };
-        switchRole('POSTER');
+        mobileState.role = mobileState.userProfile.role;
+        mobileState.walletBalance = Number(srvUser.walletBalance || 0);
+        if (data.token) localStorage.setItem('mce_auth_token', data.token);
+        localStorage.setItem('mce_current_user', JSON.stringify(mobileState.userProfile));
+
+        setAuthAlert('inAppLoginAlertBox', '');
+        document.getElementById('inAppLoginPass').value = '';
+        syncProfileToUI();
+        loadWalletTransactions();
+        updateShiftProximityRadar();
+        closeAuthModal();
+
+        const topNotice = document.getElementById('topAuthNoticeText');
+        if (topNotice) {
+          topNotice.textContent = `${mobileState.userProfile.name} (${mobileState.userProfile.phone}) · ${mobileState.userProfile.verified ? 'Đã eKYC' : 'Chưa eKYC'}`;
+        }
+
+        if (!mobileState.userProfile.verified) {
+          showToast(`👋 Đăng nhập thành công! Tài khoản chưa eKYC — vui lòng xác minh CCCD để chấm công & rút tiền.`, "info");
+          setTimeout(() => openEkycModal(), 400);
+        } else {
+          showToast(`✅ Đăng nhập xác thực OTP thành công: ${mobileState.userProfile.name}!`, "success");
+        }
+      } catch (err) {
+        setAuthAlert('inAppLoginAlertBox', "❌ Lỗi kết nối máy chủ xác thực (/api/auth/login).");
       }
-      localStorage.setItem('mce_current_user', JSON.stringify(mobileState.userProfile));
-      syncProfileToUI();
-      closeAuthModal();
-      showToast(`Đã chuyển sang tài khoản: ${mobileState.userProfile.name}`, "success");
     }
 
-    // --- eKYC CCCD GẮN CHIP & SINH TRẮC HỌC KHUÔN MẶT CONTROLLER ---
+    async function handleInAppRegister(e) {
+      if (e && e.preventDefault) e.preventDefault();
+      const name = document.getElementById('inAppRegName').value.trim();
+      const phone = normalizePhone(document.getElementById('inAppRegPhone').value);
+      const otp = (document.getElementById('inAppRegOtp').value || '').trim();
+
+      if (name.length < 2) {
+        setAuthAlert('inAppRegAlertBox', "⚠️ Vui lòng nhập Họ và tên thật theo CCCD (tối thiểu 2 ký tự).");
+        return;
+      }
+      if (!phone || phone.length < 9 || phone.length > 11) {
+        setAuthAlert('inAppRegAlertBox', "⚠️ Số điện thoại không hợp lệ (cần 9-11 chữ số).");
+        return;
+      }
+      if (!/^\d{6}$/.test(otp)) {
+        setAuthAlert('inAppRegAlertBox', "⚠️ Bắt buộc phải nhập đúng mã OTP 6 chữ số đã gửi về SĐT.");
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name,
+            phone,
+            otp,
+            role: authRoleSelected || 'WORKER'
+          })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success || !data.user) {
+          setAuthAlert('inAppRegAlertBox', `❌ ${data.error || 'Đăng ký thất bại.'}`);
+          return;
+        }
+
+        const srvUser = data.user;
+        mobileState.userProfile = {
+          id: srvUser.id,
+          name: srvUser.name,
+          phone: srvUser.phone,
+          email: srvUser.email || '',
+          idNumber: '',
+          bank: srvUser.bank || 'MBBank',
+          account: srvUser.account || srvUser.phone,
+          karma: srvUser.karmaScore ?? 5.0,
+          role: srvUser.role || 'WORKER',
+          verified: false, // Bắt buộc hoàn tất eKYC CCCD ở bước tiếp theo
+          isLoggedIn: true
+        };
+        mobileState.role = mobileState.userProfile.role;
+        mobileState.walletBalance = 0;
+        if (data.token) localStorage.setItem('mce_auth_token', data.token);
+        localStorage.setItem('mce_current_user', JSON.stringify(mobileState.userProfile));
+
+        setAuthAlert('inAppRegAlertBox', '');
+        document.getElementById('inAppRegOtp').value = '';
+        syncProfileToUI();
+        loadWalletTransactions();
+        updateShiftProximityRadar();
+        closeAuthModal();
+
+        const topNotice = document.getElementById('topAuthNoticeText');
+        if (topNotice) topNotice.textContent = `${name} (${phone}) · Cần xác minh eKYC CCCD`;
+
+        showToast(`🎉 Đăng ký OTP thành công! Bước tiếp theo: xác thực eKYC CCCD 2 mặt & khuôn mặt.`, "success");
+        setTimeout(() => openEkycModal(), 450);
+      } catch (err) {
+        setAuthAlert('inAppRegAlertBox', "❌ Lỗi kết nối máy chủ đăng ký (/api/auth/register).");
+      }
+    }
+
+    // --- eKYC CCCD GẮN CHIP & SINH TRẮC HỌC KHUÔN MẶT (KIỂM TRA ĐỦ HỒ SƠ THẬT) ---
     let ekycCamStream = null;
+    let ekycState = {
+      frontImage: null,
+      backImage: null,
+      selfieImage: null,
+      fullName: '',
+      idNumber: ''
+    };
+
     function openEkycModal() {
+      if (!mobileState.userProfile.phone) {
+        showToast("⚠️ Vui lòng đăng nhập hoặc đăng ký số điện thoại trước khi xác thực eKYC!", "error");
+        openAuthModal('REGISTER');
+        return;
+      }
+      const nameInput = document.getElementById('ekycInputFullName');
+      const idInput = document.getElementById('ekycInputIdNumber');
+      if (nameInput && !nameInput.value) nameInput.value = mobileState.userProfile.name || '';
+      if (idInput && !idInput.value && /^\d{12}$/.test(mobileState.userProfile.idNumber || '')) {
+        idInput.value = mobileState.userProfile.idNumber;
+      }
       document.getElementById('mobileEkycModal').classList.remove('hidden');
-      goEkycStep(1);
+      goEkycStep(1, true);
     }
+
     function closeEkycModal() {
       stopEkycCam();
       document.getElementById('mobileEkycModal').classList.add('hidden');
     }
-    function goEkycStep(step) {
+
+    function goEkycStep(step, skipValidation = false) {
+      if (!skipValidation && step === 2) {
+        const fullName = (document.getElementById('ekycInputFullName')?.value || '').trim();
+        const idNumber = (document.getElementById('ekycInputIdNumber')?.value || '').replace(/[^0-9]/g, '');
+        if (fullName.length < 2) {
+          showToast("⚠️ Vui lòng nhập Họ và tên đúng theo CCCD.", "error");
+          return;
+        }
+        if (!/^\d{12}$/.test(idNumber)) {
+          showToast("⚠️ Số CCCD gắn chip bắt buộc phải gồm đúng 12 chữ số.", "error");
+          return;
+        }
+        if (!ekycState.frontImage || !ekycState.backImage) {
+          showToast("⚠️ Bắt buộc phải tải đủ ảnh CCCD mặt trước và mặt sau!", "error");
+          return;
+        }
+        ekycState.fullName = fullName;
+        ekycState.idNumber = idNumber;
+      }
+
+      if (!skipValidation && step === 3) {
+        if (!ekycState.selfieImage) {
+          showToast("⚠️ Bắt buộc phải chụp ảnh khuôn mặt từ camera hoặc tải ảnh chân dung thật trước khi đối chiếu!", "error");
+          return;
+        }
+      }
+
       [1, 2, 3].forEach(s => {
         const el = document.getElementById(`ekycStep${s}Content`);
         if (el) el.classList.toggle('hidden', s !== step);
@@ -2851,16 +3372,32 @@
           tab.className = s === step ? "text-emerald-400 font-bold" : (s < step ? "text-indigo-400 font-bold" : "text-brand-textSecondary");
         }
       });
+
       if (step === 3) {
-        document.getElementById('ekycResultName').textContent = (mobileState.userProfile.name || "NGUYỄN VĂN AN").toUpperCase();
-        document.getElementById('ekycResultId').textContent = mobileState.userProfile.idNumber || "001098012345";
+        document.getElementById('ekycResultName').textContent = (ekycState.fullName || mobileState.userProfile.name || '--').toUpperCase();
+        document.getElementById('ekycResultId').textContent = ekycState.idNumber || mobileState.userProfile.idNumber || '--';
+        document.getElementById('ekycResultPhone').textContent = mobileState.userProfile.phone || '--';
+        const cccdOk = Boolean(ekycState.frontImage && ekycState.backImage);
+        const selfieOk = Boolean(ekycState.selfieImage);
+        document.getElementById('ekycResultCccdFiles').textContent = cccdOk ? '✓ Đã tải đủ 2 mặt' : '❌ Thiếu ảnh CCCD';
+        document.getElementById('ekycResultSelfieStatus').textContent = selfieOk ? '✓ Đã chụp / tải khuôn mặt' : '❌ Thiếu ảnh khuôn mặt';
+        const badge = document.getElementById('ekycStep3StatusBadge');
+        if (badge) badge.textContent = (cccdOk && selfieOk) ? 'ĐỦ 3/3 TÀI LIỆU' : 'CHƯA ĐỦ HỒ SƠ';
       }
     }
+
     function handleEkycCccdFile(event, side) {
       const file = event.target.files && event.target.files[0];
       if (!file) return;
+      if (!file.type.startsWith('image/')) {
+        showToast("⚠️ Vui lòng chọn tệp hình ảnh hợp lệ (.jpg, .png).", "error");
+        return;
+      }
       const reader = new FileReader();
       reader.onload = e => {
+        if (side === 'FRONT') ekycState.frontImage = e.target.result;
+        else ekycState.backImage = e.target.result;
+
         const img = document.getElementById(side === 'FRONT' ? 'imgCccdFront' : 'imgCccdBack');
         const ph = document.getElementById(side === 'FRONT' ? 'phCccdFront' : 'phCccdBack');
         if (img && ph) {
@@ -2872,41 +3409,122 @@
       };
       reader.readAsDataURL(file);
     }
+
     async function startEkycCam() {
       const video = document.getElementById('ekycSelfieVideo');
       const placeholder = document.getElementById('ekycSelfiePlaceholder');
+      const preview = document.getElementById('ekycSelfiePreview');
+      const btnCapture = document.getElementById('btnCaptureEkycSelfie');
       try {
         ekycCamStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
         video.srcObject = ekycCamStream;
         video.classList.remove('hidden');
-        placeholder.classList.add('hidden');
-        showToast("📷 Live camera bật thành công. Hãy giữ thẳng khuôn mặt trong 3 giây!", "info");
+        if (placeholder) placeholder.classList.add('hidden');
+        if (preview) preview.classList.add('hidden');
+        if (btnCapture) btnCapture.classList.remove('hidden');
+        showToast("📷 Live camera bật thành công. Hãy nhìn thẳng và bấm '📸 Chụp Khuôn Mặt'!", "info");
       } catch (err) {
-        showToast("Camera không thể bật trực tiếp. Bạn hãy nhấn 'File Ảnh' để tải selfie!", "info");
-        document.getElementById('fileEkycSelfie').click();
+        showToast("⚠️ Không bật được camera trực tiếp. Hãy chọn 'File Ảnh' chân dung thật của bạn.", "error");
       }
     }
+
+    function captureEkycSelfie() {
+      const video = document.getElementById('ekycSelfieVideo');
+      const canvas = document.getElementById('ekycSelfieCanvas');
+      const preview = document.getElementById('ekycSelfiePreview');
+      const placeholder = document.getElementById('ekycSelfiePlaceholder');
+      const btnCapture = document.getElementById('btnCaptureEkycSelfie');
+      if (!ekycCamStream || !video || video.classList.contains('hidden')) {
+        showToast("⚠️ Vui lòng bật camera trước khi chụp!", "error");
+        return;
+      }
+      canvas.width = video.videoWidth || 480;
+      canvas.height = video.videoHeight || 360;
+      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+      ekycState.selfieImage = canvas.toDataURL('image/jpeg', 0.85);
+
+      stopEkycCam();
+      video.classList.add('hidden');
+      if (placeholder) placeholder.classList.add('hidden');
+      if (btnCapture) btnCapture.classList.add('hidden');
+      if (preview) {
+        preview.src = ekycState.selfieImage;
+        preview.classList.remove('hidden');
+      }
+      showToast("✓ Đã chụp ảnh khuôn mặt xác thực thành công!", "success");
+    }
+
     function stopEkycCam() {
       if (ekycCamStream) {
         ekycCamStream.getTracks().forEach(t => t.stop());
         ekycCamStream = null;
       }
     }
+
     function handleEkycSelfieFile(event) {
       const file = event.target.files && event.target.files[0];
-      if (!file) return;
-      showToast("✓ Đã nhận diện khuôn mặt sinh trắc học sống thành công!", "success");
-      stopEkycCam();
-      goEkycStep(3);
+      if (!file || !file.type.startsWith('image/')) {
+        showToast("⚠️ Vui lòng chọn tệp ảnh chân dung hợp lệ!", "error");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = e => {
+        ekycState.selfieImage = e.target.result;
+        stopEkycCam();
+        const video = document.getElementById('ekycSelfieVideo');
+        const placeholder = document.getElementById('ekycSelfiePlaceholder');
+        const preview = document.getElementById('ekycSelfiePreview');
+        const btnCapture = document.getElementById('btnCaptureEkycSelfie');
+        if (video) video.classList.add('hidden');
+        if (placeholder) placeholder.classList.add('hidden');
+        if (btnCapture) btnCapture.classList.add('hidden');
+        if (preview) {
+          preview.src = ekycState.selfieImage;
+          preview.classList.remove('hidden');
+        }
+        showToast("✓ Đã tải ảnh chân dung sinh trắc học!", "success");
+      };
+      reader.readAsDataURL(file);
     }
-    function completeEkycVerification() {
+
+    async function completeEkycVerification() {
+      if (!ekycState.frontImage || !ekycState.backImage || !ekycState.selfieImage || !/^\d{12}$/.test(ekycState.idNumber)) {
+        showToast("❌ Hồ sơ eKYC chưa đủ 12 số CCCD, ảnh 2 mặt hoặc ảnh khuôn mặt.", "error");
+        return;
+      }
       stopEkycCam();
+
+      try {
+        const res = await fetch('/api/auth/ekyc/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone: mobileState.userProfile.phone,
+            fullName: ekycState.fullName,
+            idNumber: ekycState.idNumber,
+            hasFrontImage: Boolean(ekycState.frontImage),
+            hasBackImage: Boolean(ekycState.backImage),
+            hasSelfieImage: Boolean(ekycState.selfieImage)
+          })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          showToast(`❌ ${data.error || 'Xác thực eKYC trên máy chủ thất bại.'}`, "error");
+          return;
+        }
+      } catch (err) {
+        showToast("❌ Không kết nối được máy chủ xác thực eKYC (/api/auth/ekyc/verify).", "error");
+        return;
+      }
+
+      mobileState.userProfile.name = ekycState.fullName;
+      mobileState.userProfile.idNumber = ekycState.idNumber;
       mobileState.userProfile.verified = true;
-      mobileState.userProfile.karma = Math.min(5.0, Number((mobileState.userProfile.karma + 0.2).toFixed(1)));
       localStorage.setItem('mce_current_user', JSON.stringify(mobileState.userProfile));
       syncProfileToUI();
+      updateShiftProximityRadar();
       closeEkycModal();
-      showToast(`🎉 Xác thực eKYC CCCD thành công! Điểm uy tín Karma tăng lên: ${mobileState.userProfile.karma}⭐`, "success");
+      showToast("🎉 Xác thực eKYC CCCD thành công trên máy chủ! Tài khoản đã được mở khóa chấm công & rút tiền.", "success");
     }
 
     // --- ESCROW VIETQR & STORE DISTRIBUTION CONTROLLER ---
@@ -2936,14 +3554,16 @@
         pay: pay,
         lat: mobileState.currentCoords.lat + (Math.random() * 0.004 - 0.002),
         lng: mobileState.currentCoords.lng + (Math.random() * 0.004 - 0.002),
-        dist: '0.8 km',
+        dist: '0 m',
+        distanceKm: 0,
         type: 'PACK',
         poster: mobileState.userProfile.name
       };
       jobData.unshift(newJob);
-      renderJobMarkers(jobData);
+      mobileState.selectedJobId = newJob.id;
+      applyScanFiltersAndRender({ fitBounds: false, preserveSelected: true });
       
-      showToast(`⚡ Ký quỹ thành công ${pay.toLocaleString()}đ! Ca "${title}" đã được ghim lên bản đồ và gửi thông báo tới thợ quanh bán kính 6km.`, "success");
+      showToast(`⚡ Ký quỹ thành công ${pay.toLocaleString()}đ! Ca "${title}" đã được ghim lên bản đồ và gửi thông báo tới thợ quanh vị trí của bạn.`, "success");
       switchMobileTab(1);
     }
 
@@ -2975,19 +3595,31 @@
     let pendingApplicationJob = null;
 
     function openJobApplicationModal(jobId) {
+      if (!mobileState.userProfile.isLoggedIn || !mobileState.userProfile.phone) {
+        showToast("🔐 Vui lòng đăng nhập hoặc đăng ký tài khoản bằng OTP trước khi ứng tuyển!", "error");
+        openAuthModal('LOGIN');
+        return;
+      }
+      if (mobileState.userProfile.verified !== true) {
+        showToast("🪪 Tài khoản cần hoàn tất xác thực eKYC CCCD trước khi nhận ca làm việc!", "error");
+        openEkycModal();
+        return;
+      }
+
       const job = jobData.find(j => j.id === jobId) || jobData[0];
       pendingApplicationJob = job;
-      
+
       document.getElementById('applyJobTitle').textContent = job.title;
       document.getElementById('applyJobAddress').textContent = job.address || ('Người thuê: ' + job.poster);
       document.getElementById('applyJobPay').textContent = job.pay.toLocaleString('vi-VN') + "đ (100% về ví)";
-      
-      // Tính Match Score thực tế
-      const distKm = parseFloat(job.dist) || 2.0;
+
+      // Tính Match Score thực tế dựa trên khoảng cách Haversine hiện tại
+      recomputeJobsFromOrigin();
+      const distKm = typeof job.distanceKm === 'number' ? job.distanceKm : (parseFloat(job.dist) || 2.0);
       let score = 96;
       if (distKm > 10) score = Math.max(78, Math.round(96 - (distKm - 10) * 0.5));
       document.getElementById('applyMatchScoreValue').textContent = score + "%";
-      document.getElementById('applyMatchDistText').textContent = `📍 Cách bạn: ${job.dist}`;
+      document.getElementById('applyMatchDistText').textContent = `📍 Cách vị trí của bạn: ${job.dist}`;
 
       document.getElementById('jobApplicationModal').classList.remove('hidden');
     }
@@ -3000,14 +3632,13 @@
       if (!pendingApplicationJob) return;
       const job = pendingApplicationJob;
       const notes = document.getElementById('applyNotesInput').value.trim() || "Em sẵn sàng làm ngay, nhận việc đúng giờ cam kết.";
-      
+
       closeJobApplicationModal();
       showToast(`📝 Đã nộp hồ sơ ứng tuyển ca "${job.title}" thành công!`, "success");
-      
-      // Giả lập thông báo cho Chủ việc và mở modal duyệt ứng viên sau 1.2s
+
       setTimeout(() => {
         openApplicantReviewModal(job.id, notes);
-      }, 1200);
+      }, 900);
     }
 
     function openApplicantReviewModal(jobId, applicantNotes = "Em sẵn sàng làm ngay, nhận việc đúng giờ cam kết.") {
@@ -3016,9 +3647,9 @@
 
       document.getElementById('reviewJobTitle').textContent = job.title;
       document.getElementById('reviewJobPay').textContent = job.pay.toLocaleString('vi-VN') + "đ";
-      document.getElementById('reviewApplicantName').textContent = mobileState.userProfile.name || "Nguyễn Văn An";
-      document.getElementById('reviewApplicantPhone').textContent = mobileState.userProfile.phone || "0981234567";
-      document.getElementById('reviewApplicantDist').textContent = `Cách bạn ${job.dist} · Điểm Karma 4.9⭐`;
+      document.getElementById('reviewApplicantName').textContent = mobileState.userProfile.name || "Thành viên MCE";
+      document.getElementById('reviewApplicantPhone').textContent = mobileState.userProfile.phone || "--";
+      document.getElementById('reviewApplicantDist').textContent = `Cách bạn ${job.dist} · Điểm Karma ${mobileState.userProfile.karma || 5.0}⭐`;
       document.getElementById('reviewApplicantNotes').textContent = `"${applicantNotes}"`;
 
       document.getElementById('applicantReviewModal').classList.remove('hidden');
@@ -3034,60 +3665,271 @@
       closeApplicantReviewModal();
 
       mobileAcceptJob(job.id, job.title, job.pay);
-      showToast(`🤝 Chủ việc đã XÁC NHẬN & GIAO VIỆC cho bạn! Chuyển sang màn hình Check-in GPS.`, "success");
+      showToast(`🤝 Chủ việc đã XÁC NHẬN & GIAO VIỆC cho bạn! Đang kiểm tra định vị chấm công thực địa.`, "success");
     }
 
     // --- ACCEPT JOB ---
     function mobileAcceptJob(id, title, pay) {
-      mobileState.activeJob = { id, title, pay };
-      document.getElementById('mobileActiveTitle').textContent = title;
+      const jobObj = jobData.find(j => j.id === id);
+      mobileState.activeJob = jobObj
+        ? Object.assign({}, jobObj)
+        : { id, title, pay, lat: mobileState.currentCoords.lat, lng: mobileState.currentCoords.lng, address: 'Địa điểm thực địa' };
+      mobileState.shiftStatus = 'READY';
+
+      document.getElementById('mobileActiveTitle').textContent = mobileState.activeJob.title;
+      const addrEl = document.getElementById('mobileActiveAddress');
+      if (addrEl) addrEl.textContent = mobileState.activeJob.address || ('Người thuê: ' + (mobileState.activeJob.poster || 'MCE'));
+      const codeEl = document.getElementById('mobileActiveJobCode');
+      if (codeEl) codeEl.textContent = `MÃ: #${mobileState.activeJob.id}`;
+      const escrowNotice = document.getElementById('mobileEscrowNoticeText');
+      if (escrowNotice) {
+        escrowNotice.innerHTML = `Số tiền <strong class="text-emerald-400">${mobileState.activeJob.pay.toLocaleString('vi-VN')} VNĐ</strong> đã được Người thuê nạp ký quỹ cho ca <strong>${mobileState.activeJob.title}</strong>. Sau khi check-in hợp lệ trong bán kính 150m và nộp ảnh nghiệm thu thực tế, hệ thống sẽ giải ngân 100% (0% phí sàn).`;
+      }
+
       document.getElementById('mobileShiftBadge').textContent = "ĐÃ GÁN VIỆC · CHỜ CHECK-IN";
       document.getElementById('mobileShiftBadge').className = "text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30";
-      
-      showToast(`🎉 Nhận ca thành công: ${title}! Chuyển sang màn hình ca làm việc.`, "success");
+
+      const btnCheckIn = document.getElementById('btnMobileCheckIn');
+      const btnProof = document.getElementById('btnMobilePhotoProof');
+      const btnRelease = document.getElementById('btnPosterReleaseEscrow');
+      if (btnCheckIn) {
+        btnCheckIn.disabled = false;
+        btnCheckIn.className = "w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-95 text-slate-950 font-black text-xs shadow transition flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed";
+      }
+      if (btnProof) btnProof.disabled = true;
+      if (btnRelease) btnRelease.classList.add('hidden');
+
+      showToast(`🎉 Nhận ca thành công: ${mobileState.activeJob.title}!`, "success");
       switchMobileTab(2);
+      refreshShiftAttendanceGPS();
     }
 
-    // --- CHECK-IN GPS (THỰC TẾ VỚI GEOLOCATION API & BÁN KÍNH GEOFENCE) ---
-    function handleMobileCheckIn() {
-      showToast("📍 Đang đọc tọa độ GPS vệ tinh có độ chính xác cao...", "info");
-      
-      if ("geolocation" in navigator) {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            const lat = pos.coords.latitude;
-            const lng = pos.coords.longitude;
-            mobileState.currentCoords = { lat, lng };
-            executeCheckInSuccess(lat, lng);
-          },
-          (err) => {
-            console.warn("GPS error fallback to current pin", err);
-            executeCheckInSuccess(mobileState.currentCoords.lat, mobileState.currentCoords.lng);
-          },
-          { enableHighAccuracy: true, timeout: 5000 }
-        );
-      } else {
-        executeCheckInSuccess(mobileState.currentCoords.lat, mobileState.currentCoords.lng);
+    // --- STRICT REAL-TIME ATTENDANCE RADAR & GEOFENCE CHECK-IN (NO DEMO BYPASS) ---
+    function formatMetersOrKm(meters) {
+      if (!Number.isFinite(meters)) return '--';
+      if (meters < 1000) return `${Math.round(meters)} mét`;
+      return `${(meters / 1000).toFixed(2)} km`;
+    }
+
+    function evaluateShiftAttendanceEligibility() {
+      const job = mobileState.activeJob;
+      const isVerified = mobileState.userProfile.verified === true;
+      const hasRealGps = mobileState.gps.source === 'REAL_GPS' && typeof mobileState.gps.accuracyMeters === 'number';
+      const acc = mobileState.gps.accuracyMeters;
+
+      if (!job) {
+        return { eligible: false, reasonCode: 'NO_JOB', message: 'Chưa nhận ca việc nào. Hãy chọn ca ở tab Tìm Việc.' };
+      }
+      const distanceMeters = Math.round(
+        calculateHaversineKm(mobileState.currentCoords.lat, mobileState.currentCoords.lng, job.lat, job.lng) * 1000
+      );
+      if (!isVerified) {
+        return { eligible: false, reasonCode: 'UNVERIFIED_EKYC', distanceMeters, accuracyMeters: acc, message: 'Tài khoản chưa xác thực eKYC CCCD nên chưa được phép chấm công.' };
+      }
+      if (!hasRealGps) {
+        return { eligible: false, reasonCode: 'NO_REAL_GPS', distanceMeters, accuracyMeters: null, message: 'Chưa có tín hiệu GPS vệ tinh thực tế. Vui lòng bật định vị trình duyệt và đo lại GPS.' };
+      }
+      if (acc <= 0 || acc > 50) {
+        return { eligible: false, reasonCode: 'LOW_ACCURACY', distanceMeters, accuracyMeters: acc, message: `Tín hiệu GPS chưa đủ chính xác (sai số ±${acc}m > ngưỡng 50m). Hãy ra nơi thoáng hoặc bật GPS chính xác cao.` };
+      }
+      if (distanceMeters > 150) {
+        return { eligible: false, reasonCode: 'OUT_OF_GEOFENCE', distanceMeters, accuracyMeters: acc, message: `Ngoài vùng chấm công: bạn đang cách điểm làm ${formatMetersOrKm(distanceMeters)} (cho phép ≤ 150m).` };
+      }
+      return { eligible: true, reasonCode: 'OK', distanceMeters, accuracyMeters: acc, message: `✓ Đủ điều kiện chấm công thực địa (cách ${distanceMeters}m · sai số ±${acc}m)` };
+    }
+
+    function updateShiftProximityRadar() {
+      const ekycWarn = document.getElementById('shiftEkycWarning');
+      const accEl = document.getElementById('shiftAccuracyText');
+      const distEl = document.getElementById('mobileDistanceText');
+      const barEl = document.getElementById('shiftGeofenceBar');
+      const statusEl = document.getElementById('shiftGeofenceStatus');
+      const dotEl = document.getElementById('shiftRadarDot');
+      const btnCheckIn = document.getElementById('btnMobileCheckIn');
+
+      if (ekycWarn) {
+        ekycWarn.classList.toggle('hidden', mobileState.userProfile.verified === true);
+      }
+
+      const check = evaluateShiftAttendanceEligibility();
+
+      if (accEl) {
+        if (mobileState.gps.source === 'REAL_GPS' && typeof mobileState.gps.accuracyMeters === 'number') {
+          const okAcc = mobileState.gps.accuracyMeters <= 50;
+          accEl.textContent = `Sai số ±${mobileState.gps.accuracyMeters}m${okAcc ? ' (Đạt chuẩn)' : ' (> 50m · Yếu)'}`;
+          accEl.className = okAcc ? "text-emerald-400 text-[10px] font-bold" : "text-rose-400 text-[10px] font-bold";
+        } else {
+          accEl.textContent = "Chưa có GPS thực tế";
+          accEl.className = "text-rose-400 text-[10px] font-bold";
+        }
+      }
+
+      if (distEl) {
+        if (typeof check.distanceMeters === 'number') {
+          distEl.textContent = formatMetersOrKm(check.distanceMeters);
+          distEl.className = check.distanceMeters <= 150
+            ? "text-lg font-black text-emerald-400"
+            : "text-lg font-black text-rose-400";
+        } else {
+          distEl.textContent = "--";
+          distEl.className = "text-lg font-black text-amber-300";
+        }
+      }
+
+      if (barEl) {
+        let pct = 0;
+        if (typeof check.distanceMeters === 'number') {
+          pct = check.distanceMeters <= 150
+            ? Math.max(15, Math.round(100 - (check.distanceMeters / 150) * 60))
+            : Math.max(5, Math.round(Math.min(100, (150 / Math.max(150, check.distanceMeters)) * 100)));
+        }
+        barEl.style.width = `${pct}%`;
+        barEl.className = check.eligible
+          ? "bg-emerald-500 h-full rounded-full transition-all duration-300"
+          : (check.reasonCode === 'LOW_ACCURACY' ? "bg-amber-500 h-full rounded-full transition-all duration-300" : "bg-rose-500 h-full rounded-full transition-all duration-300");
+      }
+
+      if (dotEl) {
+        dotEl.className = check.eligible
+          ? "w-2 h-2 rounded-full bg-emerald-400 animate-ping"
+          : "w-2 h-2 rounded-full bg-rose-400";
+      }
+
+      if (statusEl) {
+        statusEl.textContent = check.message;
+        statusEl.className = check.eligible
+          ? "text-[9px] text-emerald-400 text-center font-bold"
+          : "text-[9px] text-rose-300 text-center font-semibold";
+      }
+
+      if (btnCheckIn && mobileState.shiftStatus === 'READY') {
+        btnCheckIn.disabled = !mobileState.activeJob;
       }
     }
 
-    function executeCheckInSuccess(lat, lng) {
+    function refreshShiftAttendanceGPS() {
+      showToast("🛰️ Đang đo lại tín hiệu GPS chấm công độ chính xác cao...", "info");
+      requestPersonalGPSLocation({
+        forceFresh: true,
+        silent: false,
+        fitBounds: false,
+        timeoutMs: 8000,
+        onComplete: () => {
+          updateShiftProximityRadar();
+        }
+      });
+    }
+
+    function handleMobileCheckIn() {
+      if (!mobileState.activeJob) {
+        showToast("⚠️ Bạn chưa nhận ca việc nào. Vui lòng chọn ca ở tab Tìm Việc trước!", "error");
+        switchMobileTab(1);
+        return;
+      }
+      if (!mobileState.userProfile.isLoggedIn || !mobileState.userProfile.phone) {
+        showToast("🔐 Vui lòng đăng nhập tài khoản xác thực OTP trước khi chấm công!", "error");
+        openAuthModal('LOGIN');
+        return;
+      }
+      if (mobileState.userProfile.verified !== true) {
+        showToast("🪪 Tài khoản chưa xác thực eKYC CCCD! Không thể bỏ qua bước xác minh danh tính.", "error");
+        openEkycModal();
+        return;
+      }
+      if (!("geolocation" in navigator)) {
+        showToast("❌ Thiết bị/trình duyệt không hỗ trợ GPS thực tế — không thể chấm công!", "error");
+        updateShiftProximityRadar();
+        return;
+      }
+
+      showToast("🛰️ Đang kiểm định tọa độ GPS thực địa (không dùng tọa độ giả lập)...", "info");
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          const acc = Math.round(pos.coords.accuracy || 0);
+          const nowTs = Date.now();
+
+          // Tầng 3: Kiểm tra tốc độ di chuyển bất thường (Chống Fake GPS > 120 km/h)
+          if (mobileState.lastGpsPing) {
+            const elapsedSec = Math.max(1, (nowTs - mobileState.lastGpsPing.timestamp) / 1000);
+            const movedMeters = calculateHaversineKm(mobileState.lastGpsPing.lat, mobileState.lastGpsPing.lng, lat, lng) * 1000;
+            const speedKmH = (movedMeters / elapsedSec) * 3.6;
+            if (movedMeters > 300 && speedKmH > 120) {
+              showToast(`🚫 Phát hiện dịch chuyển bất thường (${Math.round(speedKmH)} km/h). Nghi vấn Fake GPS — từ chối chấm công!`, "error");
+              return;
+            }
+          }
+          mobileState.lastGpsPing = { lat, lng, timestamp: nowTs, accuracyMeters: acc };
+
+          updateScanLocation(lat, lng, null, { source: 'REAL_GPS', accuracyMeters: acc, panTo: false, preserveSelected: true });
+          updateShiftProximityRadar();
+
+          const check = evaluateShiftAttendanceEligibility();
+          if (!check.eligible) {
+            showToast(`❌ ${check.message}`, "error");
+            return;
+          }
+
+          // Xác thực lại phía máy chủ /api/escrow/check-in
+          try {
+            const res = await fetch('/api/escrow/check-in', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                jobId: mobileState.activeJob.id,
+                workerPhone: mobileState.userProfile.phone,
+                lat,
+                lng,
+                accuracyMeters: acc,
+                jobLat: mobileState.activeJob.lat,
+                jobLng: mobileState.activeJob.lng
+              })
+            });
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+              showToast(`❌ Máy chủ từ chối check-in: ${data.error || 'Chưa đạt điều kiện Geofence.'}`, "error");
+              return;
+            }
+          } catch (err) {
+            showToast("❌ Không kết nối được máy chủ chấm công (/api/escrow/check-in).", "error");
+            return;
+          }
+
+          executeCheckInSuccess(lat, lng, acc, check.distanceMeters);
+        },
+        (err) => {
+          const msg = (err && err.code === 1)
+            ? "❌ Bạn đã từ chối quyền truy cập Vị trí (GPS). Không thể chấm công khi chưa có GPS thực tế!"
+            : "❌ Không lấy được tín hiệu GPS thực tế (timeout/yếu). Hệ thống đã khóa chế độ chấm công thay vì tự cho qua.";
+          showToast(msg, "error");
+          updateShiftProximityRadar();
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+      );
+    }
+
+    function executeCheckInSuccess(lat, lng, accuracyMeters, distanceMeters) {
       mobileState.shiftStatus = 'IN_PROGRESS';
       document.getElementById('mobileShiftBadge').textContent = "ĐANG LÀM VIỆC (IN_PROGRESS)";
       document.getElementById('mobileShiftBadge').className = "text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30";
-      
+
       document.getElementById('btnMobileCheckIn').disabled = true;
       document.getElementById('btnMobileCheckIn').className = "w-full py-2.5 px-4 rounded-xl bg-brand-surface text-brand-textSecondary font-bold text-xs cursor-not-allowed border border-brand-border";
       document.getElementById('btnMobilePhotoProof').disabled = false;
 
-      showToast(`📍 Check-in GPS thành công tại [${lat.toFixed(4)}, ${lng.toFixed(4)}]! Sai số 5m, bắt đầu tính giờ làm.`, "success");
+      showToast(`✅ Check-in thực địa thành công! Cách điểm làm ${distanceMeters}m (sai số ±${accuracyMeters}m).`, "success");
     }
 
-    // --- CAMERA MODAL & PROOF WITH LIVE WEBCAM & WATERMARK (DEF-08) ---
+    // --- CAMERA MODAL & PROOF WITH LIVE WEBCAM & WATERMARK (BẮT BUỘC ẢNH THẬT, KHÔNG VẼ CANVAS DEMO) ---
     let proofCameraStream = null;
     let currentCapturedProof = null;
 
     function openCameraModal() {
+      if (mobileState.shiftStatus !== 'IN_PROGRESS') {
+        showToast("⚠️ Bạn cần Check-in GPS hợp lệ trước khi chụp ảnh nghiệm thu!", "error");
+        return;
+      }
       currentCapturedProof = null;
       const preview = document.getElementById('mobileProofPreview');
       const placeholder = document.getElementById('cameraPlaceholder');
@@ -3119,15 +3961,15 @@
         video.classList.remove('hidden');
         placeholder.classList.add('hidden');
         if (preview) preview.classList.add('hidden');
-        
+
         if (watermark) {
           watermark.classList.remove('hidden');
           document.getElementById('watermarkCoordsText').textContent = `📍 ${mobileState.currentCoords.lat.toFixed(4)}, ${mobileState.currentCoords.lng.toFixed(4)}`;
           document.getElementById('watermarkTimeText').textContent = `🕒 ${new Date().toLocaleTimeString('vi-VN')}`;
         }
-        showToast("📷 Live camera sẵn sàng. Nhấn 'Chụp & Nộp Minh Chứng'!", "success");
+        showToast("📷 Live camera sẵn sàng. Nhấn 'Chụp & Nộp Minh Chứng Ngay'!", "success");
       } catch (err) {
-        showToast("⚠️ Không truy cập được webcam. Bạn có thể bấm 'Chọn Từ Ảnh'!", "info");
+        showToast("⚠️ Không truy cập được webcam. Vui lòng bấm 'Chọn Từ Ảnh' để tải ảnh thực tế!", "error");
       }
     }
 
@@ -3140,7 +3982,10 @@
 
     function handleProofFileSelected(event) {
       const file = event.target.files && event.target.files[0];
-      if (!file) return;
+      if (!file || !file.type.startsWith('image/')) {
+        showToast("⚠️ Vui lòng chọn tệp hình ảnh hợp lệ!", "error");
+        return;
+      }
       const reader = new FileReader();
       reader.onload = (e) => {
         applyWatermarkToImage(e.target.result);
@@ -3157,17 +4002,17 @@
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-        // Draw Watermark
-        ctx.fillStyle = 'rgba(8, 13, 26, 0.75)';
+        // Draw Watermark bằng tọa độ GPS thực tế hiện tại
+        ctx.fillStyle = 'rgba(8, 13, 26, 0.78)';
         ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
         ctx.fillStyle = '#10B981';
         ctx.font = 'bold 14px monospace';
-        const stamp = `📍 GPS: ${mobileState.currentCoords.lat.toFixed(4)}, ${mobileState.currentCoords.lng.toFixed(4)} | 🕒 ${new Date().toLocaleString('vi-VN')} | MCE-PROVED ✓`;
+        const jobTag = mobileState.activeJob ? mobileState.activeJob.id : 'MCE';
+        const stamp = `📍 GPS: ${mobileState.currentCoords.lat.toFixed(4)}, ${mobileState.currentCoords.lng.toFixed(4)} | 🕒 ${new Date().toLocaleString('vi-VN')} | ${jobTag} ✓`;
         ctx.fillText(stamp, 15, canvas.height - 15);
 
         currentCapturedProof = canvas.toDataURL('image/jpeg', 0.85);
 
-        // Display preview
         const preview = document.getElementById('mobileProofPreview');
         const placeholder = document.getElementById('cameraPlaceholder');
         const video = document.getElementById('mobileProofVideo');
@@ -3177,12 +4022,17 @@
         preview.classList.remove('hidden');
         stopProofCamera();
 
-        showToast("✅ Đã đóng dấu Watermark tọa độ & thời gian thực!", "success");
+        showToast("✅ Đã đóng dấu Watermark tọa độ GPS & thời gian thực lên ảnh!", "success");
       };
       img.src = imgSrc;
     }
 
     async function takeOrSubmitProof() {
+      if (mobileState.shiftStatus !== 'IN_PROGRESS') {
+        showToast("⚠️ Ca làm chưa ở trạng thái đang làm (IN_PROGRESS).", "error");
+        return;
+      }
+
       const video = document.getElementById('mobileProofVideo');
       if (proofCameraStream && video && !video.classList.contains('hidden')) {
         const canvas = document.getElementById('mobileProofCanvas');
@@ -3191,96 +4041,145 @@
         const ctx = canvas.getContext('2d');
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        // Watermark
-        ctx.fillStyle = 'rgba(8, 13, 26, 0.75)';
+        ctx.fillStyle = 'rgba(8, 13, 26, 0.78)';
         ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
         ctx.fillStyle = '#10B981';
         ctx.font = 'bold 14px monospace';
-        const stamp = `📍 GPS: ${mobileState.currentCoords.lat.toFixed(4)}, ${mobileState.currentCoords.lng.toFixed(4)} | 🕒 ${new Date().toLocaleString('vi-VN')} | MCE-PROVED ✓`;
+        const jobTag = mobileState.activeJob ? mobileState.activeJob.id : 'MCE';
+        const stamp = `📍 GPS: ${mobileState.currentCoords.lat.toFixed(4)}, ${mobileState.currentCoords.lng.toFixed(4)} | 🕒 ${new Date().toLocaleString('vi-VN')} | ${jobTag} ✓`;
         ctx.fillText(stamp, 15, canvas.height - 15);
 
         currentCapturedProof = canvas.toDataURL('image/jpeg', 0.85);
         stopProofCamera();
       }
 
+      // Không cho phép tạo ảnh canvas giả lập khi chưa có ảnh thật
       if (!currentCapturedProof) {
-        const canvas = document.getElementById('mobileProofCanvas');
-        canvas.width = 640;
-        canvas.height = 480;
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#151F32';
-        ctx.fillRect(0, 0, 640, 480);
-        ctx.fillStyle = '#6366F1';
-        ctx.font = 'bold 24px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText("📦 HÀNG HÓA ĐÃ HOÀN TẤT ĐÓNG GÓI", 320, 220);
-        ctx.fillStyle = 'rgba(8, 13, 26, 0.85)';
-        ctx.fillRect(0, 430, 640, 50);
-        ctx.fillStyle = '#10B981';
-        ctx.font = 'bold 14px monospace';
-        ctx.fillText(`📍 21.0285, 105.8544 | 🕒 ${new Date().toLocaleString('vi-VN')} | MCE-EVIDENCE`, 320, 460);
-        currentCapturedProof = canvas.toDataURL('image/jpeg', 0.85);
+        showToast("❌ Bắt buộc phải chụp ảnh từ Live Camera hoặc chọn ảnh thực tế từ máy để nghiệm thu!", "error");
+        return;
       }
 
+      const jobId = mobileState.activeJob ? mobileState.activeJob.id : 'JOB-HANOI-001';
+      let uploadedProofUrl = '';
+
       try {
-        await fetch('/api/upload/proof', {
+        const uploadRes = await fetch('/api/upload/proof', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            jobId: mobileState.activeJob ? mobileState.activeJob.id : 'JOB-001',
+            jobId,
             workerId: mobileState.userProfile.phone,
-            proofData: currentCapturedProof.slice(0, 100) + '...',
+            base64: currentCapturedProof,
             timestamp: new Date().toISOString()
           })
         });
-      } catch (e) {}
+        const uploadData = await uploadRes.json();
+        if (!uploadRes.ok || !uploadData.success || !uploadData.url) {
+          showToast(`❌ Tải ảnh minh chứng lên máy chủ thất bại: ${uploadData.error || 'Lỗi upload'}`, "error");
+          return;
+        }
+        uploadedProofUrl = uploadData.url;
 
-      submitPhotoProof();
+        const checkoutRes = await fetch('/api/escrow/check-out', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jobId, photoUrl: uploadedProofUrl })
+        });
+        const checkoutData = await checkoutRes.json();
+        if (!checkoutRes.ok || !checkoutData.success) {
+          showToast(`❌ Check-out nghiệm thu thất bại: ${checkoutData.error || 'Chưa hợp lệ'}`, "error");
+          return;
+        }
+      } catch (err) {
+        showToast("❌ Không kết nối được máy chủ lưu bằng chứng (/api/upload/proof & /api/escrow/check-out).", "error");
+        return;
+      }
+
+      submitPhotoProof(uploadedProofUrl);
     }
 
-    function submitPhotoProof() {
+    function submitPhotoProof(proofUrl) {
       closeCameraModal();
       mobileState.shiftStatus = 'PENDING_REVIEW';
-      document.getElementById('mobileShiftBadge').textContent = "HOÀN TẤT · GIẢI NGÂN 100%";
-      document.getElementById('mobileShiftBadge').className = "text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30";
-      
-      const payout = mobileState.activeJob ? mobileState.activeJob.pay : 240000;
-      mobileState.walletBalance += payout;
-      document.getElementById('mobileWalletBalance').textContent = mobileState.walletBalance.toLocaleString('vi-VN') + " VNĐ";
+      document.getElementById('mobileShiftBadge').textContent = "ĐÃ NỘP ẢNH · CHỜ CHỦ VIỆC DUYỆT";
+      document.getElementById('mobileShiftBadge').className = "text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-400/40";
 
-      // Append income tx
-      const newIncomeTx = {
-        id: 'TX-' + Date.now().toString().slice(-4),
-        type: 'IN',
-        title: `Thù lao: ${mobileState.activeJob ? mobileState.activeJob.title : 'Đóng gói Shopee'}`,
-        time: 'Hôm nay · ' + new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-        amount: payout,
-        fee: 0,
-        status: 'SUCCESS'
-      };
-      cachedTransactions.unshift(newIncomeTx);
-      renderRecentTransactions();
+      const btnProof = document.getElementById('btnMobilePhotoProof');
+      if (btnProof) btnProof.disabled = true;
+      const btnRelease = document.getElementById('btnPosterReleaseEscrow');
+      if (btnRelease) btnRelease.classList.remove('hidden');
 
-      showToast(`📸 Đã nộp ảnh nghiệm thu! Nhận trọn 100% thù lao: +${payout.toLocaleString()}đ (0% phí sàn)`, "success");
-      
-      // Mở modal Đánh giá & Chấm sao Karma ngay sau khi hoàn thành ca
-      setTimeout(() => openRatingModal(), 800);
+      showToast(`📸 Đã lưu ảnh nghiệm thu (${proofUrl}). Chờ chủ việc xác nhận để giải ngân 100% về ví!`, "success");
     }
 
-    // --- WALLET WITHDRAWAL & TRANSACTION HISTORY (DEF-09 & DEF-10) ---
-    let cachedTransactions = [
-      { id: 'TX-001', type: 'IN', title: 'Hoàn thành ca Trông thú cưng', time: 'Hôm nay · 16:05', amount: 150000, fee: 0, status: 'SUCCESS' },
-      { id: 'TX-002', type: 'IN', title: 'Hoàn thành ca Đóng gói Shopee', time: 'Hôm qua · 17:00', amount: 240000, fee: 0, status: 'SUCCESS' },
-      { id: 'TX-003', type: 'OUT', title: 'Rút tiền về MBBank *1234', time: '22/11 · 09:15', amount: 300000, fee: 0, status: 'SUCCESS' }
-    ];
+    async function releaseActiveShiftEscrow() {
+      if (mobileState.shiftStatus !== 'PENDING_REVIEW' || !mobileState.activeJob) {
+        showToast("⚠️ Ca việc chưa hoàn tất bước nộp ảnh nghiệm thu.", "error");
+        return;
+      }
+
+      const job = mobileState.activeJob;
+      try {
+        const res = await fetch('/api/escrow/release', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            jobId: job.id,
+            workerPhone: mobileState.userProfile.phone,
+            amount: job.pay
+          })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          showToast(`❌ Giải ngân thất bại: ${data.error || 'Chưa đủ điều kiện giải ngân'}`, "error");
+          return;
+        }
+
+        mobileState.shiftStatus = 'COMPLETED';
+        if (typeof data.workerBalance === 'number') {
+          mobileState.walletBalance = data.workerBalance;
+        } else {
+          mobileState.walletBalance += job.pay;
+        }
+        mobileState.userProfile.walletBalance = mobileState.walletBalance;
+        localStorage.setItem('mce_current_user', JSON.stringify(mobileState.userProfile));
+
+        document.getElementById('mobileWalletBalance').textContent = mobileState.walletBalance.toLocaleString('vi-VN') + " VNĐ";
+        document.getElementById('mobileShiftBadge').textContent = "HOÀN TẤT · ĐÃ GIẢI NGÂN 100%";
+        document.getElementById('mobileShiftBadge').className = "text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30";
+
+        const btnRelease = document.getElementById('btnPosterReleaseEscrow');
+        if (btnRelease) btnRelease.classList.add('hidden');
+
+        loadWalletTransactions();
+        showToast(`✅ Đã xác nhận nghiệm thu & giải ngân +${job.pay.toLocaleString('vi-VN')}đ về ví!`, "success");
+        setTimeout(() => openRatingModal(), 700);
+      } catch (err) {
+        showToast("❌ Không kết nối được máy chủ giải ngân (/api/escrow/release).", "error");
+      }
+    }
+
+    // --- WALLET WITHDRAWAL & TRANSACTION HISTORY (ĐỒNG BỘ SERVER, YÊU CẦU eKYC) ---
+    let cachedTransactions = [];
 
     async function loadWalletTransactions() {
+      const balEl = document.getElementById('mobileWalletBalance');
+      if (balEl) balEl.textContent = (mobileState.walletBalance || 0).toLocaleString('vi-VN') + " VNĐ";
+
       try {
-        const res = await fetch('/api/wallet/transactions?userPhone=' + mobileState.userProfile.phone);
+        const res = await fetch('/api/wallet/transactions?userPhone=' + encodeURIComponent(mobileState.userProfile.phone || ''));
         if (res.ok) {
           const data = await res.json();
-          if (data && data.transactions && data.transactions.length > 0) {
-            cachedTransactions = data.transactions;
+          if (data && Array.isArray(data.transactions)) {
+            cachedTransactions = data.transactions.map(tx => ({
+              id: tx.id,
+              type: (tx.type === 'PAYOUT' || tx.type === 'IN' || Number(tx.amount) > 0) ? 'IN' : 'OUT',
+              title: tx.title,
+              time: tx.time || tx.timestamp || '',
+              amount: Math.abs(Number(tx.amount) || 0),
+              fee: Number(tx.fee || 0),
+              status: tx.status || 'SUCCESS'
+            }));
           }
         }
       } catch (e) {}
@@ -3291,6 +4190,10 @@
       const container = document.getElementById('mobileRecentTxList');
       if (!container) return;
       container.innerHTML = '';
+      if (cachedTransactions.length === 0) {
+        container.innerHTML = `<div class="py-4 text-center text-[11px] text-brand-textSecondary">Chưa có giao dịch nào.</div>`;
+        return;
+      }
       const recent = cachedTransactions.slice(0, 3);
       recent.forEach(tx => {
         const isIncome = tx.type === 'IN';
@@ -3308,7 +4211,7 @@
           </div>
           <div class="text-right">
             <span class="font-extrabold ${isIncome ? 'text-emerald-400' : 'text-rose-400'} block text-xs">
-              ${isIncome ? '+' : '-'}${tx.amount.toLocaleString()}đ
+              ${isIncome ? '+' : '-'}${tx.amount.toLocaleString('vi-VN')}đ
             </span>
             <span class="text-[9px] text-brand-textSecondary">Phí: 0đ</span>
           </div>
@@ -3318,11 +4221,21 @@
     }
 
     function openWithdrawModal() {
+      if (!mobileState.userProfile.isLoggedIn || !mobileState.userProfile.phone) {
+        showToast("🔐 Vui lòng đăng nhập tài khoản trước khi rút tiền!", "error");
+        openAuthModal('LOGIN');
+        return;
+      }
+      if (mobileState.userProfile.verified !== true) {
+        showToast("🪪 Bạn cần hoàn tất xác thực eKYC CCCD trước khi thực hiện rút tiền về ngân hàng!", "error");
+        openEkycModal();
+        return;
+      }
       document.getElementById('withdrawModalAvailableBalance').textContent = mobileState.walletBalance.toLocaleString('vi-VN') + " VNĐ";
       document.getElementById('inputWithdrawAmount').value = '';
       document.getElementById('selectWithdrawBank').value = mobileState.userProfile.bank || 'MBBank';
       document.getElementById('inputWithdrawAccount').value = mobileState.userProfile.account || mobileState.userProfile.phone;
-      document.getElementById('inputWithdrawOwner').value = (mobileState.userProfile.name || 'NGUYEN VAN AN').toUpperCase();
+      document.getElementById('inputWithdrawOwner').value = (mobileState.userProfile.name || '').toUpperCase();
       document.getElementById('withdrawModal').classList.remove('hidden');
     }
 
@@ -3339,6 +4252,10 @@
     }
 
     async function submitMobileWithdraw() {
+      if (mobileState.userProfile.verified !== true) {
+        showToast("❌ Tài khoản chưa xác thực eKYC CCCD!", "error");
+        return;
+      }
       const amount = parseInt(document.getElementById('inputWithdrawAmount').value);
       const bank = document.getElementById('selectWithdrawBank').value;
       const account = document.getElementById('inputWithdrawAccount').value.trim();
@@ -3362,7 +4279,7 @@
       btn.textContent = "⏳ Đang kết nối Napas 24/7...";
 
       try {
-        await fetch('/api/wallet/withdraw', {
+        const res = await fetch('/api/wallet/withdraw', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -3373,28 +4290,32 @@
             owner: owner
           })
         });
-      } catch (e) {}
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          btn.disabled = false;
+          btn.textContent = "⚡ Xác Nhận Rút Tiền (0đ phí)";
+          showToast(`❌ ${data.error || 'Lệnh rút tiền bị từ chối.'}`, "error");
+          return;
+        }
+        mobileState.walletBalance = typeof data.newBalance === 'number' ? data.newBalance : (mobileState.walletBalance - amount);
+      } catch (e) {
+        btn.disabled = false;
+        btn.textContent = "⚡ Xác Nhận Rút Tiền (0đ phí)";
+        showToast("❌ Không kết nối được máy chủ rút tiền (/api/wallet/withdraw).", "error");
+        return;
+      }
 
-      mobileState.walletBalance -= amount;
+      mobileState.userProfile.walletBalance = mobileState.walletBalance;
+      localStorage.setItem('mce_current_user', JSON.stringify(mobileState.userProfile));
       document.getElementById('mobileWalletBalance').textContent = mobileState.walletBalance.toLocaleString('vi-VN') + " VNĐ";
 
-      const newTx = {
-        id: 'TX-' + Date.now().toString().slice(-4),
-        type: 'OUT',
-        title: `Rút tiền về ${bank} *${account.slice(-4)}`,
-        time: 'Vừa xong · ' + new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-        amount: amount,
-        fee: 0,
-        status: 'SUCCESS'
-      };
-      cachedTransactions.unshift(newTx);
-      renderRecentTransactions();
+      await loadWalletTransactions();
 
       btn.disabled = false;
       btn.textContent = "⚡ Xác Nhận Rút Tiền (0đ phí)";
       closeWithdrawModal();
 
-      showToast(`💸 Rút thành công ${amount.toLocaleString()} VNĐ về ${bank}! (Phí giao dịch: 0 VNĐ)`, "success");
+      showToast(`💸 Rút thành công ${amount.toLocaleString('vi-VN')} VNĐ về ${bank}! (Phí giao dịch: 0 VNĐ)`, "success");
     }
 
     function openWalletHistoryModal() {
