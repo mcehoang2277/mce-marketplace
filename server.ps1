@@ -13,7 +13,10 @@ function Get-Db {
     if (Test-Path $dbPath) {
         try {
             $raw = [System.IO.File]::ReadAllText($dbPath, [System.Text.Encoding]::UTF8)
-            return $raw | ConvertFrom-Json
+            $parsed = $raw | ConvertFrom-Json
+            if (-not $parsed.PSObject.Properties["platformBanks"]) { $parsed | Add-Member -NotePropertyName "platformBanks" -NotePropertyValue @() -Force }
+            if (-not $parsed.PSObject.Properties["disputes"]) { $parsed | Add-Member -NotePropertyName "disputes" -NotePropertyValue @() -Force }
+            return $parsed
         } catch {
             Write-Host "Warning: Corrupt DB, re-initializing"
         }
@@ -24,6 +27,8 @@ function Get-Db {
         escrows = @()
         transactions = @()
         messages = @()
+        platformBanks = @()
+        disputes = @()
         otps = @{}
     }
     $json = $initialDb | ConvertTo-Json -Depth 6
@@ -151,6 +156,94 @@ function Test-OtpCode($phone, $code, [switch]$Consume) {
     return @{ valid = $true }
 }
 
+$script:VietnamBanks = @(
+    @{ code = "VCB"; bin = "970436"; shortName = "Vietcombank"; fullName = "Ngân hàng TMCP Ngoại thương Việt Nam"; swiftCode = "BFTVVNVX"; aliases = @("vcb","ngoai thuong","vietcombank"); napasSupported = $true },
+    @{ code = "TCB"; bin = "970407"; shortName = "Techcombank"; fullName = "Ngân hàng TMCP Kỹ thương Việt Nam"; swiftCode = "VTCBVNVX"; aliases = @("tcb","ky thuong","techcombank"); napasSupported = $true },
+    @{ code = "MB"; bin = "970422"; shortName = "MBBank"; fullName = "Ngân hàng TMCP Quân đội"; swiftCode = "MSCBVNVX"; aliases = @("mb","mbbank","quan doi"); napasSupported = $true },
+    @{ code = "BIDV"; bin = "970418"; shortName = "BIDV"; fullName = "Ngân hàng TMCP Đầu tư và Phát triển Việt Nam"; swiftCode = "BIDVVNVX"; aliases = @("bidv","dau tu va phat trien"); napasSupported = $true },
+    @{ code = "ICB"; bin = "970415"; shortName = "VietinBank"; fullName = "Ngân hàng TMCP Công thương Việt Nam"; swiftCode = "ICBVVNVX"; aliases = @("ctg","icb","cong thuong","vietinbank"); napasSupported = $true },
+    @{ code = "ACB"; bin = "970416"; shortName = "ACB"; fullName = "Ngân hàng TMCP Á Châu"; swiftCode = "ASCBVNVX"; aliases = @("acb","a chau"); napasSupported = $true },
+    @{ code = "VPB"; bin = "970432"; shortName = "VPBank"; fullName = "Ngân hàng TMCP Việt Nam Thịnh Vượng"; swiftCode = "VPBKVNVX"; aliases = @("vpb","vpbank","thinh vuong"); napasSupported = $true },
+    @{ code = "TPB"; bin = "970423"; shortName = "TPBank"; fullName = "Ngân hàng TMCP Tiên Phong"; swiftCode = "TPBVVNVX"; aliases = @("tpb","tpbank","tien phong"); napasSupported = $true },
+    @{ code = "STB"; bin = "970403"; shortName = "Sacombank"; fullName = "Ngân hàng TMCP Sài Gòn Thương Tín"; swiftCode = "SGTTVNVX"; aliases = @("stb","sacombank","sai gon thuong tin"); napasSupported = $true },
+    @{ code = "HDB"; bin = "970437"; shortName = "HDBank"; fullName = "Ngân hàng TMCP Phát triển TP. Hồ Chí Minh"; swiftCode = "HDBCVNVX"; aliases = @("hdb","hdbank"); napasSupported = $true },
+    @{ code = "VIB"; bin = "970441"; shortName = "VIB"; fullName = "Ngân hàng TMCP Quốc tế Việt Nam"; swiftCode = "VNIBVNVX"; aliases = @("vib","quoc te"); napasSupported = $true },
+    @{ code = "MSB"; bin = "970426"; shortName = "MSB"; fullName = "Ngân hàng TMCP Hàng Hải Việt Nam"; swiftCode = "MCOBVNVX"; aliases = @("msb","hang hai","maritime"); napasSupported = $true },
+    @{ code = "SHB"; bin = "970443"; shortName = "SHB"; fullName = "Ngân hàng TMCP Sài Gòn - Hà Nội"; swiftCode = "SHBAVNVX"; aliases = @("shb","sai gon ha noi"); napasSupported = $true },
+    @{ code = "OCB"; bin = "970448"; shortName = "OCB"; fullName = "Ngân hàng TMCP Phương Đông"; swiftCode = "ORCOVNVX"; aliases = @("ocb","phuong dong"); napasSupported = $true },
+    @{ code = "SEAB"; bin = "970440"; shortName = "SeABank"; fullName = "Ngân hàng TMCP Đông Nam Á"; swiftCode = "SEAVVNVX"; aliases = @("seab","seabank","dong nam a"); napasSupported = $true },
+    @{ code = "EIB"; bin = "970431"; shortName = "Eximbank"; fullName = "Ngân hàng TMCP Xuất Nhập Khẩu Việt Nam"; swiftCode = "EBVIVNVX"; aliases = @("eib","eximbank"); napasSupported = $true },
+    @{ code = "LPB"; bin = "970449"; shortName = "LPBank"; fullName = "Ngân hàng TMCP Lộc Phát Việt Nam"; swiftCode = "LVBKVNVX"; aliases = @("lpb","lpbank","lien viet","loc phat"); napasSupported = $true },
+    @{ code = "VBA"; bin = "970405"; shortName = "Agribank"; fullName = "Ngân hàng Nông nghiệp và Phát triển Nông thôn Việt Nam"; swiftCode = "VBAAVNVX"; aliases = @("vba","agribank","nong nghiep"); napasSupported = $true },
+    @{ code = "NAB"; bin = "970428"; shortName = "Nam A Bank"; fullName = "Ngân hàng TMCP Nam Á"; swiftCode = "NAMAVNVX"; aliases = @("nab","nam a"); napasSupported = $true },
+    @{ code = "ABB"; bin = "970425"; shortName = "ABBANK"; fullName = "Ngân hàng TMCP An Bình"; swiftCode = "ABBKVNVX"; aliases = @("abb","abbank","an binh"); napasSupported = $true },
+    @{ code = "BAB"; bin = "970409"; shortName = "Bac A Bank"; fullName = "Ngân hàng TMCP Bắc Á"; swiftCode = "NASCVNVX"; aliases = @("bab","bac a"); napasSupported = $true },
+    @{ code = "BVB"; bin = "970454"; shortName = "BVBank"; fullName = "Ngân hàng TMCP Bản Việt"; swiftCode = "VCBCVNVX"; aliases = @("bvb","bvbank","ban viet","vietcapital"); napasSupported = $true },
+    @{ code = "CAKE"; bin = "546034"; shortName = "CAKE by VPBank"; fullName = "Ngân hàng số CAKE by VPBank"; swiftCode = "VPBKVNVX"; aliases = @("cake"); napasSupported = $true },
+    @{ code = "UBANK"; bin = "546035"; shortName = "Ubank by VPBank"; fullName = "Ngân hàng số Ubank by VPBank"; swiftCode = "VPBKVNVX"; aliases = @("ubank"); napasSupported = $true },
+    @{ code = "TIMO"; bin = "963388"; shortName = "Timo"; fullName = "Ngân hàng số Timo by Bản Việt"; swiftCode = "VCBCVNVX"; aliases = @("timo"); napasSupported = $true },
+    @{ code = "PVCB"; bin = "970412"; shortName = "PVcomBank"; fullName = "Ngân hàng TMCP Đại Chúng Việt Nam"; swiftCode = "WBVNVNVX"; aliases = @("pvcb","pvcombank"); napasSupported = $true },
+    @{ code = "SHBVN"; bin = "970424"; shortName = "Shinhan Bank"; fullName = "Ngân hàng TNHH MTV Shinhan Việt Nam"; swiftCode = "SHBKVNVX"; aliases = @("shbvn","shinhan"); napasSupported = $true },
+    @{ code = "WVN"; bin = "970457"; shortName = "Woori Bank"; fullName = "Ngân hàng TNHH MTV Woori Việt Nam"; swiftCode = "HVBKVNVX"; aliases = @("wvn","woori"); napasSupported = $true },
+    @{ code = "HSBC"; bin = "458761"; shortName = "HSBC"; fullName = "Ngân hàng TNHH MTV HSBC Việt Nam"; swiftCode = "HSBCVNVX"; aliases = @("hsbc"); napasSupported = $true },
+    @{ code = "SCVN"; bin = "970410"; shortName = "Standard Chartered"; fullName = "Ngân hàng TNHH MTV Standard Chartered Việt Nam"; swiftCode = "SCBLVNVX"; aliases = @("scvn","standard chartered"); napasSupported = $true },
+    @{ code = "KLB"; bin = "970452"; shortName = "KienlongBank"; fullName = "Ngân hàng TMCP Kiên Long"; swiftCode = "KLBKVNVX"; aliases = @("klb","kienlongbank","kien long"); napasSupported = $true },
+    @{ code = "SGB"; bin = "970400"; shortName = "SAIGONBANK"; fullName = "Ngân hàng TMCP Sài Gòn Công Thương"; swiftCode = "SBITVNVX"; aliases = @("sgb","saigonbank"); napasSupported = $true },
+    @{ code = "BVBANK"; bin = "970438"; shortName = "BaoViet Bank"; fullName = "Ngân hàng TMCP Bảo Việt"; swiftCode = "BVBVVNVX"; aliases = @("baoviet","bao viet"); napasSupported = $true },
+    @{ code = "VAB"; bin = "970427"; shortName = "VietABank"; fullName = "Ngân hàng TMCP Việt Á"; swiftCode = "VNACVNVX"; aliases = @("vab","vietabank","viet a"); napasSupported = $true },
+    @{ code = "NCB"; bin = "970419"; shortName = "NCB"; fullName = "Ngân hàng TMCP Quốc Dân"; swiftCode = "NVBAVNVX"; aliases = @("ncb","quoc dan"); napasSupported = $true },
+    @{ code = "PGB"; bin = "970430"; shortName = "PGBank"; fullName = "Ngân hàng TMCP Thịnh Vượng và Phát triển"; swiftCode = "PGBLVNVX"; aliases = @("pgb","pgbank"); napasSupported = $true },
+    @{ code = "VIETBANK"; bin = "970433"; shortName = "VietBank"; fullName = "Ngân hàng TMCP Việt Nam Thương Tín"; swiftCode = "VNTTVNVX"; aliases = @("vietbank"); napasSupported = $true },
+    @{ code = "COOPBANK"; bin = "970446"; shortName = "CO-OPBANK"; fullName = "Ngân hàng Hợp tác xã Việt Nam"; swiftCode = "COOPVNVX"; aliases = @("coopbank","hop tac xa"); napasSupported = $true },
+    @{ code = "UOB"; bin = "970458"; shortName = "UOB"; fullName = "Ngân hàng TNHH MTV UOB Việt Nam"; swiftCode = "UOVBVNVX"; aliases = @("uob"); napasSupported = $true }
+)
+
+function Remove-VnDiacritics([string]$s) {
+    if (-not $s) { return "" }
+    $norm = $s.Normalize([System.Text.NormalizationForm]::FormD)
+    $sb = New-Object System.Text.StringBuilder
+    foreach ($ch in $norm.ToCharArray()) {
+        if ([System.Globalization.CharUnicodeInfo]::GetUnicodeCategory($ch) -ne [System.Globalization.UnicodeCategory]::NonSpacingMark) {
+            [void]$sb.Append($ch)
+        }
+    }
+    return ($sb.ToString() -replace 'đ','d' -replace 'Đ','D').Trim().ToLowerInvariant()
+}
+
+function Search-VietnamBanks([string]$q) {
+    $nq = Remove-VnDiacritics $q
+    if (-not $nq) { return $script:VietnamBanks }
+    return @($script:VietnamBanks | Where-Object {
+        $fields = @($_.code, $_.bin, $_.shortName, $_.fullName) + $_.aliases
+        foreach ($f in $fields) {
+            if ((Remove-VnDiacritics $f).Contains($nq)) { return $true }
+        }
+        return $false
+    })
+}
+
+function Find-VietnamBank([string]$inputVal) {
+    $nq = Remove-VnDiacritics $inputVal
+    if (-not $nq) { return $null }
+    foreach ($b in $script:VietnamBanks) {
+        if ((Remove-VnDiacritics $b.code) -eq $nq -or (Remove-VnDiacritics $b.bin) -eq $nq -or (Remove-VnDiacritics $b.shortName) -eq $nq -or (Remove-VnDiacritics $b.fullName) -eq $nq) {
+            return $b
+        }
+        foreach ($al in $b.aliases) {
+            if ((Remove-VnDiacritics $al) -eq $nq) { return $b }
+        }
+    }
+    return $null
+}
+
+function Get-AdminSession($request) {
+    $header = $request.Headers["Authorization"]
+    $sessionToken = if ($header -match "^Bearer\s+(.+)$") { $Matches[1] } else { "" }
+    $session = if ($sessionToken) { $script:AdminSessions[$sessionToken] } else { $null }
+    if (-not $session -or $session.expiresAt -lt (Get-Date)) { return $null }
+    return $session
+}
+
 while ($listener.IsListening) {
     try {
         $context = $listener.GetContext()
@@ -162,7 +255,7 @@ while ($listener.IsListening) {
         # CORS preflight
         if ($httpMethod -eq "OPTIONS") {
             $response.AddHeader("Access-Control-Allow-Origin", "*")
-            $response.AddHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
+            $response.AddHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, PATCH, DELETE")
             $response.AddHeader("Access-Control-Allow-Headers", "Content-Type, Authorization")
             $response.StatusCode = 204
             $response.OutputStream.Close()
@@ -207,6 +300,13 @@ while ($listener.IsListening) {
                 geofenceRadiusMeters = 150
                 maxGpsAccuracyMeters = 50
             }
+            continue
+        }
+
+        if ($urlPath -eq "/api/banks" -and $httpMethod -eq "GET") {
+            $q = $request.QueryString["q"]
+            $list = @(Search-VietnamBanks $q)
+            Send-Json $response @{ success = $true; total = $list.Count; banks = $list }
             continue
         }
 
@@ -373,10 +473,7 @@ while ($listener.IsListening) {
             continue
         }
         if ($urlPath -eq "/api/admin/users" -and $httpMethod -eq "GET") {
-            $header = $request.Headers["Authorization"]
-            $sessionToken = if ($header -match "^Bearer\s+(.+)$") { $Matches[1] } else { "" }
-            $session = if ($sessionToken) { $script:AdminSessions[$sessionToken] } else { $null }
-            if (-not $session -or $session.expiresAt -lt (Get-Date)) { Send-Json $response @{ success = $false; message = "Không có quyền ADMIN." } 401; continue }
+            if (-not (Get-AdminSession $request)) { Send-Json $response @{ success = $false; message = "Không có quyền ADMIN." } 401; continue }
             $db = Get-Db
             $q = $request.QueryString["q"]
             $allUsers = @($db.users | Where-Object { -not $q -or $_.name -like "*$q*" -or $_.phone -like "*$q*" })
@@ -384,8 +481,200 @@ while ($listener.IsListening) {
             [void][int]::TryParse($request.QueryString["page"], [ref]$page)
             [void][int]::TryParse($request.QueryString["limit"], [ref]$limit)
             if ($page -lt 1) { $page = 1 }; if ($limit -lt 1 -or $limit -gt 100) { $limit = 20 }
-            $mapped = @($allUsers | Select-Object -Skip (($page - 1) * $limit) -First $limit | ForEach-Object { @{ id = $_.id; fullName = $_.name; phone = $_.phone; role = $_.role; karmaScore = $_.karmaScore; isKycVerified = [bool]$_.isVerified; isPhoneVerified = [bool]$_.isVerified; createdAt = $_.createdAt; wallet = @{ availableBalance = $_.walletBalance; lockedBalance = 0 } } })
+            $mapped = @($allUsers | Select-Object -Skip (($page - 1) * $limit) -First $limit | ForEach-Object { @{ id = $_.id; fullName = $_.name; phone = $_.phone; role = $_.role; karmaScore = $_.karmaScore; isKycVerified = [bool]$_.isVerified; isPhoneVerified = [bool]$_.isVerified; bankName = $_.bank; bankAccountNumber = $_.account; bankAccountOwner = $_.bankAccountOwner; createdAt = $_.createdAt; wallet = @{ availableBalance = $_.walletBalance; lockedBalance = 0 } } })
             Send-Json $response @{ success = $true; pagination = @{ page = $page; limit = $limit; total = $allUsers.Count; totalPages = [Math]::Max(1, [Math]::Ceiling($allUsers.Count / $limit)) }; users = $mapped }
+            continue
+        }
+
+        if ($urlPath -match "^/api/admin/users/([^/]+)/bank$" -and $httpMethod -eq "PATCH") {
+            if (-not (Get-AdminSession $request)) { Send-Json $response @{ success = $false; message = "Không có quyền ADMIN." } 401; continue }
+            $targetId = $Matches[1]
+            $body = Read-RequestBody $request
+            $db = Get-Db
+            $u = $db.users | Where-Object { $_.id -eq $targetId } | Select-Object -First 1
+            if (-not $u) { Send-Json $response @{ success = $false; message = "Không tìm thấy người dùng." } 404; continue }
+            if ($body.clear -eq $true) {
+                $u | Add-Member -NotePropertyName "bank" -NotePropertyValue $null -Force
+                $u | Add-Member -NotePropertyName "account" -NotePropertyValue $null -Force
+                $u | Add-Member -NotePropertyName "bankAccountOwner" -NotePropertyValue $null -Force
+                Save-Db $db
+                Send-Json $response @{ success = $true; message = "Đã xóa liên kết ngân hàng của tài khoản." }
+                continue
+            }
+            $bankMeta = Find-VietnamBank $body.bank
+            if (-not $bankMeta) { Send-Json $response @{ success = $false; message = "Ngân hàng không thuộc danh mục NAPAS 24/7." } 400; continue }
+            $acc = if ($body.accountNumber) { $body.accountNumber.ToString().Trim().ToUpper() } else { "" }
+            if ($acc -notmatch "^[A-Z0-9]{6,20}$") { Send-Json $response @{ success = $false; message = "Số tài khoản phải gồm 6–20 ký tự chữ/số." } 400; continue }
+            $owner = if ($body.accountOwner) { $body.accountOwner.ToString().Trim().ToUpper() } else { $u.name.ToString().ToUpper() }
+            $u | Add-Member -NotePropertyName "bank" -NotePropertyValue $bankMeta.shortName -Force
+            $u | Add-Member -NotePropertyName "account" -NotePropertyValue $acc -Force
+            $u | Add-Member -NotePropertyName "bankAccountOwner" -NotePropertyValue $owner -Force
+            Save-Db $db
+            Send-Json $response @{ success = $true; message = "Đã cập nhật ngân hàng $($bankMeta.shortName) cho tài khoản." }
+            continue
+        }
+
+        if ($urlPath -match "^/api/admin/users/([^/]+)$" -and $httpMethod -eq "PATCH") {
+            if (-not (Get-AdminSession $request)) { Send-Json $response @{ success = $false; message = "Không có quyền ADMIN." } 401; continue }
+            $targetId = $Matches[1]
+            $body = Read-RequestBody $request
+            $db = Get-Db
+            $u = $db.users | Where-Object { $_.id -eq $targetId } | Select-Object -First 1
+            if (-not $u) { Send-Json $response @{ success = $false; message = "Không tìm thấy người dùng." } 404; continue }
+            if ($body.role) { $u | Add-Member -NotePropertyName "role" -NotePropertyValue $body.role -Force }
+            if ($null -ne $body.isKycVerified) { $u | Add-Member -NotePropertyName "isVerified" -NotePropertyValue ([bool]$body.isKycVerified) -Force }
+            Save-Db $db
+            Send-Json $response @{ success = $true; user = $u }
+            continue
+        }
+
+        if ($urlPath -eq "/api/admin/jobs" -and $httpMethod -eq "GET") {
+            if (-not (Get-AdminSession $request)) { Send-Json $response @{ success = $false; message = "Không có quyền ADMIN." } 401; continue }
+            $db = Get-Db
+            $statusFilter = $request.QueryString["status"]
+            $jobs = @($db.jobs | Where-Object { -not $statusFilter -or $_.status -eq $statusFilter })
+            Send-Json $response @{ success = $true; jobs = $jobs }
+            continue
+        }
+
+        if ($urlPath -match "^/api/admin/jobs/([^/]+)/status$" -and $httpMethod -eq "PATCH") {
+            if (-not (Get-AdminSession $request)) { Send-Json $response @{ success = $false; message = "Không có quyền ADMIN." } 401; continue }
+            $jobId = $Matches[1]
+            $body = Read-RequestBody $request
+            $db = Get-Db
+            $j = $db.jobs | Where-Object { $_.id -eq $jobId } | Select-Object -First 1
+            if (-not $j) { Send-Json $response @{ success = $false; message = "Không tìm thấy ca việc." } 404; continue }
+            $j | Add-Member -NotePropertyName "status" -NotePropertyValue $body.status -Force
+            Save-Db $db
+            Send-Json $response @{ success = $true; job = $j }
+            continue
+        }
+
+        if ($urlPath -eq "/api/admin/disputes" -and $httpMethod -eq "GET") {
+            if (-not (Get-AdminSession $request)) { Send-Json $response @{ success = $false; message = "Không có quyền ADMIN." } 401; continue }
+            $db = Get-Db
+            Send-Json $response @{ success = $true; disputes = @($db.disputes) }
+            continue
+        }
+
+        if ($urlPath -eq "/api/admin/payments" -and $httpMethod -eq "GET") {
+            if (-not (Get-AdminSession $request)) { Send-Json $response @{ success = $false; message = "Không có quyền ADMIN." } 401; continue }
+            $db = Get-Db
+            Send-Json $response @{ success = $true; payments = @($db.transactions) }
+            continue
+        }
+
+        if ($urlPath -eq "/api/admin/banks" -and $httpMethod -eq "GET") {
+            if (-not (Get-AdminSession $request)) { Send-Json $response @{ success = $false; message = "Không có quyền ADMIN." } 401; continue }
+            $db = Get-Db
+            $banks = @($db.platformBanks | ForEach-Object {
+                $qr = "https://img.vietqr.io/image/$($_.bankCode)-$($_.accountNumber)-compact2.png?amount=10000&addInfo=MCE_TEST&accountName=$([Uri]::EscapeDataString($_.accountOwner))"
+                @{
+                    id = $_.id; bankCode = $_.bankCode; bankBin = $_.bankBin; bankName = $_.bankName
+                    accountNumber = $_.accountNumber; accountOwner = $_.accountOwner; branch = $_.branch
+                    provider = $_.provider; isDefault = [bool]$_.isDefault; isActive = ($_.isActive -ne $false)
+                    qrPreviewUrl = $qr; createdAt = $_.createdAt
+                }
+            })
+            $sepayConfigured = [bool]([Environment]::GetEnvironmentVariable("SEPAY_WEBHOOK_SECRET"))
+            Send-Json $response @{
+                success = $true
+                banks = $banks
+                integration = @{ webhookEndpoint = "/api/webhook/payment"; sepayHmacConfigured = $sepayConfigured }
+                enterpriseChecklist = @(
+                    @{ key = "VIETQR_NAPAS"; title = "VietQR động chuẩn NAPAS 24/7"; ready = (@($banks | Where-Object { $_.isActive }).Count -gt 0); detail = "Mỗi ca việc sinh mã tham chiếu MCE duy nhất tránh nhầm giao dịch." },
+                    @{ key = "BANK_WEBHOOK_HMAC"; title = "Webhook nhận biến động số dư (SePay / PayOS / Casso)"; ready = $sepayConfigured; detail = "Xác thực chữ ký HMAC-SHA256 + timestamp trên rawBody để tự động khóa Escrow." },
+                    @{ key = "LEDGER_SUSPENSE"; title = "Sổ cái kép & Tài khoản treo (SUSPENSE)"; ready = $true; detail = "Tiền chuyển nhầm nội dung/thiếu tiền được giữ vào SUSPENSE để đối soát." },
+                    @{ key = "BANK_NAME_MATCH"; title = "Đối khớp tên chủ TK ngân hàng ↔ Họ tên eKYC CCCD"; ready = $false; detail = "Tra cứu tên chủ TK qua API VietQR/Napas trước khi cho rút tiền." },
+                    @{ key = "AUTO_DISBURSEMENT"; title = "Chi hộ tự động 24/7 (Payout API)"; ready = $false; detail = "Kết nối API chuyển tiền nhanh ngân hàng với hạn mức & 2FA duyệt chi." },
+                    @{ key = "DAILY_RECON"; title = "Đối soát sao kê cuối ngày (Reconciliation)"; ready = $true; detail = "Đối chiếu tổng tiền ngân hàng thực nhận với tổng số dư ví & ký quỹ." }
+                )
+            }
+            continue
+        }
+
+        if ($urlPath -eq "/api/admin/banks" -and $httpMethod -eq "POST") {
+            if (-not (Get-AdminSession $request)) { Send-Json $response @{ success = $false; message = "Không có quyền ADMIN." } 401; continue }
+            $body = Read-RequestBody $request
+            $bankMeta = Find-VietnamBank $body.bank
+            if (-not $bankMeta) { Send-Json $response @{ success = $false; message = "Vui lòng chọn ngân hàng thuộc danh mục NAPAS 24/7." } 400; continue }
+            $acc = if ($body.accountNumber) { $body.accountNumber.ToString().Trim().ToUpper() } else { "" }
+            $owner = if ($body.accountOwner) { $body.accountOwner.ToString().Trim().ToUpper() } else { "" }
+            if ($acc -notmatch "^[A-Z0-9]{6,20}$" -or $owner.Length -lt 2) {
+                Send-Json $response @{ success = $false; message = "Số tài khoản (6–20 ký tự) hoặc tên chủ TK không hợp lệ." } 400; continue
+            }
+            $db = Get-Db
+            $dup = $db.platformBanks | Where-Object { $_.bankCode -eq $bankMeta.code -and $_.accountNumber -eq $acc } | Select-Object -First 1
+            if ($dup) { Send-Json $response @{ success = $false; message = "Số tài khoản ngân hàng này đã tồn tại." } 409; continue }
+            $makeDefault = ([bool]$body.isDefault) -or (@($db.platformBanks).Count -eq 0)
+            if ($makeDefault) {
+                foreach ($b in $db.platformBanks) { $b.isDefault = $false }
+            }
+            $newBank = @{
+                id = "pbank-" + [System.DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+                bankCode = $bankMeta.code
+                bankBin = $bankMeta.bin
+                bankName = $bankMeta.shortName
+                accountNumber = $acc
+                accountOwner = $owner
+                branch = if ($body.branch) { $body.branch.ToString().Trim() } else { $null }
+                provider = if ($body.provider) { $body.provider.ToString().Trim() } else { "SEPAY" }
+                isDefault = $makeDefault
+                isActive = if ($null -ne $body.isActive) { [bool]$body.isActive } else { $true }
+                createdAt = (Get-Date).ToString("o")
+            }
+            $bList = [System.Collections.ArrayList]@($db.platformBanks)
+            $bList.Add($newBank) | Out-Null
+            $db.platformBanks = $bList
+            Save-Db $db
+            Send-Json $response @{ success = $true; bank = $newBank } 201
+            continue
+        }
+
+        if ($urlPath -match "^/api/admin/banks/([^/]+)$" -and $httpMethod -eq "PATCH") {
+            if (-not (Get-AdminSession $request)) { Send-Json $response @{ success = $false; message = "Không có quyền ADMIN." } 401; continue }
+            $bankId = $Matches[1]
+            $body = Read-RequestBody $request
+            $db = Get-Db
+            $target = $db.platformBanks | Where-Object { $_.id -eq $bankId } | Select-Object -First 1
+            if (-not $target) { Send-Json $response @{ success = $false; message = "Không tìm thấy tài khoản ngân hàng." } 404; continue }
+            if ($body.bank) {
+                $bankMeta = Find-VietnamBank $body.bank
+                if (-not $bankMeta) { Send-Json $response @{ success = $false; message = "Ngân hàng không thuộc danh mục NAPAS 24/7." } 400; continue }
+                $target.bankCode = $bankMeta.code; $target.bankBin = $bankMeta.bin; $target.bankName = $bankMeta.shortName
+            }
+            if ($body.accountNumber) {
+                $acc = $body.accountNumber.ToString().Trim().ToUpper()
+                if ($acc -notmatch "^[A-Z0-9]{6,20}$") { Send-Json $response @{ success = $false; message = "Số tài khoản không hợp lệ." } 400; continue }
+                $target.accountNumber = $acc
+            }
+            if ($body.accountOwner) { $target.accountOwner = $body.accountOwner.ToString().Trim().ToUpper() }
+            if ($null -ne $body.branch) { $target.branch = $body.branch }
+            if ($body.provider) { $target.provider = $body.provider }
+            if ($body.isDefault -eq $true) {
+                foreach ($b in $db.platformBanks) { if ($b.id -ne $target.id) { $b.isDefault = $false } }
+                $target.isDefault = $true
+            } elseif ($body.isDefault -eq $false) {
+                $target.isDefault = $false
+            }
+            if ($null -ne $body.isActive) { $target.isActive = [bool]$body.isActive }
+            Save-Db $db
+            Send-Json $response @{ success = $true; bank = $target }
+            continue
+        }
+
+        if ($urlPath -match "^/api/admin/banks/([^/]+)$" -and $httpMethod -eq "DELETE") {
+            if (-not (Get-AdminSession $request)) { Send-Json $response @{ success = $false; message = "Không có quyền ADMIN." } 401; continue }
+            $bankId = $Matches[1]
+            $db = Get-Db
+            $target = $db.platformBanks | Where-Object { $_.id -eq $bankId } | Select-Object -First 1
+            if (-not $target) { Send-Json $response @{ success = $false; message = "Không tìm thấy tài khoản ngân hàng." } 404; continue }
+            $wasDefault = [bool]$target.isDefault
+            $remaining = @($db.platformBanks | Where-Object { $_.id -ne $bankId })
+            if ($wasDefault -and $remaining.Count -gt 0) { $remaining[0].isDefault = $true }
+            $db.platformBanks = $remaining
+            Save-Db $db
+            Send-Json $response @{ success = $true; message = "Đã xóa tài khoản ngân hàng sàn." }
             continue
         }
 
@@ -786,7 +1075,41 @@ while ($listener.IsListening) {
             continue
         }
 
-        # 15. Wallet: Transactions & Withdraw
+        # 15. Wallet: Bank Accounts CRUD, Transactions & Withdraw
+        if ($urlPath -eq "/api/wallet/bank-accounts" -and $httpMethod -in @("GET","PUT","DELETE")) {
+            $body = if ($httpMethod -eq "PUT" -or $httpMethod -eq "DELETE") { Read-RequestBody $request } else { $null }
+            $rawPhone = if ($body -and $body.phone) { $body.phone } else { $request.QueryString["phone"] }
+            $phone = Normalize-PhoneNumber $rawPhone
+            $db = Get-Db
+            $u = if ($phone) { $db.users | Where-Object { $_.phone -eq $phone } | Select-Object -First 1 } else { $null }
+            if (-not $u) { Send-Json $response @{ success = $false; message = "Không tìm thấy người dùng để quản lý ngân hàng."; error = "Không tìm thấy người dùng." } 404; continue }
+            if ($httpMethod -eq "GET") {
+                $bankMeta = Find-VietnamBank $u.bank
+                $linked = [bool]($u.bank -and $u.account)
+                Send-Json $response @{ success = $true; bankAccount = if ($linked) { @{ bankCode = if ($bankMeta) { $bankMeta.code } else { $u.bank }; bankBin = if ($bankMeta) { $bankMeta.bin } else { $null }; bankName = if ($bankMeta) { $bankMeta.shortName } else { $u.bank }; accountNumber = $u.account; accountOwner = if ($u.bankAccountOwner) { $u.bankAccountOwner } else { $u.name } } } else { $null } }
+                continue
+            }
+            if ($httpMethod -eq "DELETE") {
+                $u | Add-Member -NotePropertyName "bank" -NotePropertyValue $null -Force
+                $u | Add-Member -NotePropertyName "account" -NotePropertyValue $null -Force
+                $u | Add-Member -NotePropertyName "bankAccountOwner" -NotePropertyValue $null -Force
+                Save-Db $db
+                Send-Json $response @{ success = $true; message = "Đã xóa liên kết tài khoản ngân hàng." }
+                continue
+            }
+            $bankMeta = Find-VietnamBank $body.bank
+            if (-not $bankMeta) { Send-Json $response @{ success = $false; message = "Ngân hàng chưa có trong danh mục NAPAS 24/7."; error = "Ngân hàng chưa hợp lệ." } 400; continue }
+            $acc = if ($body.accountNumber) { $body.accountNumber.ToString().Trim().ToUpper() } else { "" }
+            if ($acc -notmatch "^[A-Z0-9]{6,20}$") { Send-Json $response @{ success = $false; message = "Số tài khoản phải gồm 6–20 ký tự chữ/số."; error = "Số tài khoản không hợp lệ." } 400; continue }
+            $owner = if ($body.accountOwner) { $body.accountOwner.ToString().Trim().ToUpper() } else { $u.name.ToString().ToUpper() }
+            $u | Add-Member -NotePropertyName "bank" -NotePropertyValue $bankMeta.shortName -Force
+            $u | Add-Member -NotePropertyName "account" -NotePropertyValue $acc -Force
+            $u | Add-Member -NotePropertyName "bankAccountOwner" -NotePropertyValue $owner -Force
+            Save-Db $db
+            Send-Json $response @{ success = $true; message = "Đã lưu tài khoản $($bankMeta.shortName) thành công."; bankAccount = @{ bankCode = $bankMeta.code; bankBin = $bankMeta.bin; bankName = $bankMeta.shortName; accountNumber = $acc; accountOwner = $owner } }
+            continue
+        }
+
         if ($urlPath -eq "/api/wallet/transactions" -and $httpMethod -eq "GET") {
             $db = Get-Db
             Send-Json $response @{ success = $true; transactions = $db.transactions }

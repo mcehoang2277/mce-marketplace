@@ -3,7 +3,8 @@ import { prisma } from '../../core/database/prisma';
 import { ENV } from '../../config/env';
 import { AppError } from '../../core/errors/app-error';
 import { VietQRService, VietQRPaymentPayload } from './vietqr.service';
-import { Prisma } from '@prisma/client';
+import { PaymentProvider, Prisma } from '@prisma/client';
+import { findVietnamBank } from './vietnam-banks';
 
 export interface CreatePaymentParams {
   userId: string;
@@ -18,8 +19,18 @@ export class PaymentService {
   public static async createPaymentRequest(
     params: CreatePaymentParams
   ): Promise<VietQRPaymentPayload & { paymentId: string; referenceCode: string }> {
-    if (!ENV.VIETQR_BANK_CODE || !ENV.VIETQR_ACCOUNT_NO || !ENV.VIETQR_ACCOUNT_NAME) {
-      throw new AppError('Chưa cấu hình tài khoản nhận tiền VietQR trên máy chủ.', 503);
+    const activePlatformBank = await prisma.platformBankAccount.findFirst({
+      where: { isActive: true },
+      orderBy: [{ isDefault: 'desc' }, { updatedAt: 'desc' }]
+    });
+    const bankCode = activePlatformBank?.bankCode || ENV.VIETQR_BANK_CODE;
+    const accountNo = activePlatformBank?.accountNumber || ENV.VIETQR_ACCOUNT_NO;
+    const accountName = activePlatformBank?.accountOwner || ENV.VIETQR_ACCOUNT_NAME;
+    const provider: PaymentProvider = activePlatformBank?.provider || PaymentProvider.SEPAY;
+    const bankMeta = findVietnamBank(bankCode);
+
+    if (!bankCode || !accountNo || !accountName) {
+      throw new AppError('Chưa cấu hình tài khoản ngân hàng nhận tiền VietQR trên máy chủ hoặc Admin Ops.', 503);
     }
 
     const referenceCode = 'MCE' + randomBytes(6).toString('hex').toUpperCase();
@@ -43,22 +54,22 @@ export class PaymentService {
         });
         if (recentPending && recentPending.qrCodeUrl) {
           return {
-            bankCode: ENV.VIETQR_BANK_CODE, bankName: 'Ngân hàng nhận tiền đã cấu hình',
-            accountNumber: ENV.VIETQR_ACCOUNT_NO, accountName: ENV.VIETQR_ACCOUNT_NAME,
+            bankCode, bankName: bankMeta?.shortName || activePlatformBank?.bankName || bankCode,
+            accountNumber: accountNo, accountName,
             amountVnd: recentPending.amount.toNumber(), transferContent: recentPending.transferContent,
             qrImageUrl: recentPending.qrCodeUrl, status: 'WAITING_PAYMENT',
             paymentId: recentPending.id, referenceCode: recentPending.referenceCode
           };
         }
-        const vietQrData = VietQRService.generatePayment(referenceCode, amount, ENV.VIETQR_BANK_CODE, ENV.VIETQR_ACCOUNT_NO, ENV.VIETQR_ACCOUNT_NAME);
+        const vietQrData = VietQRService.generatePayment(referenceCode, amount, bankCode, accountNo, accountName);
         const paymentRecord = await tx.paymentTransaction.create({
           data: {
-            userId: params.userId, jobId: job.id, provider: 'SEPAY', referenceCode,
+            userId: params.userId, jobId: job.id, provider, referenceCode,
             amount: new Prisma.Decimal(amount), status: 'PENDING',
             transferContent: vietQrData.transferContent, qrCodeUrl: vietQrData.qrImageUrl
           }
         });
-        return { ...vietQrData, paymentId: paymentRecord.id, referenceCode };
+        return { ...vietQrData, bankName: bankMeta?.shortName || activePlatformBank?.bankName || bankCode, paymentId: paymentRecord.id, referenceCode };
       }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
     } catch (error) {
       const code = typeof error === 'object' && error !== null && 'code' in error ? String(error.code) : '';
@@ -70,8 +81,8 @@ export class PaymentService {
       });
       if (existing && existing.qrCodeUrl) {
         return {
-          bankCode: ENV.VIETQR_BANK_CODE, bankName: 'Ngân hàng nhận tiền đã cấu hình',
-          accountNumber: ENV.VIETQR_ACCOUNT_NO, accountName: ENV.VIETQR_ACCOUNT_NAME,
+          bankCode, bankName: bankMeta?.shortName || activePlatformBank?.bankName || bankCode,
+          accountNumber: accountNo, accountName,
           amountVnd: existing.amount.toNumber(), transferContent: existing.transferContent,
           qrImageUrl: existing.qrCodeUrl, status: 'WAITING_PAYMENT',
           paymentId: existing.id, referenceCode: existing.referenceCode

@@ -3,8 +3,15 @@ import { requireAuth, requireRole } from '../core/auth.middleware';
 import { AppError } from '../core/errors/app-error';
 import { PaymentService } from '../modules/payments/payment.service';
 import { PaymentWebhookController } from '../modules/payments/payment-webhook.controller';
+import { searchVietnamBanks } from '../modules/payments/vietnam-banks';
 
 export const paymentRouter = Router();
+
+paymentRouter.get('/banks', (req: Request, res: Response) => {
+  const q = typeof req.query.q === 'string' ? req.query.q : '';
+  const banks = searchVietnamBanks(q);
+  res.json({ success: true, total: banks.length, banks });
+});
 
 paymentRouter.post('/vietqr', requireAuth, requireRole('POSTER'), async (req: Request, res: Response, next: NextFunction) => {
   try {

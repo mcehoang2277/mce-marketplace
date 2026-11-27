@@ -370,3 +370,22 @@ model LedgerLine {
   @@index([postingId])
   @@index([accountId, createdAt])
 }
+
+/// Configured receiving bank accounts for VietQR / SePay / PayOS escrow funding.
+model PlatformBankAccount {
+  id            String          @id @default(uuid())
+  bankCode      String
+  bankBin       String
+  bankName      String
+  accountNumber String
+  accountOwner  String
+  branch        String?
+  provider      PaymentProvider @default(SEPAY)
+  isDefault     Boolean         @default(false)
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@unique([bankCode, accountNumber])
+  @@index([isActive, isDefault])
+}

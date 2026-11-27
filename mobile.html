@@ -633,22 +633,21 @@
           </div>
 
           <div class="p-3 bg-brand-surface rounded-2xl border border-brand-border space-y-2">
-            <span class="text-[10px] font-bold text-brand-success uppercase tracking-wider block">Tài khoản nhận tiền tự động (VietQR 24/7):</span>
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold text-brand-success uppercase tracking-wider block">Tài khoản nhận tiền (VietQR 24/7):</span>
+              <button type="button" onclick="deleteProfileBankAccount()" class="text-[9px] text-rose-400 hover:underline font-bold">🗑️ Xóa NH</button>
+            </div>
             <div class="grid grid-cols-2 gap-2 text-xs">
               <div>
-                <label class="block text-[9px] text-brand-textSecondary mb-0.5">Ngân hàng</label>
-                <select id="inputProfileBank" class="w-full p-2 bg-brand-card border border-brand-border rounded-xl text-xs font-semibold text-brand-textPrimary">
-                  <option value="MBBank">MBBank (Quân Đội)</option>
-                  <option value="Vietcombank">Vietcombank</option>
-                  <option value="Techcombank">Techcombank</option>
-                  <option value="BIDV">BIDV</option>
-                </select>
+                <label class="block text-[9px] text-brand-textSecondary mb-0.5">Ngân hàng (gõ để gợi ý)</label>
+                <input id="inputProfileBank" list="mobileBankDatalist" oninput="updateBankHint('inputProfileBank','profileBankHint')" placeholder="Gõ VCB, MB, BIDV..." class="w-full p-2 bg-brand-card border border-brand-border rounded-xl text-xs font-semibold text-brand-textPrimary">
               </div>
               <div>
                 <label class="block text-[9px] text-brand-textSecondary mb-0.5">Số tài khoản</label>
                 <input id="inputProfileAccount" type="text" placeholder="Nhập số tài khoản" class="w-full p-2 bg-brand-card border border-brand-border rounded-xl text-xs font-mono font-bold text-brand-textPrimary">
               </div>
             </div>
+            <div id="profileBankHint" class="text-[9px] text-brand-textSecondary">Gợi ý 39 ngân hàng Việt Nam chuẩn NAPAS 24/7</div>
           </div>
 
           <button onclick="saveUserProfile()" class="w-full py-3 bg-gradient-to-r from-brand-primary to-brand-secondary hover:opacity-95 text-white font-extrabold text-xs rounded-2xl shadow transition active:scale-98">
@@ -1532,16 +1531,11 @@
 
         <div class="space-y-2">
           <div>
-            <label class="block text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider mb-1">Ngân hàng thụ hưởng</label>
-            <select id="selectWithdrawBank" class="w-full p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs font-semibold text-brand-textPrimary focus:outline-none">
-              <option value="MBBank">MBBank (Ngân Hàng Quân Đội)</option>
-              <option value="Vietcombank">Vietcombank</option>
-              <option value="Techcombank">Techcombank</option>
-              <option value="BIDV">BIDV</option>
-              <option value="VPBank">VPBank</option>
-              <option value="ACB">ACB</option>
-            </select>
+            <label class="block text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider mb-1">Ngân hàng thụ hưởng (gõ tên/mã/BIN)</label>
+            <input id="selectWithdrawBank" list="mobileBankDatalist" oninput="updateBankHint('selectWithdrawBank','withdrawBankHint')" placeholder="Gõ Vietcombank, MBBank, ACB..." class="w-full p-2.5 bg-brand-surface border border-brand-border rounded-xl text-xs font-semibold text-brand-textPrimary focus:outline-none">
+            <div id="withdrawBankHint" class="text-[9px] text-brand-textSecondary mt-1">Hỗ trợ chuyển nhanh 39 ngân hàng NAPAS 24/7</div>
           </div>
+          <datalist id="mobileBankDatalist"></datalist>
 
           <div>
             <label class="block text-[10px] font-bold text-brand-textSecondary uppercase tracking-wider mb-1">Số tài khoản & Chủ tài khoản</label>
@@ -3143,7 +3137,11 @@
       }
 
       if (tabIndex === 1 && map) {
-        setTimeout(() => map.invalidateSize(), 150);
+        if (mapEngine === 'google' && window.google?.maps) {
+          setTimeout(() => google.maps.event.trigger(map, 'resize'), 150);
+        } else if (typeof map.invalidateSize === 'function') {
+          setTimeout(() => map.invalidateSize(), 150);
+        }
       }
 
       if (tabIndex === 2) {
@@ -3218,10 +3216,11 @@
       if (inputIdNumber) inputIdNumber.value = p.idNumber || "";
       
       const inputBank = document.getElementById('inputProfileBank');
-      if (inputBank) inputBank.value = p.bank || "MBBank";
+      if (inputBank) inputBank.value = p.bank || "";
       
       const inputAccount = document.getElementById('inputProfileAccount');
-      if (inputAccount) inputAccount.value = p.account || p.phone || '';
+      if (inputAccount) inputAccount.value = p.account || '';
+      updateBankHint('inputProfileBank', 'profileBankHint');
 
       const skillsSection = document.getElementById('profileSkillsSection');
       if (skillsSection) skillsSection.classList.toggle('hidden', p.role !== 'WORKER');
@@ -3252,17 +3251,87 @@
       }
     }
 
-    function saveUserProfile() {
+    let mobileBankCatalog = [];
+    async function loadMobileBankCatalog() {
+      if (mobileBankCatalog.length > 0) return mobileBankCatalog;
+      try {
+        const res = await fetch('/api/banks');
+        if (res.ok) {
+          const data = await res.json();
+          mobileBankCatalog = data.banks || [];
+          const dl = document.getElementById('mobileBankDatalist');
+          if (dl) {
+            dl.innerHTML = mobileBankCatalog.map(b =>
+              `<option value="${b.shortName}">${b.code} · BIN ${b.bin} · ${b.fullName}</option>`
+            ).join('');
+          }
+        }
+      } catch {}
+      return mobileBankCatalog;
+    }
+
+    function updateBankHint(inputId, hintId) {
+      const input = document.getElementById(inputId);
+      const hint = document.getElementById(hintId);
+      if (!input || !hint) return;
+      const val = (input.value || '').trim().toLowerCase();
+      if (!val) {
+        hint.textContent = 'Gợi ý 39 ngân hàng Việt Nam chuẩn NAPAS 24/7';
+        return;
+      }
+      const match = mobileBankCatalog.find(b =>
+        b.shortName.toLowerCase() === val || b.code.toLowerCase() === val || b.bin === val ||
+        b.shortName.toLowerCase().includes(val)
+      );
+      hint.textContent = match
+        ? `✓ ${match.shortName} (${match.code}) · BIN ${match.bin}`
+        : 'Gõ tên/mã ngân hàng (VD: Vietcombank, MBBank, ACB, 970436...)';
+    }
+
+    async function deleteProfileBankAccount() {
+      if (!confirm('Xác nhận xóa liên kết tài khoản ngân hàng khỏi hồ sơ?')) return;
+      try {
+        if (mobileState.userProfile.phone) {
+          await fetch('/api/wallet/bank-accounts', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone: mobileState.userProfile.phone })
+          });
+        }
+      } catch {}
+      mobileState.userProfile.bank = '';
+      mobileState.userProfile.account = '';
+      localStorage.setItem('mce_current_user', JSON.stringify(mobileState.userProfile));
+      syncProfileToUI();
+      showToast('🗑️ Đã xóa thông tin tài khoản ngân hàng.', 'info');
+    }
+
+    async function saveUserProfile() {
       const name = document.getElementById('inputProfileName').value.trim();
       const phone = document.getElementById('inputProfilePhone').value.trim();
       const email = document.getElementById('inputProfileEmail').value.trim();
       const idNumber = document.getElementById('inputProfileIdNumber').value.trim();
-      const bank = document.getElementById('inputProfileBank').value;
+      const bank = document.getElementById('inputProfileBank').value.trim();
       const account = document.getElementById('inputProfileAccount').value.trim();
 
       if (!phone || phone.length < 9) {
         showToast("⚠️ Số điện thoại liên hệ là BẮT BUỘC!", "error");
         return;
+      }
+
+      if (bank && account) {
+        try {
+          const bRes = await fetch('/api/wallet/bank-accounts', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone, bank, accountNumber: account, accountOwner: name || phone })
+          });
+          const bData = await bRes.json();
+          if (!bRes.ok && bData.error) {
+            showToast(`⚠️ ${bData.error}`, 'error');
+            return;
+          }
+        } catch {}
       }
 
       mobileState.userProfile.name = name;
@@ -3276,7 +3345,7 @@
       syncProfileToUI();
       document.getElementById('headerSubtext').textContent = (mobileState.role === 'WORKER' ? "Người làm: " : "Người thuê: ") + name;
 
-      showToast("💾 Đã lưu và cập nhật thông tin cá nhân thành công!", "success");
+      showToast("💾 Đã lưu và cập nhật thông tin cá nhân & ngân hàng thành công!", "success");
     }
 
     function logoutToAuth() {
@@ -4501,9 +4570,10 @@
       }
       document.getElementById('withdrawModalAvailableBalance').textContent = mobileState.walletBalance.toLocaleString('vi-VN') + " VNĐ";
       document.getElementById('inputWithdrawAmount').value = '';
-      document.getElementById('selectWithdrawBank').value = mobileState.userProfile.bank || 'MBBank';
-      document.getElementById('inputWithdrawAccount').value = mobileState.userProfile.account || mobileState.userProfile.phone;
+      document.getElementById('selectWithdrawBank').value = mobileState.userProfile.bank || '';
+      document.getElementById('inputWithdrawAccount').value = mobileState.userProfile.account || '';
       document.getElementById('inputWithdrawOwner').value = (mobileState.userProfile.name || '').toUpperCase();
+      updateBankHint('selectWithdrawBank', 'withdrawBankHint');
       document.getElementById('withdrawModal').classList.remove('hidden');
     }
 
@@ -4811,6 +4881,7 @@
     }, 1000);
 
     window.onload = function() {
+      loadMobileBankCatalog();
       initMobileMap();
       syncProfileToUI();
       loadWalletTransactions();

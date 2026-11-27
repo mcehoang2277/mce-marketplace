@@ -1,23 +1,453 @@
-<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MCE · Trung tâm điều hành</title><style>
-:root{color-scheme:dark;--bg:#080d18;--panel:#111c2d;--line:#293950;--muted:#91a4bd;--text:#f5f8ff;--brand:#7778f8}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px system-ui,Segoe UI,sans-serif}.wrap{max-width:1400px;margin:auto;padding:24px}.top,.tabs,.row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin:14px 0}.tabs button,button{background:#26364d;color:white;border:0;border-radius:9px;padding:10px 13px;font-weight:700;cursor:pointer}.tabs button.active,button.primary{background:var(--brand)}input,select,textarea{background:#0a1424;color:white;border:1px solid var(--line);border-radius:8px;padding:9px}table{border-collapse:collapse;width:100%;min-width:850px}th,td{text-align:left;padding:11px;border-bottom:1px solid var(--line);vertical-align:top}th{color:var(--muted);font-size:11px}td{font-size:13px}.scroll{overflow:auto}.muted{color:var(--muted)}.hidden{display:none!important}.error{color:#ffadb6;background:#3b1e2a;padding:10px;border-radius:8px}.good{color:#77e5c1}.small{font-size:11px}.actions{display:flex;gap:6px;flex-wrap:wrap}.actions button{font-size:11px;padding:7px}.danger{background:#7b3040}textarea{width:100%;min-height:60px}@media(max-width:650px){.wrap{padding:12px}}
-</style></head><body><main class="wrap"><header class="top"><div><h1>MCE · Trung tâm điều hành</h1><p class="muted">Công cụ quản trị đặc quyền — mọi thay đổi đều được xác thực tại máy chủ.</p></div><div><a href="/admin" style="color:#bfc9ff">← Admin Console</a>　<button id="reload">Làm mới</button></div></header><div id="status" class="muted">Đang kiểm tra phiên ADMIN…</div><nav class="tabs"><button class="active" data-tab="users">Người dùng & KYC</button><button data-tab="jobs">Kiểm duyệt ca việc</button><button data-tab="disputes">Tranh chấp</button><button data-tab="payments">Thanh toán</button></nav>
-<section id="users" class="panel"><div class="row"><h2>Người dùng</h2><input id="uq" placeholder="Tìm tên / số điện thoại"><button onclick="loadUsers(1)">Tìm</button></div><div class="scroll"><table><thead><tr><th>Tài khoản</th><th>Vai trò</th><th>KYC / SĐT</th><th>Ví khả dụng</th><th>Thao tác</th></tr></thead><tbody id="usersBody"></tbody></table></div><div id="upage" class="muted small"></div></section>
-<section id="jobs" class="panel hidden"><div class="row"><h2>Kiểm duyệt ca việc</h2><select id="jobStatus"><option value="">Tất cả trạng thái</option><option> DRAFT</option><option>OPEN</option><option>ASSIGNED</option><option>IN_PROGRESS</option><option>PENDING_REVIEW</option><option>DISPUTED</option><option>COMPLETED</option><option>CANCELLED</option></select><button onclick="loadJobs(1)">Lọc</button></div><div class="scroll"><table><thead><tr><th>Ca việc</th><th>Người thuê</th><th>Người làm</th><th>Ngân sách</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="jobsBody"></tbody></table></div></section>
-<section id="disputes" class="panel hidden"><h2>Tiếp nhận & xử lý tranh chấp</h2><div class="scroll"><table><thead><tr><th>Ca việc / người tham gia</th><th>Lý do</th><th>Trạng thái</th><th>Biên bản xử lý</th></tr></thead><tbody id="disputesBody"></tbody></table></div></section>
-<section id="payments" class="panel hidden"><h2>Lịch sử thanh toán (chỉ đọc)</h2><p class="muted">Không có thao tác chỉnh sửa trạng thái hoặc số dư từ màn hình này. Giao dịch chỉ hợp lệ khi được webhook ngân hàng xác thực.</p><div class="scroll"><table><thead><tr><th>Mã giao dịch</th><th>Khách hàng</th><th>Ca việc</th><th>Số tiền</th><th>Trạng thái</th><th>Ngày tạo</th></tr></thead><tbody id="paymentsBody"></tbody></table></div></section>
-<div id="error" class="error hidden"></div></main><script>
-const API='/api',token=sessionStorage.getItem('mce_admin_token');const $=id=>document.getElementById(id);let page=1;
-async function api(path,opts={}){const r=await fetch(API+path,{...opts,headers:{'Content-Type':'application/json',Authorization:'Bearer '+token,...(opts.headers||{})}});let d={};try{d=await r.json()}catch{}if(!r.ok)throw Error(d?.error?.message||'HTTP '+r.status);return d}
-function esc(s){return String(s??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function money(n){return Number(n||0).toLocaleString('vi-VN')+' ₫'}function fail(e){$('error').textContent=e.message;$('error').classList.remove('hidden')}
-document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));['users','jobs','disputes','payments'].forEach(x=>$(x).classList.toggle('hidden',x!==b.dataset.tab));$('error').classList.add('hidden');({users:()=>loadUsers(1),jobs:()=>loadJobs(1),disputes:loadDisputes,payments:()=>loadPayments(1)})[b.dataset.tab]()});
-async function loadUsers(p=1){page=p;try{const d=await api('/admin/users?page='+p+'&limit=25&q='+encodeURIComponent($('uq').value));$('usersBody').innerHTML=d.users.map(u=>'<tr><td><b>'+esc(u.fullName)+'</b><br><span class="muted">'+esc(u.phone)+'</span><br><span class="small muted">'+esc(u.id)+'</span></td><td>'+esc(u.role)+'</td><td>'+(u.isKycVerified?'KYC ✓':'Chưa KYC')+'<br>'+(u.isPhoneVerified?'SĐT ✓':'SĐT chưa xác minh')+'</td><td>'+money(u.wallet?.availableBalance)+'</td><td><div class="actions"><select id="role-'+u.id+'"><option>WORKER</option><option>POSTER</option><option>BOTH</option><option>ADMIN</option></select><button onclick="changeRole(\''+u.id+'\')">Đổi quyền</button><button onclick="verifyUser(\''+u.id+'\',true)">Duyệt KYC</button><button class="danger" onclick="verifyUser(\''+u.id+'\',false)">Bỏ KYC</button></div></td></tr>').join('');d.users.forEach(u=>{$('role-'+u.id).value=u.role});$('upage').textContent='Trang '+p+' / '+d.pagination.totalPages+' · '+d.pagination.total+' tài khoản'}catch(e){fail(e)}}
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>MCE · Trung tâm điều hành</title>
+  <style>
+    :root{color-scheme:dark;--bg:#080d18;--panel:#111c2d;--line:#293950;--muted:#91a4bd;--text:#f5f8ff;--brand:#7778f8;--green:#20c997;--red:#ff6b75}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font:14px system-ui,Segoe UI,sans-serif}
+    .wrap{max-width:1400px;margin:auto;padding:24px}
+    .top,.tabs,.row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin:14px 0}
+    .subcard{background:#0b1424;border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0}
+    .tabs button,button{background:#26364d;color:white;border:0;border-radius:9px;padding:10px 13px;font-weight:700;cursor:pointer}
+    .tabs button.active,button.primary{background:var(--brand)}
+    button.ghost{background:#182438;border:1px solid var(--line)}
+    button.danger{background:#7b3040}
+    input,select,textarea{background:#0a1424;color:white;border:1px solid var(--line);border-radius:8px;padding:9px;font:inherit}
+    .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+    .field{display:grid;gap:5px}
+    .field label{font-size:11px;color:#b8c7dc;font-weight:700}
+    table{border-collapse:collapse;width:100%;min-width:850px}
+    th,td{text-align:left;padding:11px;border-bottom:1px solid var(--line);vertical-align:top}
+    th{color:var(--muted);font-size:11px;text-transform:uppercase}
+    td{font-size:13px}
+    .scroll{overflow:auto}
+    .muted{color:var(--muted)}
+    .hidden{display:none!important}
+    .error{color:#ffadb6;background:#3b1e2a;padding:10px;border-radius:8px;margin:10px 0}
+    .notice{color:#bde7d8;background:#12342c;border:1px solid #215b4d;padding:10px;border-radius:8px;margin:10px 0}
+    .good{color:#77e5c1}
+    .warn{color:#f7c96e}
+    .small{font-size:11px}
+    .pill{display:inline-block;padding:3px 8px;border-radius:20px;background:#223249;color:#d6e2f2;font-size:11px;font-weight:700}
+    .pill.ok{background:#123d32;color:#7de8c2}
+    .pill.off{background:#47222b;color:#ffadb6}
+    .chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+    .chips button{font-size:11px;padding:5px 9px;background:#182438;border:1px solid var(--line)}
+    .actions{display:flex;gap:6px;flex-wrap:wrap}
+    .actions button{font-size:11px;padding:7px}
+    textarea{width:100%;min-height:60px}
+    .suggest-box{position:relative}
+    .suggest-list{position:absolute;left:0;right:0;top:100%;z-index:50;max-height:220px;overflow:auto;background:#0b1424;border:1px solid var(--brand);border-radius:10px;box-shadow:0 12px 30px #000a;margin-top:4px}
+    .suggest-item{padding:8px 10px;cursor:pointer;border-bottom:1px solid #1b283d;display:flex;justify-content:space-between;gap:8px}
+    .suggest-item:hover{background:#1c2942}
+    @media(max-width:760px){.wrap{padding:12px}.grid2,.grid3{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<main class="wrap">
+  <header class="top">
+    <div>
+      <h1>MCE · Trung tâm điều hành</h1>
+      <p class="muted">Công cụ quản trị đặc quyền — mọi thay đổi đều được xác thực tại máy chủ.</p>
+    </div>
+    <div><a href="/admin" style="color:#bfc9ff">← Admin Console</a>　<button id="reload">Làm mới</button></div>
+  </header>
+
+  <div id="status" class="muted">Đang kiểm tra phiên ADMIN…</div>
+
+  <nav class="tabs" style="margin-top:12px">
+    <button class="active" data-tab="users">Người dùng &amp; KYC</button>
+    <button data-tab="jobs">Kiểm duyệt ca việc</button>
+    <button data-tab="disputes">Tranh chấp</button>
+    <button data-tab="payments">Ngân hàng &amp; Thanh toán</button>
+  </nav>
+
+  <section id="users" class="panel">
+    <div class="row">
+      <h2>Người dùng &amp; Tài khoản ngân hàng liên kết</h2>
+      <div class="row">
+        <input id="uq" placeholder="Tìm tên / số điện thoại">
+        <button onclick="loadUsers(1)">Tìm</button>
+      </div>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr><th>Tài khoản</th><th>Vai trò</th><th>KYC / SĐT</th><th>Ngân hàng liên kết</th><th>Ví khả dụng</th><th>Thao tác</th></tr>
+        </thead>
+        <tbody id="usersBody"></tbody>
+      </table>
+    </div>
+    <div id="upage" class="muted small"></div>
+  </section>
+
+  <section id="jobs" class="panel hidden">
+    <div class="row">
+      <h2>Kiểm duyệt ca việc</h2>
+      <div class="row">
+        <select id="jobStatus">
+          <option value="">Tất cả trạng thái</option>
+          <option value="DRAFT">DRAFT</option>
+          <option value="OPEN">OPEN</option>
+          <option value="ASSIGNED">ASSIGNED</option>
+          <option value="IN_PROGRESS">IN_PROGRESS</option>
+          <option value="PENDING_REVIEW">PENDING_REVIEW</option>
+          <option value="DISPUTED">DISPUTED</option>
+          <option value="COMPLETED">COMPLETED</option>
+          <option value="CANCELLED">CANCELLED</option>
+        </select>
+        <button onclick="loadJobs(1)">Lọc</button>
+      </div>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Ca việc</th><th>Người thuê</th><th>Người làm</th><th>Ngân sách</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+        <tbody id="jobsBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="disputes" class="panel hidden">
+    <h2>Tiếp nhận &amp; xử lý tranh chấp</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Ca việc / người tham gia</th><th>Lý do</th><th>Trạng thái</th><th>Biên bản xử lý</th></tr></thead>
+        <tbody id="disputesBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="payments" class="panel hidden">
+    <div class="row">
+      <div>
+        <h2>Tích hợp Ngân hàng &amp; Tài khoản nhận tiền Sàn (VietQR / SePay)</h2>
+        <p class="muted small">Thêm, sửa, đặt mặc định, bật/tắt hoặc xóa tài khoản nhận ký quỹ. Có gợi ý tự động 39 ngân hàng chuẩn NAPAS 24/7.</p>
+      </div>
+      <span id="webhookStatePill" class="pill">Webhook · Đang kiểm tra</span>
+    </div>
+
+    <div id="bankFeedback" class="hidden"></div>
+
+    <div class="subcard">
+      <div class="row">
+        <h3 id="bankFormTitle" style="margin:0">Thêm tài khoản ngân hàng sàn</h3>
+        <button type="button" class="ghost hidden" id="cancelEditBankBtn" onclick="resetBankForm()">Hủy sửa</button>
+      </div>
+
+      <div class="chips" id="popularBankChips"></div>
+
+      <form id="platformBankForm" class="grid3" style="margin-top:10px">
+        <input type="hidden" id="editingBankId">
+        <div class="field suggest-box">
+          <label>CHỌN HOẶC GÕ TÌM NGÂN HÀNG (TÊN / MÃ / BIN NAPAS) *</label>
+          <input id="bankSearchInput" autocomplete="off" required placeholder="VD: Vietcombank, MBBank, VCB, 970422...">
+          <div id="bankSuggestList" class="suggest-list hidden"></div>
+          <span id="selectedBankMeta" class="small muted">Gợi ý: gõ tên ngân hàng hoặc mã BIN NAPAS</span>
+        </div>
+        <div class="field">
+          <label>SỐ TÀI KHOẢN NGÂN HÀNG *</label>
+          <input id="bankAccountNumber" required pattern="[A-Za-z0-9]{6,20}" placeholder="VD: 0123456789">
+        </div>
+        <div class="field">
+          <label>TÊN CHỦ TÀI KHOẢN (VIẾT HOA KHÔNG DẤU) *</label>
+          <input id="bankAccountOwner" required placeholder="VD: CONG TY CO PHAN MCE">
+        </div>
+        <div class="field">
+          <label>CỔNG ĐỐI SOÁT WEBHOOK</label>
+          <select id="bankProvider">
+            <option value="SEPAY">SePay (Khuyên dùng - HMAC Raw Body)</option>
+            <option value="PAYOS">PayOS</option>
+            <option value="CASSO">Casso</option>
+            <option value="VIETQR">VietQR Thủ công</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>CHI NHÁNH (TÙY CHỌN)</label>
+          <input id="bankBranch" placeholder="VD: CN Hoàn Kiếm - Hà Nội">
+        </div>
+        <div class="field">
+          <label>TÙY CHỌN HOẠT ĐỘNG</label>
+          <div class="row" style="justify-content:flex-start;padding-top:6px">
+            <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="bankIsDefault"> Đặt mặc định</label>
+            <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="bankIsActive" checked> Kích hoạt</label>
+          </div>
+        </div>
+        <div style="grid-column:1/-1" class="row">
+          <span class="small muted" id="webhookUrlHint">Endpoint nhận biến động số dư: <code>POST /api/webhook/payment</code></span>
+          <button type="submit" class="primary" id="saveBankBtn">＋ Lưu tài khoản ngân hàng</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="subcard">
+      <h3 style="margin:0 0 10px">Danh sách tài khoản ngân hàng đang tích hợp</h3>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Ngân hàng &amp; BIN</th><th>Số tài khoản / Chủ TK</th><th>Cổng đối soát</th><th>Trạng thái</th><th>VietQR Test</th><th>Thao tác (Sửa / Đổi / Xóa)</th></tr></thead>
+          <tbody id="platformBanksBody"><tr><td colspan="6" class="muted">Đang tải danh sách ngân hàng…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="subcard">
+      <h3 style="margin:0 0 8px">Tiêu chuẩn tích hợp ngân hàng như các app lớn (MoMo / Grab / ShopeePay)</h3>
+      <div id="enterpriseChecklist" class="grid2"></div>
+    </div>
+
+    <div class="subcard">
+      <h3 style="margin:0 0 10px">Lịch sử giao dịch thanh toán (chỉ đọc)</h3>
+      <p class="muted small">Giao dịch chỉ hợp lệ khi được webhook ngân hàng xác thực hoặc qua sổ cái Escrow.</p>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Mã giao dịch</th><th>Khách hàng</th><th>Ca việc</th><th>Số tiền</th><th>Trạng thái</th><th>Ngày tạo</th></tr></thead>
+          <tbody id="paymentsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <div id="error" class="error hidden"></div>
+</main>
+
+<datalist id="globalBankDatalist"></datalist>
+
+<script>
+const API='/api',token=sessionStorage.getItem('mce_admin_token');
+const $=id=>document.getElementById(id);
+let page=1,bankCatalog=[],platformBanksCache=[];
+
+async function api(path,opts={}){
+  const r=await fetch(API+path,{...opts,headers:{'Content-Type':'application/json',Authorization:'Bearer '+token,...(opts.headers||{})}});
+  let d={};try{d=await r.json()}catch{}
+  if(!r.ok)throw Error(d?.error?.message||d?.message||d?.error||('HTTP '+r.status));
+  return d;
+}
+function esc(s){return String(s??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function money(n){return Number(n||0).toLocaleString('vi-VN')+' ₫'}
+function fail(e){$('error').textContent=e.message;$('error').classList.remove('hidden')}
+function showBankNotice(msg,isErr=false){
+  const el=$('bankFeedback');
+  el.className=isErr?'error':'notice';
+  el.textContent=msg;
+  el.classList.remove('hidden');
+}
+
+document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));
+  ['users','jobs','disputes','payments'].forEach(x=>$(x).classList.toggle('hidden',x!==b.dataset.tab));
+  $('error').classList.add('hidden');
+  ({users:()=>loadUsers(1),jobs:()=>loadJobs(1),disputes:loadDisputes,payments:()=>{loadBankPortal();loadPayments(1)}})[b.dataset.tab]();
+});
+
+async function loadBankCatalog(){
+  if(bankCatalog.length)return bankCatalog;
+  try{
+    const d=await api('/banks');
+    bankCatalog=d.banks||[];
+    const dl=$('globalBankDatalist');
+    dl.innerHTML=bankCatalog.map(b=>`<option value="${esc(b.shortName)}">${esc(b.code)} · ${esc(b.bin)} · ${esc(b.fullName)}</option>`).join('');
+    const popular=['Vietcombank','Techcombank','MBBank','BIDV','VietinBank','ACB','VPBank','TPBank'];
+    $('popularBankChips').innerHTML='<span class="small muted" style="align-self:center">Chọn nhanh:</span>'+
+      popular.map(name=>`<button type="button" onclick="pickSuggestedBank('${name}')">${name}</button>`).join('');
+  }catch{}
+  return bankCatalog;
+}
+
+function norm(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLowerCase().trim()}
+
+window.pickSuggestedBank=name=>{
+  const found=bankCatalog.find(b=>norm(b.shortName)===norm(name)||norm(b.code)===norm(name));
+  $('bankSearchInput').value=found?found.shortName:name;
+  $('selectedBankMeta').textContent=found?`✓ ${found.shortName} · Mã: ${found.code} · BIN NAPAS: ${found.bin} (${found.fullName})`:'';
+  $('bankSuggestList').classList.add('hidden');
+};
+
+$('bankSearchInput').addEventListener('input',async()=>{
+  await loadBankCatalog();
+  const q=norm($('bankSearchInput').value);
+  const matches=q?bankCatalog.filter(b=>[b.code,b.bin,b.shortName,b.fullName,...(b.aliases||[])].some(x=>norm(x).includes(q))).slice(0,10):bankCatalog.slice(0,10);
+  const box=$('bankSuggestList');
+  if(!matches.length){box.classList.add('hidden');$('selectedBankMeta').textContent='Không khớp ngân hàng NAPAS nào — thử nhập VCB, MBBank, BIDV...';return}
+  box.innerHTML=matches.map(b=>`<div class="suggest-item" onmousedown="pickSuggestedBank('${esc(b.shortName)}')"><div><b>${esc(b.shortName)}</b> <span class="small muted">(${esc(b.code)})</span><div class="small muted">${esc(b.fullName)}</div></div><span class="pill">BIN ${esc(b.bin)}</span></div>`).join('');
+  box.classList.remove('hidden');
+  const exact=bankCatalog.find(b=>norm(b.shortName)===q||norm(b.code)===q||norm(b.bin)===q);
+  if(exact)$('selectedBankMeta').textContent=`✓ ${exact.shortName} · Mã: ${exact.code} · BIN NAPAS: ${exact.bin}`;
+});
+$('bankSearchInput').addEventListener('focus',()=>$('bankSearchInput').dispatchEvent(new Event('input')));
+$('bankSearchInput').addEventListener('blur',()=>setTimeout(()=>$('bankSuggestList').classList.add('hidden'),180));
+
+function resetBankForm(){
+  $('editingBankId').value='';
+  $('bankFormTitle').textContent='Thêm tài khoản ngân hàng sàn';
+  $('saveBankBtn').textContent='＋ Lưu tài khoản ngân hàng';
+  $('cancelEditBankBtn').classList.add('hidden');
+  $('platformBankForm').reset();
+  $('bankIsActive').checked=true;
+  $('selectedBankMeta').textContent='Gợi ý: gõ tên ngân hàng hoặc mã BIN NAPAS';
+}
+
+window.editPlatformBank=id=>{
+  const b=platformBanksCache.find(x=>x.id===id);
+  if(!b)return;
+  $('editingBankId').value=b.id;
+  $('bankFormTitle').textContent='Chỉnh sửa tài khoản ngân hàng: '+b.bankName;
+  $('saveBankBtn').textContent='💾 Cập nhật thay đổi';
+  $('cancelEditBankBtn').classList.remove('hidden');
+  $('bankSearchInput').value=b.bankName||b.bankCode;
+  $('selectedBankMeta').textContent=`Đang sửa: ${b.bankName} · BIN ${b.bankBin}`;
+  $('bankAccountNumber').value=b.accountNumber||'';
+  $('bankAccountOwner').value=b.accountOwner||'';
+  $('bankProvider').value=b.provider||'SEPAY';
+  $('bankBranch').value=b.branch||'';
+  $('bankIsDefault').checked=Boolean(b.isDefault);
+  $('bankIsActive').checked=b.isActive!==false;
+  $('platformBankForm').scrollIntoView({behavior:'smooth',block:'center'});
+};
+
+window.togglePlatformBank=async(id,patch)=>{
+  try{
+    await api('/admin/banks/'+id,{method:'PATCH',body:JSON.stringify(patch)});
+    showBankNotice('Đã cập nhật trạng thái tài khoản ngân hàng.');
+    loadBankPortal();
+  }catch(e){showBankNotice(e.message,true)}
+};
+
+window.deletePlatformBank=async id=>{
+  if(!confirm('Xác nhận xóa tài khoản ngân hàng này khỏi danh sách nhận tiền sàn?'))return;
+  try{
+    await api('/admin/banks/'+id,{method:'DELETE'});
+    if($('editingBankId').value===id)resetBankForm();
+    showBankNotice('Đã xóa tài khoản ngân hàng thành công.');
+    loadBankPortal();
+  }catch(e){showBankNotice(e.message,true)}
+};
+
+$('platformBankForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const editId=$('editingBankId').value.trim();
+  const payload={
+    bank:$('bankSearchInput').value.trim(),
+    accountNumber:$('bankAccountNumber').value.trim(),
+    accountOwner:$('bankAccountOwner').value.trim().toUpperCase(),
+    provider:$('bankProvider').value,
+    branch:$('bankBranch').value.trim()||null,
+    isDefault:$('bankIsDefault').checked,
+    isActive:$('bankIsActive').checked
+  };
+  try{
+    if(editId){
+      await api('/admin/banks/'+editId,{method:'PATCH',body:JSON.stringify(payload)});
+      showBankNotice('Đã cập nhật tài khoản ngân hàng sàn.');
+    }else{
+      await api('/admin/banks',{method:'POST',body:JSON.stringify(payload)});
+      showBankNotice('Đã thêm tài khoản ngân hàng mới vào hệ thống.');
+    }
+    resetBankForm();
+    loadBankPortal();
+  }catch(err){showBankNotice(err.message,true)}
+});
+
+async function loadBankPortal(){
+  await loadBankCatalog();
+  try{
+    const d=await api('/admin/banks');
+    platformBanksCache=d.banks||[];
+    const sepayOk=Boolean(d.integration?.sepayHmacConfigured);
+    $('webhookStatePill').textContent=sepayOk?'Webhook SePay · ĐÃ BẬT HMAC':'Webhook SePay · CHƯA CẤU HÌNH SECRET';
+    $('webhookStatePill').className='pill '+(sepayOk?'ok':'off');
+    $('platformBanksBody').innerHTML=platformBanksCache.length?platformBanksCache.map(b=>`
+      <tr>
+        <td><b>${esc(b.bankName)}</b> <span class="pill">${esc(b.bankCode)}</span><div class="small muted">BIN: ${esc(b.bankBin)}${b.branch?' · '+esc(b.branch):''}</div></td>
+        <td><b style="font-family:monospace">${esc(b.accountNumber)}</b><div class="small muted">${esc(b.accountOwner)}</div></td>
+        <td><span class="pill">${esc(b.provider)}</span></td>
+        <td>${b.isDefault?'<span class="pill ok">Mặc định</span> ':''}${b.isActive?'<span class="pill ok">Đang bật</span>':'<span class="pill off">Tạm tắt</span>'}</td>
+        <td>${b.qrPreviewUrl?`<a href="${esc(b.qrPreviewUrl)}" target="_blank" style="color:#8ea6ff">Xem QR NAPAS</a>`:'—'}</td>
+        <td><div class="actions">
+          <button onclick="editPlatformBank('${b.id}')">Sửa</button>
+          ${!b.isDefault?`<button class="ghost" onclick="togglePlatformBank('${b.id}',{isDefault:true,isActive:true})">Đặt mặc định</button>`:''}
+          <button class="ghost" onclick="togglePlatformBank('${b.id}',{isActive:${!b.isActive}})">${b.isActive?'Tắt':'Bật'}</button>
+          <button class="danger" onclick="deletePlatformBank('${b.id}')">Xóa</button>
+        </div></td>
+      </tr>`).join(''):'<tr><td colspan="6" class="muted">Chưa có tài khoản ngân hàng nào được thêm. Hãy dùng form phía trên (có gợi ý 39 ngân hàng NAPAS).</td></tr>';
+
+    const checklist=d.enterpriseChecklist||[];
+    $('enterpriseChecklist').innerHTML=checklist.map(item=>`
+      <div class="subcard" style="margin:0">
+        <div class="row"><b>${esc(item.title)}</b><span class="pill ${item.ready?'ok':'off'}">${item.ready?'ĐÃ CÓ':'CẦN TÍCH HỢP'}</span></div>
+        <p class="small muted" style="margin:6px 0 0">${esc(item.detail)}</p>
+      </div>`).join('');
+  }catch(e){fail(e)}
+}
+
+async function loadUsers(p=1){
+  page=p;await loadBankCatalog();
+  try{
+    const d=await api('/admin/users?page='+p+'&limit=25&q='+encodeURIComponent($('uq').value));
+    $('usersBody').innerHTML=(d.users||[]).map(u=>`
+      <tr>
+        <td><b>${esc(u.fullName)}</b><br><span class="muted">${esc(u.phone)}</span><br><span class="small muted">${esc(u.id)}</span></td>
+        <td>${esc(u.role)}</td>
+        <td>${u.isKycVerified?'KYC ✓':'Chưa KYC'}<br>${u.isPhoneVerified?'SĐT ✓':'SĐT chưa xác minh'}</td>
+        <td>${u.bankAccountNumber?`<b>${esc(u.bankName||'—')}</b><div class="small" style="font-family:monospace">${esc(u.bankAccountNumber)}</div><div class="small muted">${esc(u.bankAccountOwner||'')}</div>`:'<span class="muted small">Chưa liên kết NH</span>'}</td>
+        <td>${money(u.wallet?.availableBalance)}</td>
+        <td><div class="actions">
+          <select id="role-${u.id}"><option>WORKER</option><option>POSTER</option><option>BOTH</option><option>ADMIN</option></select>
+          <button onclick="changeRole('${u.id}')">Đổi quyền</button>
+          <button onclick="verifyUser('${u.id}',true)">Duyệt KYC</button>
+          <button class="danger" onclick="verifyUser('${u.id}',false)">Bỏ KYC</button>
+          <button class="ghost" onclick="editUserBank('${u.id}','${esc(u.bankName||'')}','${esc(u.bankAccountNumber||'')}','${esc(u.bankAccountOwner||u.fullName||'')}')">Sửa NH</button>
+          ${u.bankAccountNumber?`<button class="danger" onclick="clearUserBank('${u.id}')">Xóa NH</button>`:''}
+        </div></td>
+      </tr>`).join('')||'<tr><td colspan="6" class="muted">Chưa có người dùng nào.</td></tr>';
+    (d.users||[]).forEach(u=>{const sel=$('role-'+u.id);if(sel)sel.value=u.role});
+    $('upage').textContent='Trang '+p+' / '+(d.pagination?.totalPages||1)+' · '+(d.pagination?.total||0)+' tài khoản';
+  }catch(e){fail(e)}
+}
+
+window.editUserBank=async(id,curBank,curAcc,curOwner)=>{
+  const bank=prompt('Nhập tên hoặc mã ngân hàng NAPAS (VD: Vietcombank, MBBank, ACB, 970422):',curBank||'MBBank');
+  if(!bank)return;
+  const accountNumber=prompt('Nhập số tài khoản ngân hàng (6–20 ký tự):',curAcc||'');
+  if(!accountNumber)return;
+  const accountOwner=prompt('Nhập tên chủ tài khoản:',curOwner||'');
+  if(!accountOwner)return;
+  try{
+    await api('/admin/users/'+id+'/bank',{method:'PATCH',body:JSON.stringify({bank:bank.trim(),accountNumber:accountNumber.trim(),accountOwner:accountOwner.trim()})});
+    loadUsers(page);
+  }catch(e){fail(e)}
+};
+
+window.clearUserBank=async id=>{
+  if(!confirm('Xác nhận xóa liên kết tài khoản ngân hàng của người dùng này?'))return;
+  try{
+    await api('/admin/users/'+id+'/bank',{method:'PATCH',body:JSON.stringify({clear:true})});
+    loadUsers(page);
+  }catch(e){fail(e)}
+};
+
 window.changeRole=async id=>{try{const role=$('role-'+id).value;if(!confirm('Xác nhận đặt vai trò '+role+' cho tài khoản này?'))return;await api('/admin/users/'+id,{method:'PATCH',body:JSON.stringify({role})});loadUsers(page)}catch(e){fail(e)}};
 window.verifyUser=async(id,ok)=>{try{await api('/admin/users/'+id,{method:'PATCH',body:JSON.stringify({isKycVerified:ok})});loadUsers(page)}catch(e){fail(e)}};
-async function loadJobs(p=1){try{const s=$('jobStatus').value.trim();const d=await api('/admin/jobs?page='+p+'&limit=40'+(s?'&status='+s:''));$('jobsBody').innerHTML=d.jobs.map(j=>'<tr><td><b>'+esc(j.title)+'</b><br><span class="muted">'+esc(j.category)+'</span><br><span class="small">'+esc(j.addressText)+'</span></td><td>'+esc(j.poster?.fullName)+'<br>'+esc(j.poster?.phone)+'</td><td>'+esc(j.worker?.fullName||'Chưa nhận')+'</td><td>'+money(j.totalEstimatedVnd)+'</td><td>'+esc(j.status)+'</td><td><div class="actions"><button onclick="moderateJob(\''+j.id+'\',\'OPEN\')">Mở</button><button class="danger" onclick="moderateJob(\''+j.id+'\',\'CANCELLED\')">Hủy</button><button onclick="moderateJob(\''+j.id+'\',\'DISPUTED\')">Đánh dấu tranh chấp</button></div></td></tr>').join('')||'<tr><td colspan="6">Không có dữ liệu</td></tr>'}catch(e){fail(e)}}
+async function loadJobs(p=1){try{const s=$('jobStatus').value.trim();const d=await api('/admin/jobs?page='+p+'&limit=40'+(s?'&status='+s:''));$('jobsBody').innerHTML=(d.jobs||[]).map(j=>'<tr><td><b>'+esc(j.title)+'</b><br><span class="muted">'+esc(j.category)+'</span><br><span class="small">'+esc(j.addressText||j.address)+'</span></td><td>'+esc(j.poster?.fullName||j.posterName)+'</td><td>'+esc(j.worker?.fullName||'Chưa nhận')+'</td><td>'+money(j.totalEstimatedVnd)+'</td><td>'+esc(j.status)+'</td><td><div class="actions"><button onclick="moderateJob(\''+j.id+'\',\'OPEN\')">Mở</button><button class="danger" onclick="moderateJob(\''+j.id+'\',\'CANCELLED\')">Hủy</button><button onclick="moderateJob(\''+j.id+'\',\'DISPUTED\')">Đánh dấu tranh chấp</button></div></td></tr>').join('')||'<tr><td colspan="6">Không có dữ liệu</td></tr>'}catch(e){fail(e)}}
 window.moderateJob=async(id,status)=>{if(!confirm('Xác nhận chuyển ca việc sang '+status+'?'))return;try{await api('/admin/jobs/'+id+'/status',{method:'PATCH',body:JSON.stringify({status})});loadJobs()}catch(e){fail(e)}};
-async function loadDisputes(){try{const d=await api('/admin/disputes');$('disputesBody').innerHTML=d.disputes.map(x=>'<tr><td><b>'+esc(x.job?.title)+'</b><br>'+esc(x.job?.poster?.fullName)+' ↔ '+esc(x.job?.worker?.fullName)+'</td><td>'+esc(x.reason)+'</td><td>'+esc(x.status)+'</td><td>'+(x.status==='OPEN'?'<select id="ds-'+x.id+'"><option value="RESOLVED_POSTER">Ưu tiên người thuê</option><option value="RESOLVED_WORKER">Ưu tiên người làm</option><option value="SPLIT">Chia theo thỏa thuận</option></select><textarea id="dr-'+x.id+'" placeholder="Biên bản và căn cứ xử lý (ít nhất 10 ký tự)"></textarea><button onclick="resolveDispute(\''+x.id+'\')">Ghi nhận quyết định</button>':esc(x.resolution))+'</td></tr>').join('')||'<tr><td colspan="4">Chưa có tranh chấp</td></tr>'}catch(e){fail(e)}}
+async function loadDisputes(){try{const d=await api('/admin/disputes');$('disputesBody').innerHTML=(d.disputes||[]).map(x=>'<tr><td><b>'+esc(x.job?.title)+'</b><br>'+esc(x.job?.poster?.fullName)+' ↔ '+esc(x.job?.worker?.fullName)+'</td><td>'+esc(x.reason)+'</td><td>'+esc(x.status)+'</td><td>'+(x.status==='OPEN'?'<select id="ds-'+x.id+'"><option value="RESOLVED_POSTER">Ưu tiên người thuê</option><option value="RESOLVED_WORKER">Ưu tiên người làm</option><option value="SPLIT">Chia theo thỏa thuận</option></select><textarea id="dr-'+x.id+'" placeholder="Biên bản và căn cứ xử lý (ít nhất 10 ký tự)"></textarea><button onclick="resolveDispute(\''+x.id+'\')">Ghi nhận quyết định</button>':esc(x.resolution))+'</td></tr>').join('')||'<tr><td colspan="4">Chưa có tranh chấp</td></tr>'}catch(e){fail(e)}}
 window.resolveDispute=async id=>{try{await api('/admin/disputes/'+id+'/resolve',{method:'PATCH',body:JSON.stringify({status:$('ds-'+id).value,resolution:$('dr-'+id).value})});loadDisputes()}catch(e){fail(e)}};
-async function loadPayments(p=1){try{const d=await api('/admin/payments?page='+p+'&limit=50');$('paymentsBody').innerHTML=d.payments.map(x=>'<tr><td>'+esc(x.referenceCode)+'<br><span class="small muted">'+esc(x.provider)+'</span></td><td>'+esc(x.user?.fullName)+'<br>'+esc(x.user?.phone)+'</td><td>'+esc(x.job?.title||'Nạp ví')+'</td><td>'+money(x.amountVnd)+'</td><td>'+esc(x.status)+'</td><td>'+new Date(x.createdAt).toLocaleString('vi-VN')+'</td></tr>').join('')||'<tr><td colspan="6">Chưa có giao dịch</td></tr>'}catch(e){fail(e)}}
-$('reload').onclick=()=>{const active=document.querySelector('[data-tab].active').dataset.tab;({users:()=>loadUsers(1),jobs:()=>loadJobs(1),disputes:loadDisputes,payments:()=>loadPayments(1)})[active]()};
-(async()=>{if(!token){$('status').textContent='Chưa có phiên đăng nhập. Hãy đăng nhập tại /admin.';return}try{const d=await api('/auth/me');if(d.user?.role!=='ADMIN')throw Error('Tài khoản không có quyền ADMIN');$('status').innerHTML='<span class="good">Đã xác thực ADMIN: '+esc(d.user.name)+'</span>';loadUsers(1)}catch(e){$('status').textContent=e.message;fail(e)}})();
-</script></body></html>
+async function loadPayments(p=1){try{const d=await api('/admin/payments?page='+p+'&limit=50');$('paymentsBody').innerHTML=(d.payments||[]).map(x=>'<tr><td>'+esc(x.referenceCode||x.id)+'<br><span class="small muted">'+esc(x.provider||'LOCAL')+'</span></td><td>'+esc(x.user?.fullName||x.title)+'</td><td>'+esc(x.job?.title||x.jobId||'Nạp ví')+'</td><td>'+money(x.amountVnd??x.amount)+'</td><td>'+esc(x.status)+'</td><td>'+new Date(x.createdAt||x.timestamp||Date.now()).toLocaleString('vi-VN')+'</td></tr>').join('')||'<tr><td colspan="6">Chưa có giao dịch</td></tr>'}catch(e){fail(e)}}
+
+$('reload').onclick=()=>{const active=document.querySelector('[data-tab].active').dataset.tab;({users:()=>loadUsers(1),jobs:()=>loadJobs(1),disputes:loadDisputes,payments:()=>{loadBankPortal();loadPayments(1)})[active]()};
+(async()=>{
+  if(!token){$('status').textContent='Chưa có phiên đăng nhập. Hãy đăng nhập tại /admin.';return}
+  try{
+    const d=await api('/auth/me');
+    if(d.user?.role!=='ADMIN')throw Error('Tài khoản không có quyền ADMIN');
+    $('status').innerHTML='<span class="good">Đã xác thực ADMIN: '+esc(d.user.name)+'</span>';
+    loadUsers(1);
+  }catch(e){$('status').textContent=e.message;fail(e)}
+})();
+</script>
+</body>
+</html>

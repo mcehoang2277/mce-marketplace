@@ -54,7 +54,12 @@ export class PaymentWebhookController {
     }
 
     const normalizeAccount = (value: string) => value.replace(/\D/g, '');
-    if (!ENV.VIETQR_ACCOUNT_NO || normalizeAccount(payload.accountNumber) !== normalizeAccount(ENV.VIETQR_ACCOUNT_NO)) {
+    const configuredBanks = await prisma.platformBankAccount.findMany({ where: { isActive: true }, select: { accountNumber: true } });
+    const allowedAccounts = new Set([
+      ...(ENV.VIETQR_ACCOUNT_NO ? [normalizeAccount(ENV.VIETQR_ACCOUNT_NO)] : []),
+      ...configuredBanks.map((item) => normalizeAccount(item.accountNumber))
+    ].filter(Boolean));
+    if (allowedAccounts.size === 0 || !allowedAccounts.has(normalizeAccount(payload.accountNumber))) {
       return res.status(400).json({ success: false, message: 'Giao dịch không thuộc tài khoản nhận tiền đã cấu hình.' });
     }
 
