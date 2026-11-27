@@ -1,5 +1,4 @@
 import { Router, Request, Response } from 'express';
-import { PaymentWebhookController } from '../modules/payments/payment-webhook.controller';
 
 export const paymentRouter = Router();
 
@@ -11,6 +10,10 @@ paymentRouter.post('/vietqr', (_req: Request, res: Response) => {
   });
 });
 
-paymentRouter.post('/webhook/payment', (req: Request, res: Response) => {
-  return PaymentWebhookController.handleBankWebhook(req, res);
+paymentRouter.post('/webhook/payment', (_req: Request, res: Response) => {
+  return res.status(503).json({
+    success: false,
+    status: 'WEBHOOK_UNAVAILABLE',
+    message: 'Webhook ngân hàng đang bị khóa cho đến khi xác thực raw-body HMAC, đối chiếu tài khoản nhận tiền và xử lý Ledger nguyên tử được tích hợp, kiểm thử.'
+  });
 });
