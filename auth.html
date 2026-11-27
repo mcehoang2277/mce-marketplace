@@ -158,6 +158,7 @@
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
         </button>
       </form>
+      </div>
 
     <!-- GIAO DIỆN 2: ĐĂNG KÝ MỚI & eKYC (REGISTER VIEW) -->
     <!-- ============================================================== -->
@@ -507,83 +508,15 @@
     let cameraMediaStream = null;
 
     async function sendRegOtp() {
-      const phone = document.getElementById('regPhone').value.trim();
-      if (!phone || phone.length < 9) {
-        alert("⚠️ Vui lòng nhập Số điện thoại hợp lệ trước khi lấy mã OTP!");
-        document.getElementById('regPhone').focus();
-        return;
-      }
-
-      const btn = document.getElementById('btnSendRegOtp');
-      btn.disabled = true;
-      let seconds = 120;
-      btn.textContent = `Đợi ${seconds}s`;
-
-      if (otpCountdownInterval) clearInterval(otpCountdownInterval);
-      otpCountdownInterval = setInterval(() => {
-        seconds--;
-        if (seconds <= 0) {
-          clearInterval(otpCountdownInterval);
-          btn.disabled = false;
-          btn.textContent = "Gửi Lại OTP";
-          document.getElementById('otpTimerText').textContent = "Mã OTP đã hết hạn. Vui lòng bấm gửi lại!";
-        } else {
-          btn.textContent = `Đợi ${seconds}s`;
-          document.getElementById('otpTimerText').textContent = `Mã OTP có hiệu lực trong ${seconds} giây`;
-        }
-      }, 1000);
-
-      try {
-        const res = await fetch('/api/auth/otp/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phone })
-        });
-        if (res.ok) {
-          const data = await res.json();
-          activeGeneratedOtp = data.otp || "889966";
-        } else {
-          activeGeneratedOtp = Math.floor(100000 + Math.random() * 900000).toString();
-        }
-      } catch (e) {
-        activeGeneratedOtp = Math.floor(100000 + Math.random() * 900000).toString();
-      }
-
-      const banner = document.getElementById('otpNoticeBanner');
-      const text = document.getElementById('otpNoticeText');
-      if (banner && text) {
-        banner.classList.remove('hidden');
-        text.innerHTML = `📲 <strong>Mã xác thực SMS OTP thật:</strong> <span class="font-mono font-black text-amber-300 text-sm tracking-wider">${activeGeneratedOtp}</span>`;
-      }
+      alert("Đăng ký đang tạm khóa: hệ thống chưa tích hợp nhà cung cấp SMS OTP thật.");
     }
 
     function autoFillOtp() {
-      if (activeGeneratedOtp) {
-        document.getElementById('regOtp').value = activeGeneratedOtp;
-      }
+      alert("Không hỗ trợ tự điền mã OTP thử nghiệm.");
     }
 
     async function sendLoginOtp() {
-      const phone = document.getElementById('loginPhone').value.trim();
-      if (!phone) {
-        alert("⚠️ Vui lòng nhập số điện thoại đăng nhập!");
-        return;
-      }
-      try {
-        const res = await fetch('/api/auth/otp/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phone })
-        });
-        if (res.ok) {
-          const data = await res.json();
-          alert(`📲 SMS OTP xác thực đăng nhập: ${data.otp} (Có hiệu lực 120s)`);
-          document.getElementById('loginPassword').value = data.otp;
-          return;
-        }
-      } catch (e) {}
-      alert(`📲 SMS OTP xác thực: 889966`);
-      document.getElementById('loginPassword').value = "889966";
+      alert("Đăng nhập bằng OTP chưa khả dụng. Vui lòng dùng mật khẩu đã đăng ký.");
     }
 
     // --- REGISTRATION STEPS ---
