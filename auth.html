@@ -277,78 +277,20 @@
         </div>
       </div>
 
-      <!-- BƯỚC 2: eKYC CCCD & SELFIE (CLEAN INTERFACE) -->
+      <!-- BƯỚC 2: eKYC is intentionally unavailable until a verified provider is integrated -->
       <div id="stepContainer2" class="bg-brand-card p-6 sm:p-7 rounded-3xl border border-brand-border space-y-5 hidden">
         <div>
           <h2 class="text-lg font-bold text-brand-textPrimary">Xác thực danh tính eKYC</h2>
-          <p class="text-xs text-brand-textSecondary mt-0.5">Bảo đảm tính xác thực hai chiều giữa người thuê và người làm.</p>
+          <p class="text-xs text-brand-textSecondary mt-0.5">Bảo vệ tài khoản bằng quy trình xác minh danh tính được kiểm chứng.</p>
         </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <!-- Chụp CCCD -->
-          <div class="border border-brand-border rounded-2xl p-4 text-center bg-brand-surface flex flex-col justify-between">
-            <div>
-              <span class="text-xl">💳</span>
-              <strong class="text-xs font-bold text-brand-textPrimary block mt-1">CCCD Gắn Chip (Mặt trước)</strong>
-              <p class="text-[10px] text-brand-textSecondary mt-0.5">Trích xuất số CCCD & họ tên</p>
-            </div>
-            
-            <input type="file" id="cccdFileInput" accept="image/*" class="hidden" onchange="handleCccdFileUpload(event)">
-            <div id="cccdPreviewContainer" class="my-2 p-2.5 bg-brand-card rounded-xl border border-brand-border hidden text-left text-xs font-mono space-y-1">
-              <img id="cccdPreviewImg" src="" class="w-full h-24 object-cover rounded-lg mb-1 hidden" alt="CCCD Preview">
-              <div class="text-[10px] text-brand-primary font-bold" id="ocrIdText">CCCD: 001098012345</div>
-              <div class="text-[10px] text-brand-textPrimary" id="ocrNameText">Họ tên: NGUYỄN VĂN AN</div>
-              <div class="text-[9px] text-brand-success font-bold">✓ CSDL Quốc Gia Xác Thực</div>
-            </div>
-
-            <div class="flex gap-1.5 mt-2">
-              <button type="button" onclick="document.getElementById('cccdFileInput').click()" class="flex-1 py-2 px-2 bg-brand-card hover:bg-brand-border border border-brand-border text-brand-textPrimary rounded-xl text-xs font-semibold transition">
-                📁 Chọn Ảnh Thật
-              </button>
-              <button type="button" onclick="executeOcrScan()" class="py-2 px-3 bg-brand-primary hover:bg-brand-secondary text-white rounded-xl text-xs font-bold transition">
-                🔍 Quét OCR
-              </button>
-            </div>
-          </div>
-
-          <!-- Chụp Liveness Selfie -->
-          <div class="border border-brand-border rounded-2xl p-4 text-center bg-brand-surface flex flex-col justify-between">
-            <div>
-              <span class="text-xl">👤</span>
-              <strong class="text-xs font-bold text-brand-textPrimary block mt-1">Chân Dung Sinh Trắc Học</strong>
-              <p class="text-[10px] text-brand-textSecondary mt-0.5">Chống giả mạo Deepfake</p>
-            </div>
-            
-            <div class="my-2 relative rounded-xl overflow-hidden bg-brand-card border border-brand-border flex items-center justify-center min-h-[96px]">
-              <video id="selfieVideo" autoplay playsinline class="w-full h-28 object-cover hidden"></video>
-              <canvas id="selfieCanvas" class="w-full h-28 object-cover hidden"></canvas>
-              <div id="selfiePlaceholder" class="text-[11px] text-brand-textSecondary p-2">
-                Chạm để bật camera khuôn mặt
-              </div>
-            </div>
-
-            <div id="selfiePreviewContainer" class="my-1 p-1.5 bg-brand-card rounded-lg border border-brand-success/40 hidden text-left text-xs">
-              <span class="text-[10px] text-brand-success font-bold block" id="selfieMatchText">✓ Khớp sinh trắc học 99.4% (Live)</span>
-            </div>
-
-            <input type="file" id="selfieFileInput" accept="image/*" class="hidden" onchange="handleSelfieFileUpload(event)">
-            <div class="flex gap-1.5 mt-2">
-              <button type="button" id="btnToggleCamera" onclick="startSelfieCamera()" class="flex-1 py-2 px-2 bg-brand-card hover:bg-brand-border border border-brand-border text-brand-textPrimary rounded-xl text-xs font-semibold transition">
-                📹 Bật Camera
-              </button>
-              <button type="button" onclick="captureSelfieFrame()" id="btnCaptureSelfie" class="py-2 px-3 bg-brand-success hover:bg-emerald-600 text-slate-950 rounded-xl text-xs font-black transition hidden">
-                📸 Chụp
-              </button>
-              <button type="button" onclick="document.getElementById('selfieFileInput').click()" class="py-2 px-2 bg-brand-surface hover:bg-brand-border border border-brand-border text-brand-textSecondary rounded-xl text-xs transition" title="Tải ảnh chân dung từ máy">
-                📁 File
-              </button>
-            </div>
-          </div>
+        <div class="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 space-y-2">
+          <p class="text-sm font-bold text-brand-textPrimary">Tạm thời chưa khả dụng</p>
+          <p class="text-xs text-brand-textSecondary">MCE chưa kết nối nhà cung cấp eKYC/đối soát dữ liệu căn cước. Tải ảnh hoặc bật camera tại đây không đồng nghĩa với xác minh danh tính. Chúng tôi không lưu hay hiển thị kết quả OCR, điểm khớp khuôn mặt hoặc trạng thái xác minh giả lập.</p>
+          <p class="text-xs text-brand-textSecondary">Vui lòng quay lại sau khi quy trình xác minh chính thức được tích hợp và kiểm thử.</p>
         </div>
-
         <div class="flex gap-3 pt-2">
           <button type="button" onclick="goToStep(1)" class="py-2.5 px-4 border border-brand-border hover:bg-brand-surface text-brand-textSecondary font-semibold rounded-xl text-xs transition">&larr; Quay lại</button>
-          <button type="button" onclick="goToStep(3)" class="flex-1 py-2.5 px-4 bg-brand-primary hover:bg-brand-secondary text-white font-bold rounded-xl text-xs shadow transition">Tiếp tục bước cuối &rarr;</button>
+          <button type="button" disabled class="flex-1 py-2.5 px-4 bg-brand-border text-brand-textSecondary font-bold rounded-xl text-xs opacity-60 cursor-not-allowed">eKYC chưa khả dụng</button>
         </div>
       </div>
 
@@ -356,7 +298,7 @@
       <div id="stepContainer3" class="bg-brand-card p-6 sm:p-7 rounded-3xl border border-brand-border space-y-5 hidden">
         <div>
           <h2 class="text-lg font-bold text-brand-textPrimary">Thiết lập tài khoản nhận tiền</h2>
-          <p class="text-xs text-brand-textSecondary mt-0.5">Nhận 100% thù lao tự động qua VietQR 24/7 (0% phí sàn 90 ngày).</p>
+          <p class="text-xs text-brand-textSecondary mt-0.5">Phí nền tảng hiện tại: 0%. Tính năng nhận tiền sẽ chỉ hoạt động sau khi hoàn tất xác minh và tích hợp đối tác thanh toán.</p>
         </div>
 
         <div class="space-y-4">
@@ -423,7 +365,7 @@
         <div class="mt-4 p-3.5 rounded-2xl bg-brand-surface border border-brand-border text-left space-y-1.5 text-xs">
           <div class="flex justify-between items-center">
             <span class="text-brand-textSecondary">Chủ tài khoản:</span>
-            <span class="font-bold text-brand-textPrimary" id="successUserName">NGUYỄN VĂN AN</span>
+            <span class="font-bold text-brand-textPrimary" id="successUserName"></span>
           </div>
           <div class="flex justify-between items-center">
             <span class="text-brand-textSecondary">SĐT liên hệ:</span>
@@ -503,11 +445,7 @@
       }
     }
 
-    let activeGeneratedOtp = null;
-    let otpCountdownInterval = null;
-    let cameraMediaStream = null;
-
-    async function sendRegOtp() {
+        async function sendRegOtp() {
       alert("Đăng ký đang tạm khóa: hệ thống chưa tích hợp nhà cung cấp SMS OTP thật.");
     }
 
@@ -568,104 +506,27 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // --- REAL CCCD FILE & OCR PARSING ---
-    function handleCccdFileUpload(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const img = document.getElementById('cccdPreviewImg');
-        img.src = e.target.result;
-        img.classList.remove('hidden');
-        executeOcrScan(file.name);
-      };
-      reader.readAsDataURL(file);
+    // eKYC is intentionally fail-closed until a verified identity provider is integrated.
+    function handleCccdFileUpload() {
+      alert("eKYC chưa khả dụng. MCE chưa tích hợp nhà cung cấp xác minh danh tính thật.");
     }
 
-    function executeOcrScan(fileName) {
-      const preview = document.getElementById('cccdPreviewContainer');
-      preview.classList.remove('hidden');
-      const name = document.getElementById('regName').value || "NGUYỄN VĂN AN";
-      document.getElementById('ocrNameText').textContent = `Họ tên: ${name.toUpperCase()}`;
-      document.getElementById('ocrIdText').textContent = `CCCD: 001098012345`;
-      alert("🔍 OCR AI đã quét và trích xuất thành công dữ liệu từ thẻ CCCD gắn chip!");
+    function executeOcrScan() {
+      alert("Không có chức năng OCR giả lập. eKYC chỉ được bật sau khi tích hợp và kiểm thử nhà cung cấp chính thức.");
     }
 
-    // --- REAL CAMERA SELFIE & LIVENESS CAPTURE ---
     async function startSelfieCamera() {
-      const video = document.getElementById('selfieVideo');
-      const placeholder = document.getElementById('selfiePlaceholder');
-      const btnCapture = document.getElementById('btnCaptureSelfie');
-      const btnToggle = document.getElementById('btnToggleCamera');
-
-      try {
-        cameraMediaStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
-        });
-        video.srcObject = cameraMediaStream;
-        video.classList.remove('hidden');
-        placeholder.classList.add('hidden');
-        btnCapture.classList.remove('hidden');
-        btnToggle.textContent = "⏹️ Dừng Camera";
-        btnToggle.onclick = stopSelfieCamera;
-      } catch (err) {
-        alert("ℹ️ Camera không khả dụng hoặc bị từ chối quyền truy cập. Bạn có thể bấm '📁 File' để chọn ảnh từ máy!");
-        document.getElementById('selfieFileInput').click();
-      }
+      alert("Xác minh khuôn mặt/liveness chưa khả dụng. Camera chưa được dùng để xác minh danh tính.");
     }
 
-    function stopSelfieCamera() {
-      if (cameraMediaStream) {
-        cameraMediaStream.getTracks().forEach(t => t.stop());
-        cameraMediaStream = null;
-      }
-      const video = document.getElementById('selfieVideo');
-      const btnCapture = document.getElementById('btnCaptureSelfie');
-      const btnToggle = document.getElementById('btnToggleCamera');
-      video.classList.add('hidden');
-      btnCapture.classList.add('hidden');
-      btnToggle.textContent = "📹 Bật Camera";
-      btnToggle.onclick = startSelfieCamera;
-    }
+    function stopSelfieCamera() {}
 
     function captureSelfieFrame() {
-      const video = document.getElementById('selfieVideo');
-      const canvas = document.getElementById('selfieCanvas');
-      const previewContainer = document.getElementById('selfiePreviewContainer');
-
-      canvas.width = video.videoWidth || 320;
-      canvas.height = video.videoHeight || 240;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      stopSelfieCamera();
-      canvas.classList.remove('hidden');
-      previewContainer.classList.remove('hidden');
-      document.getElementById('selfieMatchText').textContent = "✓ Xác thực sinh trắc học sống thành công (Khớp 99.4%)!";
-      alert("📸 Đã chụp ảnh khuôn mặt thành công và vượt qua kiểm định Liveness Detection!");
+      alert("Chụp ảnh không phải là xác minh liveness. Tính năng này đang tạm khóa.");
     }
 
-    function handleSelfieFileUpload(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const canvas = document.getElementById('selfieCanvas');
-        const img = new Image();
-        img.onload = function() {
-          canvas.width = 320;
-          canvas.height = 240;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, 320, 240);
-          canvas.classList.remove('hidden');
-          document.getElementById('selfiePlaceholder').classList.add('hidden');
-          document.getElementById('selfiePreviewContainer').classList.remove('hidden');
-          document.getElementById('selfieMatchText').textContent = "✓ Đã nhận diện khuôn mặt khớp 99.1% từ ảnh tải lên!";
-        };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
+    function handleSelfieFileUpload() {
+      alert("Tải ảnh lên không phải là xác minh danh tính. eKYC đang tạm khóa.");
     }
 
     async function finishRegistration() {
