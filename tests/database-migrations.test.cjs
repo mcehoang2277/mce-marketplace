@@ -33,6 +33,19 @@ test('PostgreSQL migrations expose the fields required by the current API', { sk
     WHERE schemaname = 'public' AND indexname = 'Review_jobId_reviewerId_key'
   `;
   assert.equal(reviewIndexes.length, 1);
+
+  const ledgerTables = await prisma.$queryRaw`
+    SELECT table_name FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_name IN ('LedgerAccount', 'LedgerPosting', 'LedgerLine')
+  `;
+  assert.deepEqual(new Set(ledgerTables.map((row) => row.table_name)), new Set(['LedgerAccount', 'LedgerPosting', 'LedgerLine']));
+
+  const paymentIntentGuard = await prisma.$queryRaw`
+    SELECT indexname FROM pg_indexes
+    WHERE schemaname = 'public' AND indexname = 'PaymentTransaction_one_pending_per_job_key'
+  `;
+  assert.equal(paymentIntentGuard.length, 1);
 });
 
 test.after(async () => {

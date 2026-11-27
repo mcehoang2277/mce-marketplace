@@ -89,6 +89,11 @@ test('SePay webhook funds escrow once and opens the job atomically', { skip: !en
   });
 
   try {
+    const rejected = await fetch(`${baseUrl}/api/webhook/payment`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: rawBody
+    });
+    assert.equal(rejected.status, 401);
+
     const response = await send();
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), { success: true });
@@ -112,15 +117,49 @@ test('SePay webhook funds escrow once and opens the job atomically', { skip: !en
     assert.equal(webhook.isVerified, true);
     assert.equal(webhook.isProcessed, true);
 
-    const replay = await send();
-    assert.equal(replay.status, 200);
-    assert.deepEqual(await replay.json(), { success: true, duplicate: true });
+    const replays = await Promise.all(Array.from({ length: 20 }, () => send()));
+    assert.ok(replays.every((replay) => replay.status === 200));
+    const replayBodies = await Promise.all(replays.map((replay) => replay.json()));
+    assert.ok(replayBodies.every((body) => body.success === true));
     const replayLedgerCount = await prisma.walletTransaction.count({
       where: { referenceId: { in: [job.id, `PAYMENT:${payment.id}`] } }
     });
     assert.equal(replayLedgerCount, 2);
+    const replayJournalCount = await prisma.ledgerPosting.count({
+      where: { idempotencyKey: { in: [`BANK_IN:${transactionId}`, `ESCROW_LOCK:${job.id}`] } }
+    });
+    assert.equal(replayJournalCount, 2);
+
+    const suspenseId = transactionId + 1;
+    const suspensePayload = { ...payload, id: suspenseId, content: 'MCEFFFFFFFFFFFF', transferAmount: 50000 };
+    const suspenseRaw = Buffer.from(JSON.stringify(suspensePayload));
+    const suspenseSignature = 'sha256=' + createHmac('sha256', process.env.SEPAY_WEBHOOK_SECRET)
+      .update(timestamp + '.').update(suspenseRaw).digest('hex');
+    const suspenseResponse = await fetch(`${baseUrl}/api/webhook/payment`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-SePay-Timestamp': timestamp, 'X-SePay-Signature': suspenseSignature },
+      body: suspenseRaw
+    });
+    assert.equal(suspenseResponse.status, 200);
+    const suspenseEvent = await prisma.webhookEvent.findUnique({ where: { idempotencyKey: `SEPAY:${suspenseId}` } });
+    assert.equal(suspenseEvent.isProcessed, true);
+    assert.match(suspenseEvent.errorMessage, /SUSPENSE/);
+    const suspensePosting = await prisma.ledgerPosting.findUnique({
+      where: { idempotencyKey: `BANK_SUSPENSE:${suspenseId}` }, include: { lines: true }
+    });
+    assert.ok(suspensePosting);
+    assert.equal(suspensePosting.lines.filter((line) => line.side === 'DEBIT').reduce((sum, line) => sum + line.amount.toNumber(), 0), 50000);
+    assert.equal(suspensePosting.lines.filter((line) => line.side === 'CREDIT').reduce((sum, line) => sum + line.amount.toNumber(), 0), 50000);
   } finally {
-    await prisma.webhookEvent.deleteMany({ where: { idempotencyKey: `SEPAY:${transactionId}` } });
+    const postingKeys = [`BANK_IN:${transactionId}`, `ESCROW_LOCK:${job.id}`, `BANK_SUSPENSE:${transactionId + 1}`];
+    await prisma.ledgerLine.deleteMany({ where: { posting: { idempotencyKey: { in: postingKeys } } } });
+    await prisma.ledgerPosting.deleteMany({ where: { idempotencyKey: { in: postingKeys } } });
+    await prisma.ledgerAccount.deleteMany({
+      where: { code: { in: ['BANK_CLEARING', 'SUSPENSE', `USER_AVAILABLE:${user.id}`, `ESCROW_JOB:${job.id}`] } }
+    });
+    await prisma.webhookEvent.deleteMany({
+      where: { idempotencyKey: { in: [`SEPAY:${transactionId}`, `SEPAY:${transactionId + 1}`] } }
+    });
     await prisma.job.delete({ where: { id: job.id } });
     await prisma.paymentTransaction.delete({ where: { id: payment.id } });
     await prisma.user.delete({ where: { id: user.id } });

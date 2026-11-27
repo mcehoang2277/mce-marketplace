@@ -127,3 +127,12 @@ Targets are proposed, not measured results or contractual guarantees.
 - Daily: review CI, errors, payment reconciliation and blocked issues.
 - Friday: demo only working features, review test evidence and update the risk register.
 - Every release: branch → PR → CI → reviewer approval → staging verification → explicit release approval.
+
+## Founder decisions and revised release gates — 2026-11-26
+
+1. Keep platform fee at 0% until a separate explicit Founder decision changes it; snapshot the policy in every escrow.
+2. Treat Web/PWA and Expo as equal first-class clients of one shared API.
+3. Target managed Node.js + managed PostgreSQL; do not deploy or provision paid infrastructure without a separate approval.
+4. Prioritize Ledger, webhook reconciliation, idempotency and concurrency before UI expansion.
+5. Do not open live-money beta until opening balances are reconciled, suspense operations exist, payout provider settlement is implemented, legal/accounting review is documented, and backup/restore is rehearsed.
+6. Keep the holiday change freeze and pilot timing in the 90-day plan; do not bypass financial release gates to meet a calendar date.

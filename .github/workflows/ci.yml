@@ -1,6 +1,7 @@
 name: CI
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - 'src/**'
@@ -22,6 +23,7 @@ on:
       - 'vercel.json'
       - 'manifest.json'
       - 'sw.js'
+      - 'docs/**'
       - '.github/workflows/ci.yml'
     branches:
       - main
@@ -32,6 +34,7 @@ on:
   pull_request:
     branches:
       - main
+      - agent/cto-roadmap-2026-11
     paths:
       - 'src/**'
       - 'mobile/**'
@@ -52,6 +55,7 @@ on:
       - 'vercel.json'
       - 'manifest.json'
       - 'sw.js'
+      - 'docs/**'
       - '.github/workflows/ci.yml'
 
 jobs:
@@ -77,6 +81,7 @@ jobs:
       JWT_SECRET: ci-only-secret-value-not-used-for-deployment-000000000000
       SEPAY_WEBHOOK_SECRET: ci-only-sepay-hmac-secret-not-used-for-deployment-000000000000
       VIETQR_ACCOUNT_NO: "1234567890"
+      VIETQR_ACCOUNT_NAME: "MCE CI"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

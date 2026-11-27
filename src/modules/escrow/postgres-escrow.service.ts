@@ -1,6 +1,8 @@
+import { randomUUID } from 'crypto';
 import { prisma } from '../../core/database/prisma';
 import { AppError } from '../../core/errors/app-error';
-import { Prisma } from '@prisma/client';
+import { LedgerAccountType, LedgerEntrySide, Prisma } from '@prisma/client';
+import { LedgerService } from '../ledger/ledger.service';
 
 export interface EscrowTxResult {
   jobId: string;
@@ -15,12 +17,37 @@ export interface EscrowTxResult {
   refundedAt?: Date | null;
 }
 
+async function lockJobRow(tx: Prisma.TransactionClient, jobId: string) {
+  await tx.$queryRawUnsafe('SELECT "id" FROM "Job" WHERE "id" = $1 FOR UPDATE', jobId);
+}
+
+async function lockWalletsByUserIds(tx: Prisma.TransactionClient, userIds: string[]) {
+  for (const userId of [...new Set(userIds)].sort()) {
+    await tx.$queryRawUnsafe('SELECT "id" FROM "Wallet" WHERE "userId" = $1 FOR UPDATE', userId);
+  }
+}
+
+
+async function runSerializable<T>(operation: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      return await prisma.$transaction(operation, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    } catch (error) {
+      const code = typeof error === 'object' && error !== null && 'code' in error ? String(error.code) : '';
+      if (code !== 'P2034') throw error;
+      if (attempt === 2) throw new AppError('Giao dịch đang được xử lý đồng thời. Vui lòng tải lại và thử lại.', 409);
+      await new Promise((resolve) => setTimeout(resolve, 40 * (attempt + 1)));
+    }
+  }
+  throw new AppError('Không thể hoàn tất giao dịch sau nhiều lần thử.', 409);
+}
+
 export class PostgresEscrowService {
   /**
    * 1. Nạp tiền vào ví người dùng (Top-up Wallet) bằng Transaction
    */
   public static async creditVerifiedPaymentTx(paymentId: string) {
-    return prisma.$transaction(async (tx) => {
+    return runSerializable(async (tx) => {
       const payment = await tx.paymentTransaction.findUnique({ where: { id: paymentId } });
       if (!payment || payment.status !== 'SUCCESS') {
         throw new AppError('Chỉ giao dịch đã được webhook ngân hàng xác thực mới được ghi có.', 409);
@@ -29,20 +56,25 @@ export class PostgresEscrowService {
       const existing = await tx.walletTransaction.findFirst({ where: { referenceId, type: 'TOPUP' } });
       if (existing) return existing;
 
-      let wallet = await tx.wallet.findUnique({ where: { userId: payment.userId } });
-      if (!wallet) {
-        wallet = await tx.wallet.create({
-          data: {
-            userId: payment.userId,
-            availableBalance: new Prisma.Decimal(0),
-            lockedBalance: new Prisma.Decimal(0),
-            totalDeposited: new Prisma.Decimal(0),
-            totalWithdrawn: new Prisma.Decimal(0)
-          }
-        });
-      }
+      await tx.wallet.createMany({
+        data: [{ userId: payment.userId, availableBalance: 0, lockedBalance: 0, totalDeposited: 0, totalWithdrawn: 0 }],
+        skipDuplicates: true
+      });
+      await lockWalletsByUserIds(tx, [payment.userId]);
+      const wallet = await tx.wallet.findUniqueOrThrow({ where: { userId: payment.userId } });
       const balBefore = wallet.availableBalance;
       const balAfter = balBefore.plus(payment.amount);
+      await LedgerService.createPosting(tx, {
+        eventType: 'BANK_IN',
+        idempotencyKey: 'BANK_IN:PAYMENT:' + payment.id,
+        referenceType: 'PAYMENT',
+        referenceId: payment.id,
+        description: 'Nạp tiền ngân hàng đã xác thực ' + payment.referenceCode,
+        lines: [
+          { accountCode: 'BANK_CLEARING', accountName: 'Bank clearing asset', accountType: LedgerAccountType.ASSET, side: LedgerEntrySide.DEBIT, amount: payment.amount },
+          { accountCode: 'USER_AVAILABLE:' + payment.userId, accountName: 'User available wallet liability', accountType: LedgerAccountType.LIABILITY, side: LedgerEntrySide.CREDIT, amount: payment.amount }
+        ]
+      });
       await tx.wallet.update({
         where: { id: wallet.id },
         data: {
@@ -61,7 +93,7 @@ export class PostgresEscrowService {
           description: `Nạp tiền từ giao dịch ngân hàng đã xác thực ${payment.referenceCode}`
         }
       });
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    });
   }
 
   /**
@@ -77,7 +109,8 @@ export class PostgresEscrowService {
   ): Promise<EscrowTxResult> {
     if (!Number.isSafeInteger(amount) || amount <= 0) throw new AppError('Số tiền ký quỹ không hợp lệ.', 400);
 
-    return prisma.$transaction(async (tx) => {
+    return runSerializable(async (tx) => {
+      await lockJobRow(tx, jobId);
       const job = await tx.job.findUnique({ where: { id: jobId } });
       if (!job) throw new AppError('Không tìm thấy công việc.', 404);
       if (job.posterId !== posterId) throw new AppError('Chỉ người đăng việc mới được ký quỹ.', 403);
@@ -87,11 +120,11 @@ export class PostgresEscrowService {
       const existingEscrow = await tx.escrowTransaction.findUnique({ where: { jobId } });
       if (existingEscrow) throw new AppError('Công việc đã có bản ghi ký quỹ; không thể khóa tiền lần nữa.', 409);
 
+      await lockWalletsByUserIds(tx, [posterId]);
       const wallet = await tx.wallet.findUnique({ where: { userId: posterId } });
       if (!wallet) throw new AppError('Ví chưa có số dư được xác nhận.', 400);
       const balBefore = wallet.availableBalance;
       const balAfter = balBefore.minus(new Prisma.Decimal(amount));
-      const lockedAfter = wallet.lockedBalance.plus(new Prisma.Decimal(amount));
       const debited = await tx.wallet.updateMany({
         where: { id: wallet.id, availableBalance: { gte: new Prisma.Decimal(amount) } },
         data: {
@@ -100,6 +133,17 @@ export class PostgresEscrowService {
         }
       });
       if (debited.count !== 1) throw new AppError('Số dư khả dụng không đủ hoặc vừa thay đổi. Hãy tải lại ví.', 409);
+
+      await LedgerService.createPosting(tx, {
+        eventType: 'ESCROW_LOCK',
+        idempotencyKey: 'ESCROW_LOCK:' + jobId,
+        referenceType: 'JOB', referenceId: jobId,
+        description: 'Khóa ký quỹ cho công việc ' + job.title + '; phí sàn 0%',
+        lines: [
+          { accountCode: 'USER_AVAILABLE:' + posterId, accountName: 'User available wallet liability', accountType: LedgerAccountType.LIABILITY, side: LedgerEntrySide.DEBIT, amount },
+          { accountCode: 'ESCROW_JOB:' + jobId, accountName: 'Job escrow liability', accountType: LedgerAccountType.LIABILITY, side: LedgerEntrySide.CREDIT, amount }
+        ]
+      });
 
       await tx.walletTransaction.create({
         data: {
@@ -135,7 +179,7 @@ export class PostgresEscrowService {
         status: escrow.status,
         lockedAt: escrow.lockedAt
       };
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    });
   }
 
   /**
@@ -149,7 +193,8 @@ export class PostgresEscrowService {
     jobId: string,
     approverId: string
   ): Promise<EscrowTxResult> {
-    return prisma.$transaction(async (tx) => {
+    return runSerializable(async (tx) => {
+      await lockJobRow(tx, jobId);
       const job = await tx.job.findUnique({
         where: { id: jobId },
         include: { escrowTransaction: true }
@@ -164,8 +209,17 @@ export class PostgresEscrowService {
         throw new AppError('Khoản ký quỹ không ở trạng thái LOCKED.', 409);
       }
 
+      const walletUserIds = [job.posterId, job.workerId].sort();
+      await tx.wallet.createMany({
+        data: walletUserIds.map((userId) => ({
+          userId, availableBalance: 0, lockedBalance: 0, totalDeposited: 0, totalWithdrawn: 0
+        })),
+        skipDuplicates: true
+      });
+      await lockWalletsByUserIds(tx, [job.posterId, job.workerId]);
       const posterWallet = await tx.wallet.findUnique({ where: { userId: job.posterId } });
-      if (!posterWallet || posterWallet.lockedBalance.lessThan(escrow.grossAmount)) {
+      const workerWallet = await tx.wallet.findUnique({ where: { userId: job.workerId } });
+      if (!posterWallet || !workerWallet || posterWallet.lockedBalance.lessThan(escrow.grossAmount)) {
         throw new AppError('Số dư ký quỹ không khớp sổ cái; đã dừng giải ngân để bảo toàn tiền.', 409);
       }
 
@@ -175,12 +229,23 @@ export class PostgresEscrowService {
       });
       if (escrowChanged.count !== 1) throw new AppError('Khoản ký quỹ đã được xử lý ở một yêu cầu khác.', 409);
 
+      await LedgerService.createPosting(tx, {
+        eventType: 'ESCROW_RELEASE',
+        idempotencyKey: 'ESCROW_RELEASE:' + jobId,
+        referenceType: 'JOB', referenceId: jobId,
+        description: 'Giải ngân 100% cho Worker sau nghiệm thu; phí sàn 0%',
+        lines: [
+          { accountCode: 'ESCROW_JOB:' + jobId, accountName: 'Job escrow liability', accountType: LedgerAccountType.LIABILITY, side: LedgerEntrySide.DEBIT, amount: escrow.grossAmount },
+          { accountCode: 'USER_AVAILABLE:' + job.workerId, accountName: 'Worker available wallet liability', accountType: LedgerAccountType.LIABILITY, side: LedgerEntrySide.CREDIT, amount: escrow.netWorkerPayout }
+        ]
+      });
+
       const posterBefore = posterWallet.availableBalance;
-      const posterLockedAfter = posterWallet.lockedBalance.minus(escrow.grossAmount);
-      await tx.wallet.update({
-        where: { id: posterWallet.id },
+      const posterDebited = await tx.wallet.updateMany({
+        where: { id: posterWallet.id, lockedBalance: { gte: escrow.grossAmount } },
         data: { lockedBalance: { decrement: escrow.grossAmount } }
       });
+      if (posterDebited.count !== 1) throw new AppError('Số dư ký quỹ vừa thay đổi; đã dừng giải ngân.', 409);
       await tx.walletTransaction.create({
         data: {
           walletId: posterWallet.id,
@@ -193,18 +258,6 @@ export class PostgresEscrowService {
         }
       });
 
-      let workerWallet = await tx.wallet.findUnique({ where: { userId: job.workerId } });
-      if (!workerWallet) {
-        workerWallet = await tx.wallet.create({
-          data: {
-            userId: job.workerId,
-            availableBalance: new Prisma.Decimal(0),
-            lockedBalance: new Prisma.Decimal(0),
-            totalDeposited: new Prisma.Decimal(0),
-            totalWithdrawn: new Prisma.Decimal(0)
-          }
-        });
-      }
       const workerBefore = workerWallet.availableBalance;
       const workerAfter = workerBefore.plus(escrow.netWorkerPayout);
       await tx.wallet.update({
@@ -238,7 +291,7 @@ export class PostgresEscrowService {
         status: 'RELEASED',
         releasedAt: new Date()
       };
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    });
   }
 
   /**
@@ -250,7 +303,8 @@ export class PostgresEscrowService {
     posterId: string,
     reason: string
   ): Promise<EscrowTxResult> {
-    return prisma.$transaction(async (tx) => {
+    return runSerializable(async (tx) => {
+      await lockJobRow(tx, jobId);
       const job = await tx.job.findUnique({
         where: { id: jobId },
         include: { escrowTransaction: true }
@@ -263,6 +317,7 @@ export class PostgresEscrowService {
       const escrow = job.escrowTransaction;
       if (!escrow || escrow.status !== 'LOCKED') throw new AppError('Không có khoản ký quỹ đang bị khóa.', 409);
 
+      await lockWalletsByUserIds(tx, [job.posterId]);
       const wallet = await tx.wallet.findUnique({ where: { userId: job.posterId } });
       if (!wallet || wallet.lockedBalance.lessThan(escrow.grossAmount)) {
         throw new AppError('Sổ cái không khớp khoản ký quỹ; đã dừng hoàn tiền để bảo toàn số dư.', 409);
@@ -273,15 +328,27 @@ export class PostgresEscrowService {
       });
       if (changed.count !== 1) throw new AppError('Khoản ký quỹ đã được xử lý ở yêu cầu khác.', 409);
 
+      await LedgerService.createPosting(tx, {
+        eventType: 'ESCROW_REFUND',
+        idempotencyKey: 'ESCROW_REFUND:' + jobId,
+        referenceType: 'JOB', referenceId: jobId,
+        description: 'Hoàn ký quỹ về ví người thuê: ' + reason.slice(0, 300),
+        lines: [
+          { accountCode: 'ESCROW_JOB:' + jobId, accountName: 'Job escrow liability', accountType: LedgerAccountType.LIABILITY, side: LedgerEntrySide.DEBIT, amount: escrow.grossAmount },
+          { accountCode: 'USER_AVAILABLE:' + posterId, accountName: 'User available wallet liability', accountType: LedgerAccountType.LIABILITY, side: LedgerEntrySide.CREDIT, amount: escrow.grossAmount }
+        ]
+      });
+
       const before = wallet.availableBalance;
       const after = before.plus(escrow.grossAmount);
-      await tx.wallet.update({
-        where: { id: wallet.id },
+      const refundedWallet = await tx.wallet.updateMany({
+        where: { id: wallet.id, lockedBalance: { gte: escrow.grossAmount } },
         data: {
           availableBalance: { increment: escrow.grossAmount },
           lockedBalance: { decrement: escrow.grossAmount }
         }
       });
+      if (refundedWallet.count !== 1) throw new AppError('Số dư ký quỹ vừa thay đổi; đã dừng hoàn tiền.', 409);
       await tx.walletTransaction.create({
         data: {
           walletId: wallet.id,
@@ -305,7 +372,7 @@ export class PostgresEscrowService {
         status: 'REFUNDED',
         refundedAt: new Date()
       };
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    });
   }
 
   /**
@@ -316,38 +383,40 @@ export class PostgresEscrowService {
     amount: number,
     bankInfo: { bank: string; account: string; owner: string }
   ) {
-    if (amount < 10000) throw new AppError('Số tiền rút tối thiểu là 10.000 VNĐ', 400);
-
-    return await prisma.$transaction(async (tx) => {
+    if (!Number.isSafeInteger(amount) || amount < 10000) throw new AppError('Số tiền rút không hợp lệ (tối thiểu 10.000 VNĐ).', 400);
+    const requestId = 'WD-' + randomUUID();
+    return runSerializable(async (tx) => {
+      await lockWalletsByUserIds(tx, [userId]);
       const wallet = await tx.wallet.findUnique({ where: { userId } });
-      if (!wallet || wallet.availableBalance.toNumber() < amount) {
-        throw new AppError('Số dư khả dụng không đủ để rút tiền', 400);
-      }
-
+      if (!wallet) throw new AppError('Không tìm thấy ví.', 404);
       const balBefore = wallet.availableBalance;
       const balAfter = balBefore.minus(new Prisma.Decimal(amount));
-
-      const updatedWallet = await tx.wallet.update({
-        where: { id: wallet.id },
+      const reserved = await tx.wallet.updateMany({
+        where: { id: wallet.id, availableBalance: { gte: new Prisma.Decimal(amount) } },
+        data: { availableBalance: { decrement: new Prisma.Decimal(amount) } }
+      });
+      if (reserved.count !== 1) throw new AppError('Số dư khả dụng không đủ hoặc vừa thay đổi.', 409);
+      const updatedWallet = await tx.wallet.findUniqueOrThrow({ where: { id: wallet.id } });
+      await LedgerService.createPosting(tx, {
+        eventType: 'WITHDRAWAL_REQUEST',
+        idempotencyKey: 'WITHDRAWAL_REQUEST:' + requestId,
+        referenceType: 'WITHDRAWAL',
+        referenceId: requestId,
+        description: 'Giữ tiền chờ đối soát và chuyển khoản qua PSP; chưa xác nhận đã chi tiền.',
+        lines: [
+          { accountCode: 'USER_AVAILABLE:' + userId, accountName: 'User available wallet liability', accountType: LedgerAccountType.LIABILITY, side: LedgerEntrySide.DEBIT, amount },
+          { accountCode: 'PAYOUT_PENDING:' + userId, accountName: 'Pending bank payout liability', accountType: LedgerAccountType.LIABILITY, side: LedgerEntrySide.CREDIT, amount }
+        ]
+      });
+      const lastFour = bankInfo.account.replace(/\\D/g, '').slice(-4);
+      const transaction = await tx.walletTransaction.create({
         data: {
-          availableBalance: balAfter,
-          totalWithdrawn: wallet.totalWithdrawn.plus(new Prisma.Decimal(amount))
+          walletId: wallet.id, type: 'WITHDRAWAL', amount: new Prisma.Decimal(amount),
+          balanceBefore: balBefore, balanceAfter: balAfter, referenceId: requestId,
+          description: 'Yêu cầu rút tiền đang chờ PSP: ' + bankInfo.bank + ' (****' + lastFour + '). Chưa xác nhận chuyển khoản.'
         }
       });
-
-      const txRecord = await tx.walletTransaction.create({
-        data: {
-          walletId: wallet.id,
-          type: 'WITHDRAWAL',
-          amount: new Prisma.Decimal(amount),
-          balanceBefore: balBefore,
-          balanceAfter: balAfter,
-          referenceId: `WD-${Date.now().toString().slice(-6)}`,
-          description: `Rút tiền về ${bankInfo.bank} (${bankInfo.account} - ${bankInfo.owner})`
-        }
-      });
-
-      return { wallet: updatedWallet, transaction: txRecord };
+      return { wallet: updatedWallet, transaction, payoutStatus: 'PENDING_PROVIDER' as const };
     });
   }
 }

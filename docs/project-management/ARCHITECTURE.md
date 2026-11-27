@@ -157,3 +157,10 @@ Do not assume Vercel deployment status proves the API container, PostgreSQL, web
 - API and mobile/web clients share versioned request/response contracts.
 - Staging can be rebuilt from source and migrations without manual data patching.
 - Restore from backup is tested before public launch.
+
+## Founder-approved decisions — 2026-11-26
+
+- **Fee policy:** 0% (0 bps) is the approved policy until the Founder explicitly approves a change. New escrow records snapshot zero fee and 100% gross payout to the worker. Any future fee change must not rewrite historical escrow.
+- **Clients:** Web/PWA and Expo are both first-class clients. Both consume the same versioned TypeScript API and PostgreSQL domain services; business rules must not be duplicated in client code. The old mobile.html remains a legacy/demo artifact and is not a financial client.
+- **Hosting:** managed Node.js application hosting and managed PostgreSQL are the target. Provider selection, secret provisioning, TLS, monitoring and production deployment remain explicit release tasks. Redis is not required until a measured workload justifies it.
+- **Repository workflow:** finance hardening is developed on stacked feature branches and reviewed through PRs. Do not push directly to main.
