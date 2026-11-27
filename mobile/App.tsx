@@ -42,10 +42,7 @@ export default function App() {
             <Text style={styles.headerSubtitle}>Sàn việc làm tức thời 24/7</Text>
           </View>
         </View>
-        <View style={styles.promoTag}>
-          <Text style={styles.promoText}>BẢN THỬ NGHIỆM</Text>
-        </View>
-      </View>
+</View>
 
       {/* Main Screen Content */}
       <View style={styles.content}>
