@@ -4,8 +4,6 @@ import { z } from 'zod';
 import { prisma } from '../core/database/prisma';
 import { requireAuth, requireRole } from '../core/auth.middleware';
 import { AppError } from '../core/errors/app-error';
-import { repository } from '../repositories/in-memory.repository';
-import { MatchingService } from '../modules/matching/matching.service';
 
 export const jobRouter = Router();
 
@@ -82,42 +80,4 @@ jobRouter.post('/jobs/:jobId/applications', requireAuth, requireRole('WORKER'), 
     }
     next(error);
   }
-});
-
-// Legacy demo endpoints remain available for comparison; they do not read production job data.
-jobRouter.get('/candidates', requireAuth, async (_req: Request, res: Response) => {
-  const candidates = await repository.findAll();
-  res.json({
-    success: true,
-    demo: true,
-    total: candidates.length,
-    candidates: candidates.map((c) => ({
-      id: c.id,
-      name: c.fullName,
-      phone: c.phone,
-      location: c.location,
-      skills: c.skills,
-      karmaScore: c.karmaScore,
-      desiredRateVnd: c.desiredMinHourlyRateVnd
-    }))
-  });
-});
-
-jobRouter.get('/jobs/match', async (_req: Request, res: Response) => {
-  const candidates = await repository.findAll();
-  const sampleJob = repository.getSampleJob();
-  const matches = MatchingService.rankCandidates(candidates, sampleJob);
-  res.json({
-    success: true,
-    demo: true,
-    jobId: sampleJob.id,
-    jobTitle: sampleJob.title,
-    matches
-  });
-});
-
-jobRouter.get('/jobs/benchmark', (req: Request, res: Response) => {
-  const rate = parseInt(req.query.rate as string, 10) || 80000;
-  const benchmark = MatchingService.calculatePriceBenchmark(rate);
-  res.json({ success: true, benchmark });
 });
