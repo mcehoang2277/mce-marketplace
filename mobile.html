@@ -44,7 +44,9 @@
     }
   </script>
 
-  <!-- Google Maps JS API sẽ được nạp động theo GOOGLE_MAPS_API_KEY từ /api/config/public -->
+  <!-- Bản đồ miễn phí (Leaflet + OSM/Esri) & tự động nâng cấp Google Maps JS API nếu có GOOGLE_MAPS_API_KEY -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -81,6 +83,10 @@
     }
     
     #mobileMap { height: 100%; width: 100%; border-radius: 0; z-index: 10; background: #080D1A; }
+    .leaflet-tile { filter: brightness(0.85) contrast(1.15) invert(0.92) hue-rotate(185deg); }
+    .leaflet-container { background: #080D1A !important; }
+    .leaflet-popup-content-wrapper { background: #151F32 !important; color: #F8FAFC !important; border: 1px solid #273449; border-radius: 12px; }
+    .leaflet-popup-tip { background: #151F32 !important; }
     .gm-style .gm-style-iw-c { background: #151F32 !important; color: #F8FAFC !important; border: 1px solid #273449; border-radius: 12px !important; }
     .gm-style .gm-style-iw-tc::after { background: #151F32 !important; }
 
@@ -1845,8 +1851,8 @@
       console.warn("Storage profile load", e);
     }
 
-    // --- GOOGLE MAPS JS API ON MOBILE (INTERACTIVE LIVE RADAR) ---
-    let map, radarCircle, gpsAccuracyCircle, userMarker, offsiteMarker, activeRoutePolyline, activeInfoWindow, googleGeocoder, googleMapsLoadPromise;
+    // --- DUAL MAP ENGINE: GOOGLE MAPS JS API (KHI CÓ KEY) HOẶC BẢN ĐỒ MIỄN PHÍ (LEAFLET + OSM + LINK GOOGLE MAPS 0Đ) ---
+    let map, mapEngine = 'leaflet', radarCircle, gpsAccuracyCircle, userMarker, offsiteMarker, activeRoutePolyline, activeInfoWindow, googleGeocoder, googleMapsLoadPromise;
     let jobMarkers = [];
     let currentSelectedRadius = 'ALL';
     let currentSelectedCategory = 'ALL';
@@ -2018,15 +2024,24 @@
         : filtered[0];
       updateDirectMatchCard(selectedJob || null);
 
-      if (fitBounds && map && window.google?.maps) {
-        if (jobMarkers.length > 0) {
-          const bounds = new google.maps.LatLngBounds();
-          bounds.extend({ lat: mobileState.currentCoords.lat, lng: mobileState.currentCoords.lng });
-          jobMarkers.forEach(m => { if (m.getPosition()) bounds.extend(m.getPosition()); });
-          map.fitBounds(bounds, 40);
-        } else {
-          map.setCenter({ lat: mobileState.currentCoords.lat, lng: mobileState.currentCoords.lng });
-          map.setZoom(13);
+      if (fitBounds && map) {
+        if (mapEngine === 'google' && window.google?.maps) {
+          if (jobMarkers.length > 0) {
+            const bounds = new google.maps.LatLngBounds();
+            bounds.extend({ lat: mobileState.currentCoords.lat, lng: mobileState.currentCoords.lng });
+            jobMarkers.forEach(m => { if (m.getPosition()) bounds.extend(m.getPosition()); });
+            map.fitBounds(bounds, 40);
+          } else {
+            map.setCenter({ lat: mobileState.currentCoords.lat, lng: mobileState.currentCoords.lng });
+            map.setZoom(13);
+          }
+        } else if (mapEngine === 'leaflet' && window.L && userMarker) {
+          if (jobMarkers.length > 0) {
+            const group = new L.featureGroup([userMarker, ...jobMarkers]);
+            map.fitBounds(group.getBounds().pad(0.08));
+          } else {
+            map.setView([mobileState.currentCoords.lat, mobileState.currentCoords.lng], 13);
+          }
         }
       }
       return filtered;
@@ -2078,8 +2093,12 @@
         orderBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full ${source === 'REAL_GPS' ? 'bg-emerald-400' : 'bg-amber-400'} animate-ping"></span>${originLabel}`;
       }
 
-      if (userMarker && activeInfoWindow && activeInfoWindow.anchor === userMarker) {
-        activeInfoWindow.setContent(getUserMarkerPopupHtml());
+      if (userMarker) {
+        if (mapEngine === 'google' && activeInfoWindow && activeInfoWindow.anchor === userMarker) {
+          activeInfoWindow.setContent(getUserMarkerPopupHtml());
+        } else if (mapEngine === 'leaflet' && typeof userMarker.setPopupContent === 'function') {
+          userMarker.setPopupContent(getUserMarkerPopupHtml());
+        }
       }
 
       const headerSub = document.getElementById('headerSubtext');
@@ -2102,108 +2121,111 @@
       let mapsReady = false;
       try {
         mapsReady = await ensureMobileGoogleMaps();
-      } catch (err) {
-        if (mapEl) {
-          mapEl.innerHTML = `<div class="h-full flex flex-col items-center justify-center p-4 text-center text-xs text-rose-300 space-y-2"><div>❌ ${err.message}</div></div>`;
-        }
+      } catch {
+        mapsReady = false;
       }
 
-      if (!mapsReady || !window.google?.maps) {
-        if (mapEl) {
-          mapEl.innerHTML = `
-            <div class="h-full flex flex-col items-center justify-center p-5 text-center space-y-2.5 bg-brand-bg text-xs">
-              <span class="text-2xl">🗺️</span>
-              <div class="font-extrabold text-brand-textPrimary">Google Maps API Key chưa được cấu hình</div>
-              <p class="text-[10px] text-brand-textSecondary max-w-xs leading-relaxed">
-                Để hiển thị bản đồ Google Maps chính xác và mới nhất, hãy cấu hình <code class="text-emerald-400">GOOGLE_MAPS_API_KEY</code> trong <code>.env</code> hoặc nhập nhanh key để kiểm thử:
-              </p>
-              <div class="flex gap-1.5 w-full max-w-xs">
-                <input id="tempGoogleMapsKeyInput" type="password" placeholder="Dán Google Maps API Key..." class="flex-1 px-2.5 py-1.5 bg-brand-surface border border-brand-border rounded-lg text-[11px] text-brand-textPrimary focus:outline-none">
-                <button type="button" onclick="applyTemporaryGoogleMapsKey()" class="px-3 py-1.5 bg-brand-primary text-white font-bold rounded-lg text-[10px]">Kích hoạt</button>
-              </div>
-            </div>`;
-        }
-        await loadRealJobsFromServer();
-        updateGpsStatusUI();
-        requestPersonalGPSLocation({ silent: true, fitBounds: false });
-        return;
-      }
+      if (mapsReady && window.google?.maps) {
+        mapEngine = 'google';
+        const originPos = { lat: mobileState.currentCoords.lat, lng: mobileState.currentCoords.lng };
+        googleGeocoder = new google.maps.Geocoder();
+        activeInfoWindow = new google.maps.InfoWindow();
 
-      const originPos = { lat: mobileState.currentCoords.lat, lng: mobileState.currentCoords.lng };
-      googleGeocoder = new google.maps.Geocoder();
-      activeInfoWindow = new google.maps.InfoWindow();
+        map = new google.maps.Map(mapEl, {
+          center: originPos,
+          zoom: 13,
+          styles: MCE_DARK_MAP_STYLE,
+          disableDefaultUI: true,
+          zoomControl: true,
+          mapTypeControl: true
+        });
 
-      map = new google.maps.Map(mapEl, {
-        center: originPos,
-        zoom: 13,
-        styles: MCE_DARK_MAP_STYLE,
-        disableDefaultUI: true,
-        zoomControl: true,
-        mapTypeControl: true
-      });
+        userMarker = new google.maps.Marker({
+          position: originPos,
+          map: map,
+          draggable: true,
+          title: 'Vị trí của bạn',
+          icon: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+        });
 
-      userMarker = new google.maps.Marker({
-        position: originPos,
-        map: map,
-        draggable: true,
-        title: 'Vị trí của bạn',
-        icon: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png'
-      });
+        userMarker.addListener('click', () => {
+          activeInfoWindow.setContent(getUserMarkerPopupHtml());
+          activeInfoWindow.open(map, userMarker);
+        });
 
-      userMarker.addListener('click', () => {
-        activeInfoWindow.setContent(getUserMarkerPopupHtml());
-        activeInfoWindow.open(map, userMarker);
-      });
+        userMarker.addListener('dragend', function(e) {
+          updateScanLocation(
+            e.latLng.lat(),
+            e.latLng.lng(),
+            "📌 Đã đặt vị trí cá nhân thủ công — đang tính khoảng cách tỏa ra xung quanh!",
+            { source: 'MANUAL_PIN', accuracyMeters: null, panTo: true, preserveSelected: false }
+          );
+        });
 
-      userMarker.addListener('dragend', function(e) {
-        updateScanLocation(
-          e.latLng.lat(),
-          e.latLng.lng(),
-          "📌 Đã đặt vị trí cá nhân thủ công — đang tính khoảng cách tỏa ra xung quanh!",
-          { source: 'MANUAL_PIN', accuracyMeters: null, panTo: true, preserveSelected: false }
-        );
-      });
+        gpsAccuracyCircle = new google.maps.Circle({
+          map: map, center: originPos, radius: 0,
+          strokeColor: '#38bdf8', strokeOpacity: 0.8, strokeWeight: 1, fillColor: '#38bdf8', fillOpacity: 0.14
+        });
 
-      gpsAccuracyCircle = new google.maps.Circle({
-        map: map,
-        center: originPos,
-        radius: 0,
-        strokeColor: '#38bdf8',
-        strokeOpacity: 0.8,
-        strokeWeight: 1,
-        fillColor: '#38bdf8',
-        fillOpacity: 0.14
-      });
+        radarCircle = new google.maps.Circle({
+          map: map, center: originPos, radius: 35000,
+          strokeColor: '#10b981', strokeOpacity: 0.7, strokeWeight: 1.5, fillColor: '#10b981', fillOpacity: 0.08
+        });
 
-      radarCircle = new google.maps.Circle({
-        map: map,
-        center: originPos,
-        radius: 35000,
-        strokeColor: '#10b981',
-        strokeOpacity: 0.7,
-        strokeWeight: 1.5,
-        fillColor: '#10b981',
-        fillOpacity: 0.08
-      });
-
-      const searchInput = document.getElementById('inputMapSearch');
-      if (searchInput && google.maps.places?.Autocomplete) {
-        const ac = new google.maps.places.Autocomplete(searchInput, { componentRestrictions: { country: 'vn' } });
-        ac.addListener('place_changed', () => {
-          const place = ac.getPlace();
-          if (!place?.geometry?.location) return;
-          updateScanLocation(place.geometry.location.lat(), place.geometry.location.lng(), `📍 Đã chuyển tới ${place.name || place.formatted_address}`, {
-            source: 'MANUAL_PIN',
-            accuracyMeters: null,
-            panTo: true,
-            zoom: 14
+        const searchInput = document.getElementById('inputMapSearch');
+        if (searchInput && google.maps.places?.Autocomplete) {
+          const ac = new google.maps.places.Autocomplete(searchInput, { componentRestrictions: { country: 'vn' } });
+          ac.addListener('place_changed', () => {
+            const place = ac.getPlace();
+            if (!place?.geometry?.location) return;
+            updateScanLocation(place.geometry.location.lat(), place.geometry.location.lng(), `📍 Đã chuyển tới ${place.name || place.formatted_address}`, {
+              source: 'MANUAL_PIN', accuracyMeters: null, panTo: true, zoom: 14
+            });
           });
+        }
+
+        map.addListener('click', function(e) {
+          handleMapClick({ lat: e.latLng.lat(), lng: e.latLng.lng() });
+        });
+      } else if (window.L) {
+        // Chế độ bản đồ miễn phí (0đ API Key): Leaflet + OpenStreetMap + dẫn đường Google Maps chính thức
+        mapEngine = 'leaflet';
+        map = L.map('mobileMap', { preferCanvas: true, zoomControl: false }).setView([mobileState.currentCoords.lat, mobileState.currentCoords.lng], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+
+        const blueIcon = new L.Icon({
+          iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+          iconSize: [22, 34],
+          iconAnchor: [11, 34]
+        });
+
+        userMarker = L.marker([mobileState.currentCoords.lat, mobileState.currentCoords.lng], {
+          icon: blueIcon,
+          draggable: true
+        }).addTo(map).bindPopup(getUserMarkerPopupHtml());
+
+        userMarker.on('dragend', function(e) {
+          const pos = e.target.getLatLng();
+          updateScanLocation(
+            pos.lat,
+            pos.lng,
+            "📌 Đã đặt vị trí cá nhân thủ công — đang tính khoảng cách tỏa ra xung quanh!",
+            { source: 'MANUAL_PIN', accuracyMeters: null, panTo: true, preserveSelected: false }
+          );
+        });
+
+        gpsAccuracyCircle = L.circle([mobileState.currentCoords.lat, mobileState.currentCoords.lng], {
+          color: '#38bdf8', fillColor: '#38bdf8', fillOpacity: 0.14, weight: 1, radius: 0
+        }).addTo(map);
+
+        radarCircle = L.circle([mobileState.currentCoords.lat, mobileState.currentCoords.lng], {
+          color: '#10b981', fillColor: '#10b981', fillOpacity: 0.10, radius: 35000
+        }).addTo(map);
+
+        map.on('click', function(e) {
+          handleMapClick(e.latlng);
         });
       }
-
-      map.addListener('click', function(e) {
-        handleMapClick({ lat: e.latLng.lat(), lng: e.latLng.lng() });
-      });
 
       await loadRealJobsFromServer();
       updateGpsStatusUI();
@@ -2211,31 +2233,40 @@
     }
 
     function renderJobMarkers(jobs) {
-      jobMarkers.forEach(m => m.setMap(null));
+      if (mapEngine === 'google' && window.google?.maps) {
+        jobMarkers.forEach(m => m.setMap(null));
+      } else if (map && window.L) {
+        jobMarkers.forEach(m => map.removeLayer(m));
+      }
       jobMarkers = [];
-      if (!map || !window.google?.maps) return;
+      if (!map) return;
+
+      const redLeaflet = window.L ? new L.Icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+        iconSize: [20, 32], iconAnchor: [10, 32]
+      }) : null;
+      const goldLeaflet = window.L ? new L.Icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png',
+        iconSize: [20, 32], iconAnchor: [10, 32]
+      }) : null;
 
       jobs.forEach((job, idx) => {
         const km = typeof job.distanceKm === 'number' ? job.distanceKm : (parseFloat(job.dist) || 0);
         const isFar = km > 12;
-        const marker = new google.maps.Marker({
-          position: { lat: job.lat, lng: job.lng },
-          map: map,
-          title: job.title,
-          icon: isFar
-            ? 'https://maps.google.com/mapfiles/ms/icons/yellow-dot.png'
-            : 'https://maps.google.com/mapfiles/ms/icons/red-dot.png'
-        });
         const proximityLabel = idx === 0 ? '⚡ Gần bạn nhất' : (isFar ? '🌾 Vùng Xa / Ngoại Ô' : 'Gần bạn');
+        const gmapsDirUrl = `https://www.google.com/maps/dir/?api=1&destination=${job.lat},${job.lng}`;
 
         const popupContent = `
-          <div style="font-family: sans-serif; font-size: 11px; line-height: 1.4; min-width: 175px; color: #F8FAFC;">
+          <div style="font-family: sans-serif; font-size: 11px; line-height: 1.4; min-width: 185px; color: #F8FAFC;">
             <div style="font-weight: 800; color: #F8FAFC; margin-bottom: 2px;">${job.title}</div>
             <div style="color: #6366F1; font-weight: 800; font-size: 13px;">${job.pay.toLocaleString('vi-VN')}đ</div>
             <div style="color: #94A3B8; font-size: 10px; margin-bottom: 6px;">📍 Cách bạn: ${job.dist} · ${proximityLabel}</div>
             <button onclick="mobileAcceptJob('${job.id}', '${String(job.title).replace(/'/g, "\\'")}', ${job.pay})" style="width: 100%; background: #6366F1; color: white; border: none; padding: 6px 8px; border-radius: 8px; font-weight: bold; font-size: 10px; cursor: pointer; margin-bottom: 4px;">
               ⚡ Nhận Ca Này Ngay
             </button>
+            <a href="${gmapsDirUrl}" target="_blank" rel="noopener" style="display:block; text-align:center; width: 100%; background: #10B981; color: #080D1A; text-decoration:none; padding: 5px 8px; border-radius: 8px; font-weight: 800; font-size: 10px; margin-bottom: 4px;">
+              🧭 Dẫn Đường Google Maps (0đ)
+            </a>
             <div style="display: flex; gap: 4px;">
               <button onclick="openChatModal()" style="flex: 1; background: #111827; color: #F8FAFC; border: 1px solid #273449; padding: 4px; border-radius: 6px; font-size: 9px; cursor: pointer;">💬 Chat</button>
               <button onclick="startInAppCall()" style="flex: 1; background: rgba(16,185,129,0.2); color: #10B981; border: 1px solid rgba(16,185,129,0.4); padding: 4px; border-radius: 6px; font-size: 9px; cursor: pointer;">📞 Gọi 0đ</button>
@@ -2243,15 +2274,29 @@
           </div>
         `;
 
-        marker.addListener('click', () => {
-          selectJobOnMapDirectly(job.id);
-          if (activeInfoWindow) {
-            activeInfoWindow.setContent(popupContent);
-            activeInfoWindow.open(map, marker);
-          }
-        });
-
-        jobMarkers.push(marker);
+        if (mapEngine === 'google' && window.google?.maps) {
+          const marker = new google.maps.Marker({
+            position: { lat: job.lat, lng: job.lng },
+            map: map,
+            title: job.title,
+            icon: isFar ? 'https://maps.google.com/mapfiles/ms/icons/yellow-dot.png' : 'https://maps.google.com/mapfiles/ms/icons/red-dot.png'
+          });
+          marker.addListener('click', () => {
+            selectJobOnMapDirectly(job.id);
+            if (activeInfoWindow) {
+              activeInfoWindow.setContent(popupContent);
+              activeInfoWindow.open(map, marker);
+            }
+          });
+          jobMarkers.push(marker);
+        } else if (window.L) {
+          const marker = L.marker([job.lat, job.lng], { icon: isFar ? goldLeaflet : redLeaflet }).addTo(map);
+          marker.bindPopup(popupContent);
+          marker.on('click', () => {
+            selectJobOnMapDirectly(job.id);
+          });
+          jobMarkers.push(marker);
+        }
       });
     }
 
@@ -2480,23 +2525,27 @@
 
       updateDirectMatchCard(job);
 
-      if (map && window.google?.maps) {
-        if (activeRoutePolyline) activeRoutePolyline.setMap(null);
-        const pathCoords = [
-          { lat: mobileState.currentCoords.lat, lng: mobileState.currentCoords.lng },
-          { lat: job.lat, lng: job.lng }
-        ];
-        activeRoutePolyline = new google.maps.Polyline({
-          path: pathCoords,
-          geodesic: true,
-          strokeColor: '#6366F1',
-          strokeOpacity: 0.9,
-          strokeWeight: 4,
-          map: map
-        });
-        const bounds = new google.maps.LatLngBounds();
-        pathCoords.forEach(pt => bounds.extend(pt));
-        map.fitBounds(bounds, 40);
+      if (map) {
+        if (mapEngine === 'google' && window.google?.maps) {
+          if (activeRoutePolyline) activeRoutePolyline.setMap(null);
+          const pathCoords = [
+            { lat: mobileState.currentCoords.lat, lng: mobileState.currentCoords.lng },
+            { lat: job.lat, lng: job.lng }
+          ];
+          activeRoutePolyline = new google.maps.Polyline({
+            path: pathCoords, geodesic: true, strokeColor: '#6366F1', strokeOpacity: 0.9, strokeWeight: 4, map: map
+          });
+          const bounds = new google.maps.LatLngBounds();
+          pathCoords.forEach(pt => bounds.extend(pt));
+          map.fitBounds(bounds, 40);
+        } else if (mapEngine === 'leaflet' && window.L) {
+          if (activeRoutePolyline) map.removeLayer(activeRoutePolyline);
+          activeRoutePolyline = L.polyline([
+            [mobileState.currentCoords.lat, mobileState.currentCoords.lng],
+            [job.lat, job.lng]
+          ], { color: '#6366F1', weight: 4, dashArray: '8, 8', opacity: 0.85 }).addTo(map);
+          map.fitBounds(activeRoutePolyline.getBounds(), { padding: [40, 40] });
+        }
       }
       showToast(`📍 Định tuyến từ vị trí của bạn tới "${job.title}" (${job.dist})!`, "info");
     }
@@ -2520,8 +2569,12 @@
         toggleBtn.className = "text-[9px] bg-brand-primary text-white font-extrabold px-2 py-1 rounded-lg shadow transition whitespace-nowrap";
       }
 
-      if (map && window.google?.maps) {
-        setTimeout(() => google.maps.event.trigger(map, 'resize'), 350);
+      if (map) {
+        if (mapEngine === 'google' && window.google?.maps) {
+          setTimeout(() => google.maps.event.trigger(map, 'resize'), 350);
+        } else if (typeof map.invalidateSize === 'function') {
+          setTimeout(() => map.invalidateSize(), 350);
+        }
       }
     }
 
@@ -2634,20 +2687,33 @@
       mobileState.gps.lastUpdatedAt = Date.now();
 
       const posObj = { lat, lng };
-      if (userMarker && window.google?.maps) userMarker.setPosition(posObj);
-      if (radarCircle && window.google?.maps) radarCircle.setCenter(posObj);
-      if (gpsAccuracyCircle && window.google?.maps) {
-        gpsAccuracyCircle.setCenter(posObj);
-        gpsAccuracyCircle.setRadius(
-          mobileState.gps.source === 'REAL_GPS' && mobileState.gps.accuracyMeters
-            ? Math.min(mobileState.gps.accuracyMeters, 1000)
-            : 0
-        );
-      }
-
-      if (options.panTo !== false && map && window.google?.maps) {
-        map.panTo(posObj);
-        if (options.zoom) map.setZoom(options.zoom);
+      if (mapEngine === 'google' && window.google?.maps) {
+        if (userMarker) userMarker.setPosition(posObj);
+        if (radarCircle) radarCircle.setCenter(posObj);
+        if (gpsAccuracyCircle) {
+          gpsAccuracyCircle.setCenter(posObj);
+          gpsAccuracyCircle.setRadius(
+            mobileState.gps.source === 'REAL_GPS' && mobileState.gps.accuracyMeters
+              ? Math.min(mobileState.gps.accuracyMeters, 1000) : 0
+          );
+        }
+        if (options.panTo !== false && map) {
+          map.panTo(posObj);
+          if (options.zoom) map.setZoom(options.zoom);
+        }
+      } else if (mapEngine === 'leaflet' && window.L) {
+        if (userMarker) userMarker.setLatLng([lat, lng]);
+        if (radarCircle) radarCircle.setLatLng([lat, lng]);
+        if (gpsAccuracyCircle) {
+          gpsAccuracyCircle.setLatLng([lat, lng]);
+          gpsAccuracyCircle.setRadius(
+            mobileState.gps.source === 'REAL_GPS' && mobileState.gps.accuracyMeters
+              ? Math.min(mobileState.gps.accuracyMeters, 1000) : 0
+          );
+        }
+        if (options.panTo !== false && map) {
+          map.setView([lat, lng], options.zoom || Math.max(map.getZoom(), 13));
+        }
       }
 
       applyScanFiltersAndRender({
@@ -2664,6 +2730,7 @@
 
     function setManualPersonalPin(lat, lng) {
       if (activeInfoWindow) activeInfoWindow.close();
+      if (map && mapEngine === 'leaflet' && typeof map.closePopup === 'function') map.closePopup();
       updateScanLocation(
         lat,
         lng,
@@ -2672,42 +2739,49 @@
       );
     }
 
-    // --- GOOGLE MAPS CLICK HANDLER (THUÊ Ở ĐỊA ĐIỂM KHÁC HOẶC ĐẶT VỊ TRÍ CÁ NHÂN) ---
+    // --- MAP CLICK HANDLER (GOOGLE MAPS HOẶC LEAFLET MIỄN PHÍ) ---
     function handleMapClick(latlng) {
-      if (!map || !window.google?.maps) return;
+      if (!map) return;
       const pos = { lat: latlng.lat, lng: latlng.lng };
       if (mobileState.offsiteMode || mobileState.role === 'POSTER') {
-        if (offsiteMarker) offsiteMarker.setMap(null);
-
-        offsiteMarker = new google.maps.Marker({
-          position: pos,
-          map: map,
-          icon: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png',
-          title: 'Điểm cần tuyển người'
-        });
-
-        if (activeInfoWindow) {
-          activeInfoWindow.setContent(`
-            <div style="font-family:sans-serif; font-size:10px; color:#F8FAFC;">
-              <b>🏢 Điểm cần tuyển người</b><br>
-              <span>Tọa độ: ${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}</span><br>
-              <button onclick="setOffsiteJobLocation(${latlng.lat}, ${latlng.lng})" style="margin-top:6px; background:#10B981; color:#080D1A; font-weight:800; border:none; padding:5px 8px; border-radius:6px; font-size:10px; cursor:pointer; width:100%;">Xác nhận tuyển tại đây</button>
-            </div>
-          `);
-          activeInfoWindow.open(map, offsiteMarker);
+        const html = `
+          <div style="font-family:sans-serif; font-size:10px; color:#F8FAFC;">
+            <b>🏢 Điểm cần tuyển người</b><br>
+            <span>Tọa độ: ${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}</span><br>
+            <button onclick="setOffsiteJobLocation(${latlng.lat}, ${latlng.lng})" style="margin-top:6px; background:#10B981; color:#080D1A; font-weight:800; border:none; padding:5px 8px; border-radius:6px; font-size:10px; cursor:pointer; width:100%;">Xác nhận tuyển tại đây</button>
+          </div>
+        `;
+        if (mapEngine === 'google' && window.google?.maps) {
+          if (offsiteMarker) offsiteMarker.setMap(null);
+          offsiteMarker = new google.maps.Marker({
+            position: pos, map: map, icon: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png', title: 'Điểm cần tuyển người'
+          });
+          if (activeInfoWindow) { activeInfoWindow.setContent(html); activeInfoWindow.open(map, offsiteMarker); }
+        } else if (window.L) {
+          if (offsiteMarker) map.removeLayer(offsiteMarker);
+          const greenIcon = new L.Icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+            iconSize: [22, 34], iconAnchor: [11, 34]
+          });
+          offsiteMarker = L.marker([latlng.lat, latlng.lng], { icon: greenIcon }).addTo(map).bindPopup(html).openPopup();
         }
         showToast(`📍 Đã ghim điểm làm việc mới tại [${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}]!`, "info");
-      } else if (activeInfoWindow) {
-        activeInfoWindow.setPosition(pos);
-        activeInfoWindow.setContent(`
+      } else {
+        const pinHtml = `
           <div style="font-family:sans-serif; font-size:10px; text-align:center; color:#F8FAFC;">
             <div style="font-weight:700; margin-bottom:4px;">Tọa độ [${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}]</div>
             <button onclick="setManualPersonalPin(${latlng.lat}, ${latlng.lng})" style="background:#6366F1; color:#fff; border:none; padding:5px 8px; border-radius:6px; font-weight:800; cursor:pointer; width:100%;">
               📌 Đặt làm vị trí tôi &amp; Quét quanh đây
             </button>
           </div>
-        `);
-        activeInfoWindow.open(map);
+        `;
+        if (mapEngine === 'google' && activeInfoWindow) {
+          activeInfoWindow.setPosition(pos);
+          activeInfoWindow.setContent(pinHtml);
+          activeInfoWindow.open(map);
+        } else if (window.L) {
+          L.popup().setLatLng([latlng.lat, latlng.lng]).setContent(pinHtml).openOn(map);
+        }
       }
     }
 
@@ -2734,8 +2808,14 @@
           const formatted = res.results?.[0]?.formatted_address;
           if (formatted && addrInput) addrInput.value = formatted;
         } catch {}
+      } else {
+        try {
+          const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`);
+          const d = await r.json();
+          if (d?.display_name && addrInput) addrInput.value = d.display_name;
+        } catch {}
       }
-      showToast("✅ Đã cập nhật địa chỉ Google Maps vào mục Đăng việc!", "success");
+      showToast("✅ Đã cập nhật địa điểm làm việc vào mục Đăng việc!", "success");
       switchMobileTab(3);
     }
 
@@ -2756,9 +2836,13 @@
       currentSearchQuery = q;
       const filtered = applyScanFiltersAndRender({ fitBounds: Boolean(q), preserveSelected: false });
       if (!q) {
-        if (map && window.google?.maps) {
-          map.panTo({ lat: mobileState.currentCoords.lat, lng: mobileState.currentCoords.lng });
-          map.setZoom(13);
+        if (map) {
+          if (mapEngine === 'google' && window.google?.maps) {
+            map.panTo({ lat: mobileState.currentCoords.lat, lng: mobileState.currentCoords.lng });
+            map.setZoom(13);
+          } else if (typeof map.setView === 'function') {
+            map.setView([mobileState.currentCoords.lat, mobileState.currentCoords.lng], 13);
+          }
         }
         return;
       }
@@ -2772,10 +2856,18 @@
           const hit = res.results?.[0];
           if (hit) {
             updateScanLocation(hit.geometry.location.lat(), hit.geometry.location.lng(), `📍 Google Maps: ${hit.formatted_address}`, {
-              source: 'MANUAL_PIN',
-              accuracyMeters: null,
-              panTo: true,
-              zoom: 14
+              source: 'MANUAL_PIN', accuracyMeters: null, panTo: true, zoom: 14
+            });
+            return;
+          }
+        } catch {}
+      } else {
+        try {
+          const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=vn&q=${encodeURIComponent(q)}`);
+          const hits = await r.json();
+          if (hits?.length > 0) {
+            updateScanLocation(Number(hits[0].lat), Number(hits[0].lon), `📍 Đã chuyển tới ${hits[0].display_name}`, {
+              source: 'MANUAL_PIN', accuracyMeters: null, panTo: true, zoom: 14
             });
             return;
           }

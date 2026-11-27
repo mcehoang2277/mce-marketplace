@@ -309,10 +309,11 @@ while ($listener.IsListening) {
         if ($urlPath -eq "/api/auth/login" -and $httpMethod -eq "POST") {
             $body = Read-RequestBody $request
             $db = Get-Db
-            $configuredAdminPhone = [Environment]::GetEnvironmentVariable("MCE_ADMIN_PHONE")
+            $configuredAdminPhone = Normalize-PhoneNumber ([Environment]::GetEnvironmentVariable("MCE_ADMIN_PHONE"))
             $configuredAdminPassword = [Environment]::GetEnvironmentVariable("MCE_ADMIN_PASSWORD")
-            if ($configuredAdminPhone -and $configuredAdminPassword -and $body.phone -eq $configuredAdminPhone -and $body.password -ceq $configuredAdminPassword) {
-                $adminUser = $db.users | Where-Object { $_.phone -eq $configuredAdminPhone -and $_.role -eq "ADMIN" } | Select-Object -First 1
+            $loginPhoneNorm = Normalize-PhoneNumber $body.phone
+            if ($configuredAdminPhone -and $configuredAdminPassword -and $loginPhoneNorm -eq $configuredAdminPhone -and $body.password -ceq $configuredAdminPassword) {
+                $adminUser = $db.users | Where-Object { (Normalize-PhoneNumber $_.phone) -eq $configuredAdminPhone -and $_.role -eq "ADMIN" } | Select-Object -First 1
                 if ($adminUser) {
                     $adminToken = [Guid]::NewGuid().ToString("N") + [Guid]::NewGuid().ToString("N")
                     $script:AdminSessions[$adminToken] = @{ userId = $adminUser.id; expiresAt = (Get-Date).AddHours(8) }
@@ -321,23 +322,28 @@ while ($listener.IsListening) {
                 }
             }
 
-            $phone = Normalize-PhoneNumber $body.phone
+            if ($body.password -and -not $body.otp -and (-not $configuredAdminPhone -or -not $configuredAdminPassword)) {
+                Send-Json $response @{ success = $false; message = "Chưa khởi tạo Admin cho phiên chạy local này. Vui lòng khởi động server bằng .\start-local-admin.ps1 (nhập SĐT & mật khẩu Admin)." } 401
+                continue
+            }
+
+            $phone = $loginPhoneNorm
             $otp = if ($body.otp) { $body.otp.ToString().Trim() } elseif ($body.password) { $body.password.ToString().Trim() } else { "" }
 
             if (-not $phone -or $phone.Length -lt 9) {
-                Send-Json $response @{ success = $false; error = "Số điện thoại không hợp lệ." } 400
+                Send-Json $response @{ success = $false; message = "Số điện thoại không hợp lệ."; error = "Số điện thoại không hợp lệ." } 400
                 continue
             }
 
             $otpCheck = Test-OtpCode $phone $otp -Consume
             if (-not $otpCheck.valid) {
-                Send-Json $response @{ success = $false; error = $otpCheck.reason } 401
+                Send-Json $response @{ success = $false; message = $otpCheck.reason; error = $otpCheck.reason } 401
                 continue
             }
 
             $user = $db.users | Where-Object { $_.phone -eq $phone } | Select-Object -First 1
             if (-not $user) {
-                Send-Json $response @{ success = $false; error = "Tài khoản chưa tồn tại với số $phone. Vui lòng đăng ký tài khoản mới." } 404
+                Send-Json $response @{ success = $false; message = "Tài khoản chưa tồn tại với số $phone. Vui lòng đăng ký tài khoản mới."; error = "Tài khoản chưa tồn tại với số $phone." } 404
                 continue
             }
             Send-Json $response @{ success = $true; user = $user; token = "jwt-" + $user.id }
