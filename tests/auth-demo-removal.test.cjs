@@ -22,4 +22,8 @@ test('auth page does not expose demo credentials or simulated identity verificat
 
   assert.match(html, /eKYC chưa khả dụng/);
   assert.match(html, /Đăng ký tạm thời chưa khả dụng/);
+
+  const webhook = fs.readFileSync(path.join(__dirname, '..', 'src', 'modules', 'payments', 'payment-webhook.controller.ts'), 'utf8');
+  assert.equal(webhook.includes('simulateWebhook'), false);
+  assert.equal(webhook.includes('SIM-TX-'), false);
 });
